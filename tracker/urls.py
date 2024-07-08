@@ -8,4 +8,9 @@ urlpatterns = [
     path("dashboard/", views.dashboard, name='dashboard'),
     path("projects/", views.projects, name='projects'),
     
+    path('ajax/load-contracts/', views.load_contracts, name='ajax_load_contracts'),
+    path('ajax/load-sections/', views.load_sections, name='ajax_load_sections'),
+    path('ajax/load-Items/', views.load_Items, name='ajax_load_Items'),
+    path('ajax/load-tasks/', views.load_tasks, name='ajax_load_tasks'),
+
 ]

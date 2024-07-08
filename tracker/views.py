@@ -22,7 +22,45 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
+def login_page(request):
+    return render(request,'projects/login_page.html')
 
+def logout_page(request):
+    return render(request,'projects/logout_page.html')
+
+def load_contracts(request):
+    project_id = request.GET.get('project_id')
+    if not project_id or not project_id.isdigit():
+        return HttpResponseBadRequest("Invalid project ID")
+    contracts = Contract.objects.filter(project__id=int(project_id)).order_by('contract_name')
+    contract_list = [{'id': contract.id, 'contract_name': contract.contract_name} for contract in contracts]
+    return JsonResponse({'contracts': contract_list})
+
+def load_sections(request):
+    contract_id = request.GET.get('contract_id')
+    if not contract_id or not contract_id.isdigit():
+        return HttpResponseBadRequest("Invalid contract ID")
+    sections = Section.objects.filter(contract__id=int(contract_id)).order_by('section_name')
+    section_list = [{'id': section.id, 'section_name': section.section_name} for section in sections]
+    return JsonResponse({'sections': section_list})
+
+def load_Items(request):
+    section_id = request.GET.get('section_id')
+    if not section_id or not section_id.isdigit():
+        return HttpResponseBadRequest("Invalid section ID")
+    Items = Item.objects.filter(section__id=int(section_id))
+    Item_list = [{'id': Item.id, 'Item_name': Item.Item_name} for Item in Items]
+    return JsonResponse({'Items': Item_list})
+
+def load_tasks(request):
+    Item_id = request.GET.get('Item_id')
+    if not Item_id or not Item_id.isdigit():
+        return HttpResponseBadRequest("Invalid Item ID")
+    
+    tasks = Task.objects.filter(Item__id=int(Item_id))  # Assuming Task has a ForeignKey to Item
+    task_list = [{'id': task.id, 'task_name': task.task_name} for task in tasks]
+    
+    return JsonResponse({'tasks': task_list})
 
 @login_required
 def index(request):
@@ -137,3 +175,4 @@ def log_create(request):
         'projects': projects,
     }
     return render(request, 'tracker/log_create.html', context)
+
