@@ -14,14 +14,15 @@
 
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
-    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    
+    <!-- Tailwind CSS with DaisyUI -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Custom files -->
-    <link rel="stylesheet" href="{% static "css/output.css" %}">
 
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
 
     {% block extra_head %}
-
     {% endblock %}
 </head>
 <body>
@@ -33,7 +34,8 @@
         {% block content %}
         {% endblock %}
     </div>
-
-    
+    {% if user.is_authenticated %}
+        {% include 'tracker/partials/btmbar.html' %}
+    {% endif %}
 </body>
 </html>
