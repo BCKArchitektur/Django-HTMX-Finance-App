@@ -2,17 +2,17 @@
 
 {% block content %}
 
-<div class="hero bg-base-200 min-h-screen">
-    <div class="hero-content text-center">
-      <div class="max-w-md">
-        <h1 class="text-5xl font-bold">Hello there</h1>
-        <p class="py-6">
-          Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda excepturi exercitationem
-          quasi. In deleniti eaque aut repudiandae et a id nisi.
-        </p>
-        <button class="btn btn-primary">Get Started</button>
+<div class="container mx-auto">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for project in projects %}
+    <div class="bg-white shadow-md rounded-lg p-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-800">{{ project.name }}</h2>
+        <a href="{% url 'tracker:project_detail' project.id %}" class="text-blue-500">View</a>
       </div>
+      <p class="text-gray-600 mt-2">{{ project.description }}</p>
     </div>
+    {% endfor %}
   </div>
 
 
