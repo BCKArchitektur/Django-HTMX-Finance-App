@@ -1,6 +1,6 @@
 {% load static %}
 <div class="btm-nav flex justify-around bg-base-200 p-2 shadow-lg">
-    <a href="{% url 'index' %}" class="flex-1 text-center py-2 mx-1 transition-transform duration-100 transform hover:scale-103">
+    <a href="{% url 'log_create_compact' %}" class="flex-1 text-center py-2 mx-1 transition-transform duration-100 transform hover:scale-103">
         <div class="{% if request.path == '/' %}border-t-4 border-pink-600{% endif %}"></div>
         <button class="flex flex-col items-center w-full {% if request.path == '/' %}text-pink-600{% else %}text-base-content{% endif %}">
             <svg

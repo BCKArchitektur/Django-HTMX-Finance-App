@@ -1,0 +1,376 @@
+{% extends 'tracker/base.html' %}
+
+{% block title %}Create Log{% endblock %}
+
+{% block content %}
+<!-- Alert Container -->
+<div id="alert-container" class="mb-4 fixed top-4 left-1/2 transform -translate-x-1/2 z-50"></div>
+
+<div id="preset-container" class="flex flex-col lg:flex-row justify-center items-center space-y-4 lg:space-y-0 lg:space-x-4">
+    <!-- Fixed Preset Card -->
+    <div class="fixed_preset card bg-neutral w-96 h-60 shadow-md p-4" id="fixed_preset" 
+        data-project-name="Büro" 
+        data-contract-name="Allgemein" 
+        data-section-name="Allgemein" 
+        data-Item-name="Allgemein" 
+        data-Item-id="0" 
+        data-task-id="1">
+
+        <div class="card-body">
+            <h2 class="card-title">Fixed Preset</h2>
+            <input class="input input-bordered input-xs w-20 h-8 text-xs m-0 text-balance" type="text" name="custom_tasks" id="custom-tasks-fixed" placeholder="Custom tasks">
+            <form  >
+                {% csrf_token %}
+                {% for field in form %}
+                    <div>
+                        {{ field.errors }}
+                        {{ field }}
+                    </div>
+                {% endfor %}
+                <input type="hidden" name="log_time" value="">
+                <button type="submit" class="btn btn-xs mt-2">Submit</button>
+            </form>
+        </div>
+    </div>
+    <div class="divider lg:divider-horizontal"></div>
+    
+    {% for preset in project_presets %}
+    <div class="card bg-base-100 w-96 h-60 shadow-md p-4 preset-card" id="preset-{{ preset.id }}" 
+         data-project-name="{{ preset.project.project_name }}" 
+         data-contract-name="{{ preset.default_contract.contract_name }}" 
+         data-section-name="{{ preset.default_section.section_name }}" 
+         data-Item-name="{{ preset.default_Item.Item_name }}" 
+         data-Item-id="{{ preset.default_Item.id }}" 
+         data-task-id="{{ preset.default_task.id }}">
+        
+        <div class="card-body">
+            <h2 class="card-title font-bold">{{ preset.project.project_name }}</h2>
+            <p>{% if preset.default_section %}{{ preset.default_section.section_name }}{% else %}N/A{% endif %}</p>
+            <div class="task-container "></div>
+              <input class="input input-bordered input-xs w-20 h-8 text-xs m-0" type="text" name="custom_tasks" id="custom-tasks-{{ forloop.counter }}" placeholder="Custom tasks">
+            <div> 
+                <select id="time-select-{{ forloop.counter }}" name="time-select-{{ forloop.counter }}" class="select select-bordered w-20 max-h-8">
+                    <option value="">Time</option>
+                    <option value="0.25">15min</option>
+                    <option value="0.50">30min</option>
+                    <option value="0.75">45min</option>
+                    <option value="1.00">1hr</option>
+                    <option value="1.50">1hr 30min</option>
+                    <option value="2.00">2hr</option>
+                    <option value="2.50">2hr 30min</option>
+                    <option value="3.00">3hr</option>
+                    <option value="3.50">3hr 30min</option>
+                    <option value="4.00">4hr</option>
+                    <option value="4.50">4hr 30min</option>
+                    <option value="5.00">5hr</option>
+                    <option value="5.50">5hr 30min</option>
+                    <option value="6.00">6hr</option>
+                    <option value="6.50">6hr 30min</option>
+                    <option value="7.00">7hr</option>
+                    <option value="7.50">7hr 30min</option>
+                    <option value="8.00">8hr</option>
+                </select>
+            </div>
+            <form  >
+                {% csrf_token %}
+                {% for field in form %}
+                    <div style="display: none;">
+                        {{ field.errors }}
+                        {{ field }}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-xs mt-2">Submit</button>
+            </form>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card bg-primary text-primary-content w-96 p-4">
+        <p>No logs have been added yet.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<div id="log-container" class="overflow-x-auto mt-4 h-48">
+    <table class="table table-xs table-pin-rows table-pin-cols">
+        <thead>
+            <tr>
+                <th>Timestamps</th>
+                <th>Project Name</th>
+                <th>Contract</th>
+                <th>Section</th>
+                <th>Item</th>
+                <th>Task</th>
+                <th>Time</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr class="log-entry" id="log-{{ log.id }}">
+                <td>{{ log.log_timestamps }}</td>
+                <td>{{ log.log_project_name }}</td>
+                <td>{{ log.log_contract }}</td>
+                <td>{{ log.log_section }}</td>
+                <td>{{ log.log_Item }}</td>
+                <td>{{ log.get_log_task }}</td>
+                <td>{{ log.log_time }}</td>
+                <td>
+                    <button class="btn btn-circle btn-outline btn-xs" onclick="deleteLog('{{ log.id }}', '{{ csrf_token }}', '{{ log.log_time }}')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center">No logs have been added yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="progress-container mt-4 text-center">
+    <h3 class="text-lg font-medium">Hours Logged Today: <span id="total-hours-today">{{ total_hours_today }}</span> / {{ hours_assigned_today }} hours</h3>
+    <progress id="progressbar" class="progress progress-primary w-56" value="{{ total_hours_today }}" max="{{ hours_assigned_today }}"></progress>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+$(document).ready(function () {
+        let totalHoursToday = parseFloat("{{ total_hours_today }}");
+              const hoursAssignedToday = parseFloat("{{ hours_assigned_today }}");
+              let currentTotalHoursToday = totalHoursToday;
+
+              // Function to calculate remaining time and update fixed preset card
+              function updateFixedPresetCard() {
+                  const remainingTime = hoursAssignedToday - currentTotalHoursToday;
+                  const remainingTimeFormatted = remainingTime > 0 ? remainingTime.toFixed(2) : '0.00';
+                  
+                  $('.fixed_preset').each(function() {
+                      $(this).find('input[name="log_time"]').val(remainingTimeFormatted);
+                  });
+              }
+
+              // Initial call to update the fixed preset card on page load
+              updateFixedPresetCard();
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    // Function to display success alert
+    function displayAlert(message) {
+        const alertHtml = `
+            <div role="alert" class="alert alert-success flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>${message}</span>
+            </div>
+        `;
+        $('#alert-container').html(alertHtml);
+        setTimeout(() => {
+            $('#alert-container').empty();
+        }, 3000); // Remove the alert after 3 seconds
+    }
+
+    // Function to update fixed preset card
+    function updateFixedPresetCard() {
+                  const remainingTime = hoursAssignedToday - currentTotalHoursToday;
+                  const remainingTimeFormatted = remainingTime > 0 ? remainingTime.toFixed(2) : '0.00';
+                  
+                  $('.fixed_preset').each(function() {
+                      $(this).find('input[name="log_time"]').val(remainingTimeFormatted);
+                  });
+              }
+
+    // Initial call to update the fixed preset card on page load
+    updateFixedPresetCard();
+
+    // Populate tasks in preset cards
+    $('.preset-card').each(function() {
+        const card = $(this);
+        const ItemId = card.data('item-id');
+        console.log(ItemId);
+
+        if (ItemId) {
+          $.ajax({
+              url: `/ajax/load-tasks/?Item_id=${ItemId}`,
+              method: 'GET',
+              success: function(data) {
+                  if (data.tasks && data.tasks.length > 0) {
+                      const taskContainer = card.find('.task-container');
+                      taskContainer.empty(); // Clear any existing buttons
+
+                      data.tasks.forEach(function(task) {
+                          const button = $('<button>')
+                              .addClass('btn btn-outline btn-xs task-btn')
+                              .text(task.task_name)
+                              .attr('data-task-id', task.id)
+                              .on('click', function() {
+                                  $(this).toggleClass('btn-secondary selected');
+                                  updateSelectedTasks(card);
+                              });
+
+                          taskContainer.append(button);
+                      });
+                  } else {
+                      card.find('.task-container').html("<p>No tasks available</p>");
+                  }
+              },
+              error: function(error) {
+                  console.error("Error loading tasks:", error);
+                  card.find('.task-container').html("<p>Error loading tasks</p>");
+              }
+          });
+      
+        }
+
+        // Populate form fields with preset data
+        card.find('input[name="log_project_name"]').val(card.data('project-name'));
+        card.find('input[name="log_contract"]').val(card.data('contract-name'));
+        card.find('input[name="log_section"]').val(card.data('section-name'));
+        card.find('input[name="log_Item"]').val(card.data('item-name'));
+
+        // Update tasks when the custom tasks input field changes
+        card.find('input[name="custom_tasks"]').on('input', function() {
+            updateSelectedTasks(card);
+        });
+
+        // Update log time when the time select changes
+        card.find('select[name^="time-select"]').on('change', function() {
+            const selectedTime = $(this).val();
+            card.find('input[name="log_time"]').val(selectedTime);
+        });
+    });
+
+    function updateSelectedTasks(card) {
+        let selectedTasks = [];
+        card.find('.task-btn.selected').each(function() {
+            selectedTasks.push($(this).text());
+        });
+        let customTasks = card.find('input[name="custom_tasks"]').val();
+        if (customTasks) {
+            customTasks = customTasks.split(',').map(task => task.trim()).filter(task => task.length > 0);
+            selectedTasks = selectedTasks.concat(customTasks);
+        }
+        card.find('input[name="log_tasks"]').val(selectedTasks.join(', '));
+    }
+
+    // Handle form submission with AJAX
+    $('.preset-card form').on('submit', function (e) {
+        e.preventDefault();
+        const form = $(this);
+        $.ajax({
+            type: 'POST',
+            url: '{% url "log_create_compact" %}',
+            data: form.serialize(),
+            beforeSend: function(xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            },
+            success: function (response) {
+                // Update the log container with the new log entry
+                $('#log-container').html($(response).find('#log-container').html());
+
+                // Get the new total hours today from the response
+                totalHoursToday = parseFloat($(response).find('#total-hours-today').text());
+
+                // Update the progress bar and fixed preset card
+                updateProgressBar(totalHoursToday);
+                updateFixedPresetCard();
+
+                // Reset only log_time and log_tasks in the hidden form
+                form.find('input[name="log_time"]').val('');
+                form.find('input[name="log_tasks"]').val('');
+
+                // Reset the time dropdown
+                form.closest('.preset-card').find('select[name^="time-select"]').val('');
+
+                // Reset task buttons and custom tasks input
+                form.closest('.preset-card').find('.task-btn').removeClass('selected');
+                form.closest('.preset-card').find('input[name="custom_tasks"]').val('');
+            },
+            error: function (error) {
+                console.error('Error:', error);
+            }
+        });
+    });
+
+    // Delete log function
+    window.deleteLog = function (logId, csrfToken, logTime) {
+        if (confirm('Are you sure you want to delete this log?')) {
+            fetch(`/delete-log/${logId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Remove the log entry from the DOM
+                    document.getElementById(`log-${logId}`).remove();
+                    // Update total hours today and progress bar
+                    const logTimeValue = parseFloat(logTime);
+                    totalHoursToday -= logTimeValue;
+                    totalHoursToday = Math.max(totalHoursToday, 0); // Ensure it doesn't go negative
+
+                    // Update the progress bar and fixed preset card
+                    updateProgressBar(totalHoursToday);
+                    updateFixedPresetCard();
+                } else {
+                    alert('Failed to delete the log.');
+                }
+            })
+            .catch(error => alert('Error deleting log: ' + error));
+        }
+    }
+
+    function updateProgressBar(totalHours) {
+        const progressPercentage = (totalHours / hoursAssignedToday) * 100;
+        $('#progress-bar').css('width', progressPercentage + '%');
+        $('#progress-bar').attr('aria-valuenow', totalHours);
+        $('#total-hours-today').text(totalHours.toFixed(2));
+    }
+
+    window.deletePreset = function (presetId, csrfToken) {
+        if (confirm('Are you sure you want to delete this project preset?')) {
+            fetch(`/delete-project-preset/${presetId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById(`preset-${presetId}`).remove();
+                } else {
+                    alert('Failed to delete the project preset: ' + (data.message || 'Unknown error.'));
+                }
+            })
+            .catch(error => alert('Error deleting project preset: ' + error));
+        }
+    }
+});
+</script>
+
+{% endblock %}

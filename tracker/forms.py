@@ -1,5 +1,5 @@
 from django import forms
-from .models import Project, Contract, Section, Item, Logs
+from .models import Project, Contract, Section, Item, Logs , Task
 
 class LogForm(forms.ModelForm):
     log_project_name = forms.ModelChoiceField(queryset=Project.objects.none(), label="Project")
@@ -56,3 +56,48 @@ class LogForm(forms.ModelForm):
             self.fields['log_section'].queryset = Section.objects.none()
             self.fields['log_Item'].queryset = Item.objects.none()
 
+class Hiddenform(forms.Form):
+    log_project_name = forms.CharField(max_length=50)
+    log_contract = forms.CharField(max_length=50)
+    log_section = forms.CharField(max_length=50)
+    log_Item = forms.CharField(max_length=50)
+    log_tasks = forms.CharField(max_length=255)  # Updated to handle multiple tasks as a comma-separated string
+    log_time = forms.CharField(max_length=50)
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super(Hiddenform, self).__init__(*args, **kwargs)
+
+class ProjectPresetForm(forms.Form):
+    project = forms.ModelChoiceField(queryset=Project.objects.all(), label="Project")
+    default_contract = forms.ModelChoiceField(queryset=Contract.objects.none(), required=True, label="Default Contract")
+    default_section = forms.ModelChoiceField(queryset=Section.objects.none(), required=True, label="Default Section")
+    default_Item = forms.ModelChoiceField(queryset=Item.objects.none(), required=True, label="Default Item")
+    default_task = forms.ModelChoiceField(queryset=Task.objects.none(), required=False, label="Default Task")
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super(ProjectPresetForm, self).__init__(*args, **kwargs)
+        if self.is_bound:
+            self.fields['default_contract'].queryset = Contract.objects.filter(project=self.data.get('project'))
+            self.fields['default_section'].queryset = Section.objects.filter(contract=self.data.get('default_contract'))
+            self.fields['default_Item'].queryset = Item.objects.filter(section=self.data.get('default_section'))
+            self.fields['default_task'].queryset = Task.objects.filter(Item=self.data.get('default_Item'))
+        else:
+            self.fields['default_contract'].queryset = Contract.objects.none()
+            self.fields['default_section'].queryset = Section.objects.none()
+            self.fields['default_Item'].queryset = Item.objects.none()
+            self.fields['default_task'].queryset = Task.objects.none()
+
+class ProjectForm(forms.ModelForm):
+    class Meta:
+        model = Project
+        fields = ['project_name', 'project_address', 'client_name', 'project_no', 'status', 'user', 'contract']
+        widgets = {
+            'project_name': forms.TextInput(attrs={'class': 'select2'}),  # Assuming single project name selection
+            'project_address': forms.TextInput(attrs={'class': 'select2'}),  # Assuming single project address selection
+            'client_name': forms.Select(attrs={'class': 'select2'}),  # Assuming single client selection
+            'project_no': forms.TextInput(attrs={'class': 'select2'}),  # Assuming project number as text input
+            'status': forms.Select(attrs={'class': 'select2'}),  # Assuming single status selection
+            'user': forms.SelectMultiple(attrs={'class': 'select2'}),  # Assuming multiple users can be selected
+            'contract': forms.SelectMultiple(attrs={'class': 'select2'}),  # Assuming multiple contracts can be selected
+        }

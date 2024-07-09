@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from .models import Project , Logs , Contract , Section , Item , Task , ProjectPreset , UserPreset , Employee ,User
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
-from .forms import LogForm  
+from .forms import LogForm  , Hiddenform
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, FloatField, Value
@@ -122,6 +122,79 @@ def get_berlin_time():
     formatted_time = localized_time.strftime('%d/%m/%y %H:%M:%S')
     return formatted_time
 
+#Log view to create log
+@login_required
+def log_create_compact(request):
+    projects = Project.objects.filter(user=request.user)
+    project_presets = ProjectPreset.objects.filter(user=request.user)
+    logs = Logs.objects.filter(user=request.user).order_by('-log_timestamps')
+
+    today = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).strftime('%Y-%m-%d')
+    logs_today = Logs.objects.filter(user=request.user, log_timestamps__startswith=today)
+    total_hours_today = logs_today.annotate(
+        numeric_time=Cast('log_time', FloatField())
+    ).aggregate(total_time=Sum('numeric_time'))['total_time'] or 0
+
+    # Get the employee's assigned hours
+    employee = get_object_or_404(Employee, user=request.user)
+    
+    # Determine today's day of the week
+    day_of_week = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).weekday()
+
+    # Mapping of day of the week to the corresponding hours assigned variable
+    hours_assigned_mapping = {
+        0: employee.hours_assigned_monday,
+        1: employee.hours_assigned_tuesday,
+        2: employee.hours_assigned_wednesday,
+        3: employee.hours_assigned_thursday,
+        4: employee.hours_assigned_friday,
+    }
+
+    hours_assigned_today = hours_assigned_mapping.get(day_of_week, 0)
+
+    # Calculate the progress percentage
+    progress_percentage = (total_hours_today / hours_assigned_today) * 100 if hours_assigned_today > 0 else 0
+
+    form = Hiddenform(request.POST or None, user=request.user)
+    if request.method == 'POST' and form.is_valid():
+        log_project_name = form.cleaned_data['log_project_name']
+        log_contract_name = form.cleaned_data['log_contract']
+        log_tasks = form.cleaned_data['log_tasks']
+        log_section = form.cleaned_data['log_section']
+        log_Item = form.cleaned_data['log_Item']
+        log_time = form.cleaned_data['log_time']
+        log_timestamps = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).strftime('%Y-%m-%d %H:%M:%S')
+        
+        log_project = get_object_or_404(Project, project_name=log_project_name)
+        log_contract = get_object_or_404(Contract, contract_name=log_contract_name)
+        log_section = get_object_or_404(Section, section_name=log_section)
+        log_Item = get_object_or_404(Item, Item_name=log_Item)
+
+        log_entry = Logs.objects.create(
+            log_project_name=log_project_name,
+            log_contract=log_contract,
+            log_section=log_section,
+            log_Item=log_Item,
+            log_time=log_time,
+            log_timestamps=log_timestamps,
+            log_tasks=log_tasks,
+            user=request.user
+        )
+        log_entry.save()
+        return redirect('log_create_compact')
+
+    context = {
+        'project_presets': project_presets,
+        'form': form,
+        'logs': logs,
+        'total_hours_today': total_hours_today,
+        'hours_assigned_today': hours_assigned_today,
+        'progress_percentage': progress_percentage,
+        'projects': projects,
+        'employee': employee,
+    }
+    return render(request, 'tracker/log_create_compact.html', context)
+
 #Main view to create log
 def log_create(request):
     projects = Project.objects.filter(user=request.user)
@@ -175,24 +248,24 @@ def log_create(request):
         )
         log_entry.save()
 
-        # project = form.cleaned_data['log_project_name']
-        # default_contract = form.cleaned_data['log_contract']
-        # default_section = form.cleaned_data['log_section']
-        # default_Item = form.cleaned_data['log_Item']
+        project = form.cleaned_data['log_project_name']
+        default_contract = form.cleaned_data['log_contract']
+        default_section = form.cleaned_data['log_section']
+        default_Item = form.cleaned_data['log_Item']
 
-        # user_presets = ProjectPreset.objects.filter(user=request.user)
-        # if user_presets.count() >= 4:
-        #     # Delete the oldest preset specific to the user
-        #     oldest_preset = user_presets.order_by('id').first()
-        #     oldest_preset.delete()
+        user_presets = ProjectPreset.objects.filter(user=request.user)
+        if user_presets.count() >= 4:
+            # Delete the oldest preset specific to the user
+            oldest_preset = user_presets.order_by('id').first()
+            oldest_preset.delete()
 
-        # ProjectPreset.objects.create(
-        #     user=request.user,
-        #     project=project,
-        #     default_contract=default_contract,
-        #     default_section=default_section,
-        #     default_Item=default_Item,
-        # )
+        ProjectPreset.objects.create(
+            user=request.user,
+            project=project,
+            default_contract=default_contract,
+            default_section=default_section,
+            default_Item=default_Item,
+        )
 
         return redirect('log_create')
     else:
