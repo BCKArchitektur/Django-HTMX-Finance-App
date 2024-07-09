@@ -53,14 +53,28 @@ def load_Items(request):
     return JsonResponse({'Items': Item_list})
 
 def load_tasks(request):
-    Item_id = request.GET.get('Item_id')
-    if not Item_id or not Item_id.isdigit():
+    item_id = request.GET.get('Item_id')
+    
+    # Check if Item_id is valid
+    if not item_id or not item_id.isdigit():
         return HttpResponseBadRequest("Invalid Item ID")
     
-    tasks = Task.objects.filter(Item__id=int(Item_id))  # Assuming Task has a ForeignKey to Item
-    task_list = [{'id': task.id, 'task_name': task.task_name} for task in tasks]
+    item_id = int(item_id)
     
-    return JsonResponse({'tasks': task_list})
+    try:
+        # Retrieve the Item object
+        item = Item.objects.get(id=item_id)
+        # Get the related tasks through the many-to-many relationship
+        tasks = item.tasks.all()
+        
+        # Prepare the task list
+        task_list = [{'id': task.id, 'task_name': task.task_name} for task in tasks]
+        
+        return JsonResponse({'tasks': task_list})
+    
+    except Item.DoesNotExist:
+        return HttpResponseBadRequest("Item not found")
+
 
 @login_required
 def index(request):

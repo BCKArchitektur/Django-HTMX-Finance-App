@@ -3,57 +3,77 @@
 {% block title %}Create Log{% endblock %}
 
 {% block content %}
-<div id="selectbar" class="flex flex-row justify-center items-center ">
-    <form id="log-form" method="post" class="form-inline w-full">
+<div id="selectbar" class="flex flex-col items-center space-y-4">
+    <form id="log-form" method="post">
         {% csrf_token %}
-        <div class="form-group-container flex flex-wrap w-full">
+        <div class="flex flex-col lg:flex-row justify-center items-center space-y-4 lg:space-y-0 lg:space-x-4">
             <!-- Project Name Field -->
-            <div class="form-group mx-sm-3 mb-2 w-full sm:w-auto">
+            <div class="basis-1/4">
                 {{ form.log_project_name.errors }}
-                <select class="select select-bordered w-full max-w-xs">
-                    {{ form.log_project_name }}
+                <select id="id_log_project_name" name="{{ form.log_project_name.name }}" class="select select-bordered w-full">
+                    <option value="">Select Project</option>
+                    {% for project in form.log_project_name.field.queryset %}
+                        <option value="{{ project.id }}" {% if project.id == form.log_project_name.value %}selected{% endif %}>{{ project }}</option>
+                    {% endfor %}
                 </select>
             </div>
-            <!-- Contract, Section, and Role Fields -->
-            <div class="form-group mx-sm-3 mb-2 w-full sm:w-auto">
+            <div class="divider lg:divider-horizontal"></div>
+            <!-- Contract, Section, and Item Fields -->
+            <div class="basis-1/4">
                 {{ form.log_contract.errors }}
-                <select class="select select-bordered w-full max-w-xs">
-                    {{ form.log_contract }}
+                <select id="id_log_contract" name="{{ form.log_contract.name }}" class="select select-bordered w-full">
+                    <option value="">Select Contract</option>
+                    {% for contract in form.log_contract.field.queryset %}
+                        <option value="{{ contract.id }}" {% if contract.id == form.log_contract.value %}selected{% endif %}>{{ contract }}</option>
+                    {% endfor %}
                 </select>
                 {{ form.log_section.errors }}
-                <select class="select select-bordered w-full max-w-xs mt-2">
-                    {{ form.log_section }}
+                <select id="id_log_section" name="{{ form.log_section.name }}" class="select select-bordered w-full mt-2">
+                    <option value="">Select Section</option>
+                    {% for section in form.log_section.field.queryset %}
+                        <option value="{{ section.id }}" {% if section.id == form.log_section.value %}selected{% endif %}>{{ section }}</option>
+                    {% endfor %}
                 </select>
-                {{ form.log_role.errors }}
-                <select class="select select-bordered w-full max-w-xs mt-2">
-                    {{ form.log_role }}
+                {{ form.log_Item.errors }}
+                <select id="id_log_Item" name="{{ form.log_Item.name }}" class="select select-bordered w-full mt-2">
+                    <option value="">Select Item</option>
+                    {% for item in form.log_Item.field.queryset %}
+                        <option value="{{ item.id }}" {% if item.id == form.log_Item.value %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
                 </select>
             </div>
+            <div class="divider lg:divider-horizontal"></div>
             <!-- Task Buttons -->
-            <div class="form-group mx-sm-3 mb-2 w-full sm:w-auto">
+            <div class="basis-1/4">
                 {{ form.log_tasks.errors }}
-                <input type="hidden" id="id_log_tasks" name="log_tasks">
+                {{ form.log_tasks }}
                 <div id="task-buttons-container" class="task-buttons flex flex-wrap gap-2"></div>
-                <input class="input input-bordered w-full max-w-xs mt-2" type="text" id="custom-tasks" placeholder="Add custom tasks">
+                <input class="input input-bordered w-full mt-2" type="text" id="custom-tasks" placeholder="Add custom tasks">
             </div>
+            <div class="divider lg:divider-horizontal"></div>
             <!-- Time Field -->
-            <div class="form-group mx-sm-3 mb-2 w-full sm:w-auto">
+            <div class="basis-1/4">
                 {{ form.log_time.errors }}
-                <input class="input input-bordered w-full max-w-xs" type="text" name="log_time" value="{{ form.log_time.value }}">
+                <select id="id_log_time" name="{{ form.log_time.name }}" class="select select-bordered w-full mt-2">
+                    <option value="">Select Time</option>
+                    {% for value, label in form.log_time.field.choices %}
+                        <option value="{{ value }}" {% if value == form.log_time.value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
         <button type="submit" class="btn btn-primary mt-4">Submit</button>
     </form>
 </div>
-<div id="log-container" class="mt-4">
-    <table class="table table-zebra w-full">
+<div id="log-container"  class="overflow-x-auto h-48">
+    <table class="table table-xs table-pin-rows table-pin-cols">
         <thead>
             <tr>
                 <th>Timestamps</th>
                 <th>Project Name</th>
                 <th>Contract</th>
                 <th>Section</th>
-                <th>Role</th>
+                <th>Item</th>
                 <th>Task</th>
                 <th>Time</th>
                 <th>Action</th>
@@ -66,11 +86,15 @@
                 <td>{{ log.log_project_name }}</td>
                 <td>{{ log.log_contract }}</td>
                 <td>{{ log.log_section }}</td>
-                <td>{{ log.log_role }}</td>
+                <td>{{ log.log_Item }}</td>
                 <td>{{ log.get_log_task }}</td>
                 <td>{{ log.log_time }}</td>
                 <td>
-                    <button class="btn btn-error btn-sm" onclick="deleteLog('{{ log.id }}', '{{ csrf_token }}', '{{ log.log_time }}')">x</button>
+                    <button class="btn btn-circle btn-outline btn-xs" onclick="deleteLog('{{ log.id }}', '{{ csrf_token }}', '{{ log.log_time }}')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </td>
             </tr>
             {% empty %}
@@ -80,10 +104,11 @@
             {% endfor %}
         </tbody>
     </table>
-    <div class="progress-container mt-4 text-center">
-        <h3 class="text-lg font-medium">Hours Logged Today: <span id="total-hours-today">{{ total_hours_today }}</span> / {{ hours_assigned_today }} hours</h3>
-        <progress class="progress progress-primary w-56" value="{{ total_hours_today }}" max="{{ hours_assigned_today }}"></progress>
-    </div>
+
+</div>
+<div class="progress-container mt-4 text-center">
+    <h3 class="text-lg font-medium">Hours Logged Today: <span id="total-hours-today">{{ total_hours_today }}</span> / {{ hours_assigned_today }} hours</h3>
+    <progress id="progressbar"class="progress progress-primary w-56" value="{{ total_hours_today }}" max="{{ hours_assigned_today }}"></progress>
 </div>
 {% endblock %}
 
@@ -124,30 +149,30 @@
         function updateSelectedTasks() {
             let selectedTasks = [];
             $(".task-btn.selected").each(function() {
-                selectedTasks.push($(this).text()); 
+                selectedTasks.push($(this).text());
             });
             let customTasks = $("#custom-tasks").val().split(',').map(task => task.trim()).filter(task => task.length > 0);
             selectedTasks = selectedTasks.concat(customTasks);
-            $("#id_log_tasks").val(selectedTasks.join(',')); 
+            $("#id_log_tasks").val(selectedTasks.join(','));
         }
 
         // Load task buttons dynamically if needed (similar to your existing script)
-        function loadTasks(roleId) {
+        function loadTasks(ItemId) {
             $.ajax({
-                url: `/ajax/load-tasks/?role_id=${roleId}`,
+                url: `/ajax/load-tasks/?Item_id=${ItemId}`,
                 method: 'GET',
                 success: function(data) {
                     if (data.tasks && data.tasks.length > 0) {
                         const taskContainer = $('#task-buttons-container');
-                        taskContainer.empty(); 
+                        taskContainer.empty();
 
                         data.tasks.forEach(function(task) {
                             const button = $('<button>')
-                                .addClass('task-btn btn')
+                                .addClass('task-btn btn btn-outline btn-sm')
                                 .text(task.task_name)
                                 .attr('data-task-id', task.id)
                                 .on('click', function() {
-                                    $(this).toggleClass('selected');
+                                    $(this).toggleClass('btn-primary selected');
                                     updateSelectedTasks();
                                 });
 
@@ -192,10 +217,58 @@
 
         function updateProgressBar(totalHours) {
             const progressPercentage = (totalHours / hoursAssignedToday) * 100;
-            $('#progress-bar').css('width', progressPercentage + '%');
-            $('#progress-bar').attr('aria-valuenow', totalHours);
+            $('.progressbar').css('width', progressPercentage + '%');
+            $('.progressbar').attr('aria-valuenow', totalHours);
             $('#total-hours-today').text(totalHours.toFixed(2));
         }
+
+        // Handling dynamic updates for project-related selects
+        $('#id_log_project_name').change(function() {
+            var projectId = $(this).val();
+            $.ajax({
+                url: '/ajax/load-contracts/',
+                data: { 'project_id': projectId },
+                success: function(data) {
+                    $("#id_log_contract").html('<option value="">Select Contract</option>');
+                    $.each(data.contracts, function(key, value) {
+                        $("#id_log_contract").append('<option value="' + value.id + '">' + value.contract_name + '</option>');
+                    });
+                }
+            });
+        });
+
+        $('#id_log_contract').change(function() {
+            var contractId = $(this).val();
+            $.ajax({
+                url: '/ajax/load-sections/',
+                data: { 'contract_id': contractId },
+                success: function(data) {
+                    $("#id_log_section").html('<option value="">Select Section</option>');
+                    $.each(data.sections, function(key, value) {
+                        $("#id_log_section").append('<option value="' + value.id + '">' + value.section_name + '</option>');
+                    });
+                }
+            });
+        });
+
+        $('#id_log_section').change(function() {
+            var sectionId = $(this).val();
+            $.ajax({
+                url: '/ajax/load-Items/',
+                data: { 'section_id': sectionId },
+                success: function(data) {
+                    $("#id_log_Item").html('<option value="">Select Item</option>');
+                    $.each(data.Items, function(key, value) {
+                        $("#id_log_Item").append('<option value="' + value.id + '">' + value.Item_name + '</option>');
+                    });
+                }
+            });
+        });
+
+        $('#id_log_Item').change(function() {
+            var ItemId = $(this).val();
+            loadTasks(ItemId);
+        });
     });
 </script>
 {% endblock %}

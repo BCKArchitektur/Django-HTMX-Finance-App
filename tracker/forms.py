@@ -1,8 +1,7 @@
 from django import forms
-from .models import Project, Contract, Section, Task, Logs, Item
+from .models import Project, Contract, Section, Item, Logs
 
-
-class LogForm(forms.Form):
+class LogForm(forms.ModelForm):
     log_project_name = forms.ModelChoiceField(queryset=Project.objects.none(), label="Project")
     log_contract = forms.ModelChoiceField(queryset=Contract.objects.none(), required=True, label="Contract")
     log_section = forms.ModelChoiceField(queryset=Section.objects.none(), required=True, label="Section")
@@ -30,24 +29,28 @@ class LogForm(forms.Form):
         ('7.50', '7hr 30min'),
         ('8.00', '8hr'),
     )
-    log_time = forms.ChoiceField(choices=TIME_CHOICES, label="Time", initial='', widget=forms.Select(), required=True)
+    log_time = forms.ChoiceField(choices=TIME_CHOICES, label="Time", initial='', required=True)
 
-    widgets = {
-            'log_project_name': forms.Select(attrs={'class': 'select select-bordered w-full max-w-xs'}),
-            'log_contract': forms.Select(attrs={'class': 'select select-bordered w-full max-w-xs'}),
-            'log_section': forms.Select(attrs={'class': 'select select-bordered w-full max-w-xs'}),
-            'log_Item': forms.Select(attrs={'class': 'select select-bordered w-full max-w-xs'}),
-            'log_time': forms.NumberInput(attrs={'class': 'input input-bordered w-full max-w-xs'}),
-        }
+    class Meta:
+        model = Logs
+        fields = ['log_project_name', 'log_contract', 'log_section', 'log_Item', 'log_tasks', 'log_time']
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super(LogForm, self).__init__(*args, **kwargs)
-        self.fields['log_project_name'].queryset = Project.objects.filter(user=user)
+        if user:
+            self.fields['log_project_name'].queryset = Project.objects.filter(user=user)
         if self.is_bound:
-            self.fields['log_contract'].queryset = Contract.objects.filter(project=self.data.get('log_project_name'))
-            self.fields['log_section'].queryset = Section.objects.filter(contract=self.data.get('log_contract'))
-            self.fields['log_Item'].queryset = Item.objects.filter(section=self.data.get('log_section'))
+            project_id = self.data.get('log_project_name')
+            contract_id = self.data.get('log_contract')
+            section_id = self.data.get('log_section')
+
+            if project_id:
+                self.fields['log_contract'].queryset = Contract.objects.filter(project_id=project_id)
+            if contract_id:
+                self.fields['log_section'].queryset = Section.objects.filter(contract_id=contract_id)
+            if section_id:
+                self.fields['log_Item'].queryset = Item.objects.filter(section_id=section_id)
         else:
             self.fields['log_contract'].queryset = Contract.objects.none()
             self.fields['log_section'].queryset = Section.objects.none()
