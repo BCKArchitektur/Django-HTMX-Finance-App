@@ -1,109 +1,134 @@
 {% extends 'tracker/base.html' %}
 
+{% block title %}Projects{% endblock %}
+
 {% block content %}
-<div class="container mx-auto p-4">
-    <!-- Add New Project Button -->
-    <button class="btn btn-primary mb-4" onclick="document.getElementById('addProjectModal').classList.toggle('hidden')">Add New Project</button>
+<div role="tablist" class="tabs tabs-bordered align-middle items-center">
+    <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Projects" checked="checked"/>
+    <div role="tabpanel" class="tab-content p-10">
+
+
+        <button class="btn btn-sm btn-accent">+ New Project</button>
+
+        <div class="overflow-x-auto">
+            <table class="table">
+              <!-- head -->
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Project Name</th>
+                  <th>Client Name</th>
+                  <th>Status</th>
+                  <th>Team</th>
+                  <th>Action</th>
+
+                </tr>
+              </thead>
+              <tbody>
+                <!-- row 1 -->
+                <tr class="hover">
+
+                    <th>
+                        <input type="checkbox" checked="checked" class="checkbox checkbox-sm checkbox-secondary   " />
+                    </th>
+                    <td>Cy Ganderton</td>
+                    <td>Quality Control Specialist</td>
+                    <td>Blue</td>
+                </tr>
+                <!-- row 2 -->
+                <tr class="hover">
+                  <th>2</th>
+                  <td>Hart Hagerty</td>
+                  <td>Desktop Support Technician</td>
+                  <td>Purple</td>
+                </tr>
+                <!-- row 3 -->
+                <tr class="hover">
+                    <th>3</th>
+                    <td>Brice Swyre</td>
+                    <td>Tax Accountant</td>
+                    <td>Red</td>
+                </tr>
+                <!-- row 4 -->
+                <tr class="hover">
+                    <th>4</th>
+                    <td>Brice Swyre</td>
+                    <td>Tax Accountant</td>
+                    <td>Red</td>
+                </tr>
+              </tbody>
+            </table>
+        </div>
+
+
+
+    </div>
+  
+    <input
+      type="radio"
+      name="my_tabs_1"
+      role="tab"
+      class="tab"
+      aria-label="Clients"  />
+    <div role="tabpanel" class="tab-content p-10">
+        
+        <button class="btn btn-sm btn-accent">+ New Client</button>
+        <div class="overflow-x-auto">
+            <table class="table">
+              <!-- head -->
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Client Name</th>
+                  <th>Client Address</th>
+                  <th>Status</th>
+                  <th>Status</th>
+                  <th>Action</th>
+
+                </tr>
+              </thead>
+              <tbody>
+                <!-- row 1 -->
+                <tr class="hover">
+                    <th>1</th>
+                    <td>Cy Ganderton</td>
+                    <td>Quality Control Specialist</td>
+                    <td>Blue</td>
+                </tr>
+                <!-- row 2 -->
+                <tr class="hover">
+                  <th>2</th>
+                  <td>Hart Hagerty</td>
+                  <td>Desktop Support Technician</td>
+                  <td>Purple</td>
+                </tr>
+                <!-- row 3 -->
+                <tr class="hover">
+                    <th>3</th>
+                    <td>Brice Swyre</td>
+                    <td>Tax Accountant</td>
+                    <td>Red</td>
+                </tr>
+                <!-- row 4 -->
+                <tr class="hover">
+                    <th>4</th>
+                    <td>Brice Swyre</td>
+                    <td>Tax Accountant</td>
+                    <td>Red</td>
+                </tr>
+              </tbody>
+            </table>
+        </div>
     
-    <!-- Projects Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="projectsGrid">
-        {% for project in projects %}
-            <div class="card bg-base-100 shadow-xl w-full md:w-auto">
-                <div class="card-body">
-                    <h2 class="card-title">{{ project.project_name }}</h2>
-                    <p>Project ID: {{ project.id }}</p>
-                    <p>Project Address: {{ project.project_address }}</p>
-                    <button onclick="loadProjectDetails({{ project.id }})" class="btn btn-primary mt-4">View Details</button>
-                </div>
-            </div>
-        {% endfor %}
+    
     </div>
+  
+  </div>
 
-    <!-- Skeleton Loader -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="skeletonLoader" style="display: none;">
-        <div class="card bg-base-100 shadow-xl w-full md:w-auto">
-            <div class="card-body">
-                <div class="skeleton h-6 w-3/4 mb-2 bg-gray-200"></div>
-                <div class="skeleton h-4 w-1/2 mb-2 bg-gray-200"></div>
-                <div class="skeleton h-4 w-full mb-2 bg-gray-200"></div>
-                <div class="skeleton h-4 w-full mb-2 bg-gray-200"></div>
-                <div class="skeleton h-8 w-1/4 bg-gray-200"></div>
-            </div>
-        </div>
-        <!-- Repeat the skeleton structure as needed -->
-    </div>
-
-    <!-- Add Project Modal -->
-    <div id="addProjectModal" class="fixed inset-0 hidden bg-black bg-opacity-50 flex items-center justify-center">
-        <div class="bg-white p-6 rounded shadow-lg w-3/4 max-w-lg">
-            <h2 class="text-xl mb-4">Add New Project</h2>
-            <form method="post" action="{% url 'add_project' %}">
-                {% csrf_token %}
-                <div class="mb-4">
-                    <label class="block text-gray-700">Project Name</label>
-                    <input type="text" name="project_name" class="input input-bordered w-full" required>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700">Project Address</label>
-                    <input type="text" name="project_address" class="input input-bordered w-full" required>
-                </div>
-                <div class="flex justify-end">
-                    <button type="button" class="btn btn-secondary mr-2" onclick="document.getElementById('addProjectModal').classList.toggle('hidden')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Project</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Project Details Modal -->
-    <div id="projectDetailsModal" class="fixed inset-0 hidden bg-black bg-opacity-50 flex items-center justify-center">
-        <div class="bg-white p-6 rounded shadow-lg w-3/4 max-w-3xl">
-            <h2 id="projectName" class="text-xl mb-4"></h2>
-            <div id="projectContracts"></div>
-            <button type="button" class="btn btn-secondary mt-4" onclick="document.getElementById('projectDetailsModal').classList.toggle('hidden')">Close</button>
-        </div>
-    </div>
-</div>
 {% endblock content %}
 
 {% block extra_scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Show skeleton loader while loading
-        var skeletonLoader = document.getElementById('skeletonLoader');
-        var projectsGrid = document.getElementById('projectsGrid');
-        
-        skeletonLoader.style.display = 'grid';
-        projectsGrid.style.display = 'none';
 
-        setTimeout(function() {
-            skeletonLoader.style.display = 'none';
-            projectsGrid.style.display = 'grid';
-        }, 300); // Adjust timeout as needed
-    });
-
-    function loadProjectDetails(projectId) {
-        fetch(`/project-details/${projectId}/`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('projectName').innerText = data.project_name;
-            var projectContracts = document.getElementById('projectContracts');
-            projectContracts.innerHTML = '';  // Clear previous data
-
-            data.contracts.forEach(contract => {
-                var contractHtml = `
-                    <div class="mb-4">
-                        <h3 class="text-lg font-bold">${contract.contract_name}</h3>
-                        <p>Section: ${contract.section_name}</p>
-                        <p>Allocated Budget: ${contract.allocated_budget}</p>
-                        <p>Used Budget: ${contract.used_budget}</p>
-                    </div>
-                `;
-                projectContracts.insertAdjacentHTML('beforeend', contractHtml);
-            });
-
-            document.getElementById('projectDetailsModal').classList.toggle('hidden');
-        });
-    }
 </script>
 {% endblock extra_scripts %}

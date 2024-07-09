@@ -44,9 +44,10 @@
          data-Item-id="{{ preset.default_Item.id }}" 
          data-task-id="{{ preset.default_task.id }}">
         
+
         <div class="card-body p-2">
           <div class="join">
-            <h2 class="card-title font-bold">{{ preset.project.project_name }}</h2>
+            <h2 class="card-title font-bold p-0">{{ preset.project.project_name }}</h2>
             <p class="m-3  font-extralight ">{% if preset.default_section %}{{ preset.default_section.section_name }}{% else %}N/A{% endif %}</p>
           </div> 
             <div class="task-container flex flex-wrap gap-2 mb-2"></div>
@@ -180,6 +181,51 @@ $(document).ready(function () {
             $('#alert-container').empty();
         }, 3000); // Remove the alert after 3 seconds
     }
+        // Handle the form submission
+        $('#log-form').on('submit', function (e) {
+            e.preventDefault();
+
+            const tasks = $("#id_log_tasks").val();
+            const time = $("#id_log_time").val();
+
+            if (!tasks) {
+                displayAlert("Please select at least one task.", 'error');
+                return;
+            }
+
+            if (!time) {
+                displayAlert("Please select a time.", 'error');
+                return;
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: '{% url "log_create" %}',
+                data: $(this).serialize(),
+                beforeSend: function(xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                },
+                success: function (response) {
+                    console.log('Form submitted successfully:', response);
+                    // Update the log container with the new log entry
+                    $('#log-container').html($(response).find('#log-container').html());
+                    // Reset the form
+                    $('#log-form')[0].reset();
+                    // Reset task buttons and custom tasks input
+                    $('#task-buttons-container').empty();
+                    $('#custom-tasks').val('');
+                    // Update the total hours today and progress bar
+                    totalHoursToday = parseFloat($(response).find('#total-hours-today').text());
+                    updateProgressBar(totalHoursToday);
+                    // Display success alert
+                    displayAlert("Log has been successfully added!");
+                },
+                error: function (error) {
+                    console.error('Error submitting form:', error);
+                    console.log('Error response text:', error.responseText); // Log error response text
+                }
+            });
+        });
 
     // Function to update fixed preset card
     function updateFixedPresetCard() {
