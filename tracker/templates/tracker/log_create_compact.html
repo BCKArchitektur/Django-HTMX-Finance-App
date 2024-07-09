@@ -8,34 +8,35 @@
 
 <div id="preset-container" class="flex flex-col lg:flex-row justify-center items-center space-y-4 lg:space-y-0 lg:space-x-4">
     <!-- Fixed Preset Card -->
-    <div class="fixed_preset card bg-neutral w-96 h-60 shadow-md p-4" id="fixed_preset" 
+    <div class="fixed_preset card bg-base-100 w-3/5 h-60 shadow-md " id="fixed_preset" 
         data-project-name="Büro" 
         data-contract-name="Allgemein" 
         data-section-name="Allgemein" 
         data-Item-name="Allgemein" 
-        data-Item-id="0" 
+        data-Item-id="3" 
         data-task-id="1">
-
+        
         <div class="card-body">
-            <h2 class="card-title">Fixed Preset</h2>
-            <input class="input input-bordered input-xs w-20 h-8 text-xs m-0 text-balance" type="text" name="custom_tasks" id="custom-tasks-fixed" placeholder="Custom tasks">
-            <form  >
+            <h2 class="card-title font-bold">Büro</h2>
+            <div class="task-container flex flex-wrap gap-2 mb-2"></div>
+            <input class="input input-bordered input-xs w-full text-xs mb-2" type="text" name="custom_tasks" id="custom-tasks-fixed" placeholder="Custom tasks">
+            <form>
                 {% csrf_token %}
                 {% for field in form %}
-                    <div>
+                    <div style="display: none;">
                         {{ field.errors }}
                         {{ field }}
                     </div>
                 {% endfor %}
                 <input type="hidden" name="log_time" value="">
-                <button type="submit" class="btn btn-xs mt-2">Submit</button>
+                <button type="submit" class="btn btn-xs btn-primary   w-full">Submit</button>
             </form>
         </div>
     </div>
     <div class="divider lg:divider-horizontal"></div>
     
     {% for preset in project_presets %}
-    <div class="card bg-base-100 w-96 h-60 shadow-md p-4 preset-card" id="preset-{{ preset.id }}" 
+    <div class="card bg-base-100 w-96 h-60 shadow-md  preset-card" id="preset-{{ preset.id }}" 
          data-project-name="{{ preset.project.project_name }}" 
          data-contract-name="{{ preset.default_contract.contract_name }}" 
          data-section-name="{{ preset.default_section.section_name }}" 
@@ -43,13 +44,16 @@
          data-Item-id="{{ preset.default_Item.id }}" 
          data-task-id="{{ preset.default_task.id }}">
         
-        <div class="card-body">
+        <div class="card-body p-2">
+          <div class="join">
             <h2 class="card-title font-bold">{{ preset.project.project_name }}</h2>
-            <p>{% if preset.default_section %}{{ preset.default_section.section_name }}{% else %}N/A{% endif %}</p>
-            <div class="task-container "></div>
-              <input class="input input-bordered input-xs w-20 h-8 text-xs m-0" type="text" name="custom_tasks" id="custom-tasks-{{ forloop.counter }}" placeholder="Custom tasks">
-            <div> 
-                <select id="time-select-{{ forloop.counter }}" name="time-select-{{ forloop.counter }}" class="select select-bordered w-20 max-h-8">
+            <p class="m-3  font-extralight ">{% if preset.default_section %}{{ preset.default_section.section_name }}{% else %}N/A{% endif %}</p>
+          </div> 
+            <div class="task-container flex flex-wrap gap-2 mb-2"></div>
+          <div class="join justify-between items-center">  
+            <input class="input input-bordered input-xs w-2/3 text-xs mb-2" type="text" name="custom_tasks" id="custom-tasks-{{ forloop.counter }}" placeholder="Custom tasks">
+            <div class="mb-2">
+                <select id="time-select-{{ forloop.counter }}" name="time-select-{{ forloop.counter }}" class="select select-xs select-bordered w-full text-xs">
                     <option value="">Time</option>
                     <option value="0.25">15min</option>
                     <option value="0.50">30min</option>
@@ -71,7 +75,8 @@
                     <option value="8.00">8hr</option>
                 </select>
             </div>
-            <form  >
+          </div>
+            <form>
                 {% csrf_token %}
                 {% for field in form %}
                     <div style="display: none;">
@@ -79,19 +84,19 @@
                         {{ field }}
                     </div>
                 {% endfor %}
-                <button type="submit" class="btn btn-xs mt-2">Submit</button>
+                <button type="submit" class="btn btn-xs btn-primary   w-full">Submit</button>
             </form>
         </div>
     </div>
     {% empty %}
-    <div class="card bg-primary text-primary-content w-96 p-4">
+    <div class="card bg-primary text-primary-content w-80 p-4">
         <p>No logs have been added yet.</p>
     </div>
     {% endfor %}
 </div>
 
 <div id="log-container" class="overflow-x-auto mt-4 h-48">
-    <table class="table table-xs table-pin-rows table-pin-cols">
+    <table class="table table-xs table-pin-rows table-pin-cols w-full">
         <thead>
             <tr>
                 <th>Timestamps</th>
@@ -139,22 +144,9 @@
 {% block extra_scripts %}
 <script>
 $(document).ready(function () {
-        let totalHoursToday = parseFloat("{{ total_hours_today }}");
-              const hoursAssignedToday = parseFloat("{{ hours_assigned_today }}");
-              let currentTotalHoursToday = totalHoursToday;
-
-              // Function to calculate remaining time and update fixed preset card
-              function updateFixedPresetCard() {
-                  const remainingTime = hoursAssignedToday - currentTotalHoursToday;
-                  const remainingTimeFormatted = remainingTime > 0 ? remainingTime.toFixed(2) : '0.00';
-                  
-                  $('.fixed_preset').each(function() {
-                      $(this).find('input[name="log_time"]').val(remainingTimeFormatted);
-                  });
-              }
-
-              // Initial call to update the fixed preset card on page load
-              updateFixedPresetCard();
+    let totalHoursToday = parseFloat("{{ total_hours_today }}");
+    const hoursAssignedToday = parseFloat("{{ hours_assigned_today }}");
+    let currentTotalHoursToday = totalHoursToday;
 
     function getCookie(name) {
         let cookieValue = null;
@@ -191,57 +183,68 @@ $(document).ready(function () {
 
     // Function to update fixed preset card
     function updateFixedPresetCard() {
-                  const remainingTime = hoursAssignedToday - currentTotalHoursToday;
-                  const remainingTimeFormatted = remainingTime > 0 ? remainingTime.toFixed(2) : '0.00';
-                  
-                  $('.fixed_preset').each(function() {
-                      $(this).find('input[name="log_time"]').val(remainingTimeFormatted);
-                  });
-              }
+        const remainingTime = hoursAssignedToday - currentTotalHoursToday;
+        const remainingTimeFormatted = remainingTime > 0 ? remainingTime.toFixed(2) : '0.00';
+
+        $('.fixed_preset').each(function() {
+            $(this).find('input[name="log_time"]').val(remainingTimeFormatted);
+            $(this).find('input[name="log_project_name"]').val($(this).data('project-name'));
+            $(this).find('input[name="log_contract"]').val($(this).data('contract-name'));
+            $(this).find('input[name="log_section"]').val($(this).data('section-name'));
+            $(this).find('input[name="log_Item"]').val($(this).data('item-name'));
+        });
+    }
 
     // Initial call to update the fixed preset card on page load
     updateFixedPresetCard();
 
     // Populate tasks in preset cards
-    $('.preset-card').each(function() {
-        const card = $(this);
+    function populateTasks(card) {
         const ItemId = card.data('item-id');
         console.log(ItemId);
 
         if (ItemId) {
-          $.ajax({
-              url: `/ajax/load-tasks/?Item_id=${ItemId}`,
-              method: 'GET',
-              success: function(data) {
-                  if (data.tasks && data.tasks.length > 0) {
-                      const taskContainer = card.find('.task-container');
-                      taskContainer.empty(); // Clear any existing buttons
+            $.ajax({
+                url: `/ajax/load-tasks/?Item_id=${ItemId}`,
+                method: 'GET',
+                success: function(data) {
+                    if (data.tasks && data.tasks.length > 0) {
+                        const taskContainer = card.find('.task-container');
+                        taskContainer.empty(); // Clear any existing buttons
 
-                      data.tasks.forEach(function(task) {
-                          const button = $('<button>')
-                              .addClass('btn btn-outline btn-xs task-btn')
-                              .text(task.task_name)
-                              .attr('data-task-id', task.id)
-                              .on('click', function() {
-                                  $(this).toggleClass('btn-secondary selected');
-                                  updateSelectedTasks(card);
-                              });
+                        data.tasks.forEach(function(task) {
+                            const button = $('<button>')
+                                .addClass('btn btn-outline btn-xs task-btn')
+                                .text(task.task_name)
+                                .attr('data-task-id', task.id)
+                                .on('click', function() {
+                                    $(this).toggleClass('btn-secondary selected');
+                                    updateSelectedTasks(card);
+                                });
 
-                          taskContainer.append(button);
-                      });
-                  } else {
-                      card.find('.task-container').html("<p>No tasks available</p>");
-                  }
-              },
-              error: function(error) {
-                  console.error("Error loading tasks:", error);
-                  card.find('.task-container').html("<p>Error loading tasks</p>");
-              }
-          });
-      
+                            taskContainer.append(button);
+                        });
+                    } else {
+                        card.find('.task-container').html("<p>No tasks available</p>");
+                    }
+                },
+                error: function(error) {
+                    console.error("Error loading tasks:", error);
+                    card.find('.task-container').html("<p>Error loading tasks</p>");
+                }
+            });
         }
+    }
 
-        // Populate form fields with preset data
+    // Call populateTasks for both fixed preset and dynamic presets
+    populateTasks($('#fixed_preset'));
+    $('.preset-card').each(function() {
+        populateTasks($(this));
+    });
+
+    // Populate form fields with preset data
+    $('.preset-card').each(function() {
+        const card = $(this);
         card.find('input[name="log_project_name"]').val(card.data('project-name'));
         card.find('input[name="log_contract"]').val(card.data('contract-name'));
         card.find('input[name="log_section"]').val(card.data('section-name'));
@@ -257,6 +260,19 @@ $(document).ready(function () {
             const selectedTime = $(this).val();
             card.find('input[name="log_time"]').val(selectedTime);
         });
+
+        // Add indicator if section is billed hourly
+        if (card.data('section-name').toLowerCase().includes('hourly')) {
+            card.find('.card-body').prepend(`
+                <div class="indicator">
+                    <span class="indicator-item badge badge-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </span>
+                </div>
+            `);
+        }
     });
 
     function updateSelectedTasks(card) {
@@ -273,7 +289,7 @@ $(document).ready(function () {
     }
 
     // Handle form submission with AJAX
-    $('.preset-card form').on('submit', function (e) {
+    $('form').on('submit', function (e) {
         e.preventDefault();
         const form = $(this);
         $.ajax({
@@ -289,10 +305,14 @@ $(document).ready(function () {
 
                 // Get the new total hours today from the response
                 totalHoursToday = parseFloat($(response).find('#total-hours-today').text());
+                currentTotalHoursToday = totalHoursToday;
 
                 // Update the progress bar and fixed preset card
                 updateProgressBar(totalHoursToday);
                 updateFixedPresetCard();
+
+                // Display success alert
+                displayAlert('Log created successfully.');
 
                 // Reset only log_time and log_tasks in the hidden form
                 form.find('input[name="log_time"]').val('');
@@ -302,11 +322,12 @@ $(document).ready(function () {
                 form.closest('.preset-card').find('select[name^="time-select"]').val('');
 
                 // Reset task buttons and custom tasks input
-                form.closest('.preset-card').find('.task-btn').removeClass('selected');
+                form.closest('.preset-card').find('.task-btn').removeClass('btn-secondary selected');
                 form.closest('.preset-card').find('input[name="custom_tasks"]').val('');
             },
             error: function (error) {
                 console.error('Error:', error);
+                displayAlert('Error creating log.');
             }
         });
     });
@@ -330,22 +351,30 @@ $(document).ready(function () {
                     const logTimeValue = parseFloat(logTime);
                     totalHoursToday -= logTimeValue;
                     totalHoursToday = Math.max(totalHoursToday, 0); // Ensure it doesn't go negative
+                    currentTotalHoursToday = totalHoursToday;
 
                     // Update the progress bar and fixed preset card
                     updateProgressBar(totalHoursToday);
                     updateFixedPresetCard();
+
+                    // Display success alert
+                    displayAlert('Log deleted successfully.');
                 } else {
                     alert('Failed to delete the log.');
+                    displayAlert('Error deleting log.');
                 }
             })
-            .catch(error => alert('Error deleting log: ' + error));
+            .catch(error => {
+                alert('Error deleting log: ' + error);
+                displayAlert('Error deleting log.');
+            });
         }
     }
 
     function updateProgressBar(totalHours) {
         const progressPercentage = (totalHours / hoursAssignedToday) * 100;
-        $('#progress-bar').css('width', progressPercentage + '%');
-        $('#progress-bar').attr('aria-valuenow', totalHours);
+        $('#progressbar').css('width', progressPercentage + '%');
+        $('#progressbar').attr('value', totalHours);
         $('#total-hours-today').text(totalHours.toFixed(2));
     }
 
@@ -363,11 +392,16 @@ $(document).ready(function () {
             .then(data => {
                 if (data.status === 'success') {
                     document.getElementById(`preset-${presetId}`).remove();
+                    displayAlert('Preset deleted successfully.');
                 } else {
                     alert('Failed to delete the project preset: ' + (data.message || 'Unknown error.'));
+                    displayAlert('Error deleting preset.');
                 }
             })
-            .catch(error => alert('Error deleting project preset: ' + error));
+            .catch(error => {
+                alert('Error deleting project preset: ' + error);
+                displayAlert('Error deleting preset.');
+            });
         }
     }
 });
