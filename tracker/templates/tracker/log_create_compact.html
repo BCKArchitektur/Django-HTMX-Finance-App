@@ -373,8 +373,7 @@ $(document).ready(function () {
 
     function updateProgressBar(totalHours) {
         const progressPercentage = (totalHours / hoursAssignedToday) * 100;
-        $('#progressbar').css('width', progressPercentage + '%');
-        $('#progressbar').attr('value', totalHours);
+        $('#progressbar').val(totalHours);
         $('#total-hours-today').text(totalHours.toFixed(2));
     }
 

@@ -142,4 +142,4 @@ INTERNAL_IPS = [
 ]
 
 AUTH_USER_MODEL = 'tracker.User'
-LOGIN_REDIRECT_URL = 'index'
+LOGIN_REDIRECT_URL = 'log_create_compact'
