@@ -18,14 +18,13 @@
     <!-- Tailwind CSS with DaisyUI -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
 
     {% block extra_head %}
     {% endblock %}
 </head>
-<body>
+<body class="{% if user.is_authenticated and user.dark_mode %}dark{% endif %}">
 
     {% include 'tracker/partials/navbar.html' %}
 

@@ -12,5 +12,7 @@ urlpatterns = [
     path('ajax/load-sections/', views.load_sections, name='ajax_load_sections'),
     path('ajax/load-Items/', views.load_Items, name='ajax_load_Items'),
     path('ajax/load-tasks/', views.load_tasks, name='ajax_load_tasks'),
+    path('delete-log/<int:log_id>/', views.delete_log, name='delete_log'),
+    path('toggle-dark-mode/', views.toggle_dark_mode, name='toggle_dark_mode'),
 
 ]

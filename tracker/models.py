@@ -7,7 +7,8 @@ from datetime import date
 
 #Creating custom user model
 class User(AbstractUser):
-    pass
+    dark_mode = models.BooleanField(default=False)
+
 
 
 #Creating Employee model

@@ -3,6 +3,9 @@
 {% block title %}Create Log{% endblock %}
 
 {% block content %}
+<!-- Alert Container -->
+<div id="alert-container" class="mb-4 fixed top-4 left-1/2 transform -translate-x-1/2 z-50"></div>
+
 <div id="selectbar" class="flex flex-col items-center space-y-4">
     <form id="log-form" method="post">
         {% csrf_token %}
@@ -62,7 +65,9 @@
                 </select>
             </div>
         </div>
-        <button type="submit" class="btn btn-primary mt-4">Submit</button>
+        <div class="flex justify-center items-center space-x-6">
+            <button type="submit" class="btn btn-primary m-6 ">Submit</button>
+        </div>
     </form>
 </div>
 <div id="log-container"  class="overflow-x-auto h-48">
@@ -112,11 +117,46 @@
 </div>
 {% endblock %}
 
+
+
 {% block extra_scripts %}
 <script>
     $(document).ready(function () {
         let totalHoursToday = parseFloat("{{ total_hours_today }}");
         const hoursAssignedToday = parseFloat("{{ hours_assigned_today }}");
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken');
+
+        // Function to display success alert
+        function displayAlert(message) {
+            const alertHtml = `
+                <div role="alert" class="alert alert-success flex items-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>${message}</span>
+                </div>
+            `;
+            $('#alert-container').html(alertHtml);
+            setTimeout(() => {
+                $('#alert-container').empty();
+            }, 3000); // Remove the alert after 3 seconds
+        }
 
         // Handle the form submission
         $('#log-form').on('submit', function (e) {
@@ -125,7 +165,11 @@
                 type: 'POST',
                 url: '{% url "log_create" %}',
                 data: $(this).serialize(),
+                beforeSend: function(xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                },
                 success: function (response) {
+                    console.log('Form submitted successfully:', response);
                     // Update the log container with the new log entry
                     $('#log-container').html($(response).find('#log-container').html());
                     // Reset the form
@@ -136,9 +180,12 @@
                     // Update the total hours today and progress bar
                     totalHoursToday = parseFloat($(response).find('#total-hours-today').text());
                     updateProgressBar(totalHoursToday);
+                    // Display success alert
+                    displayAlert("Log has been successfully added!");
                 },
                 error: function (error) {
-                    console.error('Error:', error);
+                    console.error('Error submitting form:', error);
+                    console.log('Error response text:', error.responseText); // Log error response text
                 }
             });
         });
@@ -171,7 +218,8 @@
                                 .addClass('task-btn btn btn-outline btn-sm')
                                 .text(task.task_name)
                                 .attr('data-task-id', task.id)
-                                .on('click', function() {
+                                .on('click', function(e) {
+                                    e.preventDefault();  // Prevent form submission
                                     $(this).toggleClass('btn-primary selected');
                                     updateSelectedTasks();
                                 });
@@ -207,6 +255,8 @@
                         // Update total hours today and progress bar
                         totalHoursToday -= parseFloat(logTime);
                         updateProgressBar(totalHoursToday);
+                        // Display success alert
+                        displayAlert("Log has been successfully deleted!");
                     } else {
                         alert('Failed to delete the log.');
                     }
@@ -217,8 +267,7 @@
 
         function updateProgressBar(totalHours) {
             const progressPercentage = (totalHours / hoursAssignedToday) * 100;
-            $('.progressbar').css('width', progressPercentage + '%');
-            $('.progressbar').attr('aria-valuenow', totalHours);
+            $('#progressbar').val(totalHours);
             $('#total-hours-today').text(totalHours.toFixed(2));
         }
 
@@ -271,4 +320,6 @@
         });
     });
 </script>
+
 {% endblock %}
+

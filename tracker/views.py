@@ -22,6 +22,15 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
+
+@login_required
+def toggle_dark_mode(request):
+    user = request.user
+    user.dark_mode = not user.dark_mode
+    user.save()
+    return redirect(request.META.get('HTTP_REFERER', '/'))
+
+    
 def login_page(request):
     return render(request,'projects/login_page.html')
 
@@ -74,6 +83,15 @@ def load_tasks(request):
     
     except Item.DoesNotExist:
         return HttpResponseBadRequest("Item not found")
+
+@login_required
+def delete_log(request, log_id):
+    if request.method == 'POST':
+        log = get_object_or_404(Logs, id=log_id, user=request.user)  # Ensure the log belongs to the user
+        log.delete()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)
+
 
 
 @login_required
@@ -157,24 +175,24 @@ def log_create(request):
         )
         log_entry.save()
 
-        project = form.cleaned_data['log_project_name']
-        default_contract = form.cleaned_data['log_contract']
-        default_section = form.cleaned_data['log_section']
-        default_Item = form.cleaned_data['log_Item']
+        # project = form.cleaned_data['log_project_name']
+        # default_contract = form.cleaned_data['log_contract']
+        # default_section = form.cleaned_data['log_section']
+        # default_Item = form.cleaned_data['log_Item']
 
-        user_presets = ProjectPreset.objects.filter(user=request.user)
-        if user_presets.count() >= 4:
-            # Delete the oldest preset specific to the user
-            oldest_preset = user_presets.order_by('id').first()
-            oldest_preset.delete()
+        # user_presets = ProjectPreset.objects.filter(user=request.user)
+        # if user_presets.count() >= 4:
+        #     # Delete the oldest preset specific to the user
+        #     oldest_preset = user_presets.order_by('id').first()
+        #     oldest_preset.delete()
 
-        ProjectPreset.objects.create(
-            user=request.user,
-            project=project,
-            default_contract=default_contract,
-            default_section=default_section,
-            default_Item=default_Item,
-        )
+        # ProjectPreset.objects.create(
+        #     user=request.user,
+        #     project=project,
+        #     default_contract=default_contract,
+        #     default_section=default_section,
+        #     default_Item=default_Item,
+        # )
 
         return redirect('log_create')
     else:

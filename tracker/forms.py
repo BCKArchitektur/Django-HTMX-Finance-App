@@ -46,12 +46,13 @@ class LogForm(forms.ModelForm):
             section_id = self.data.get('log_section')
 
             if project_id:
-                self.fields['log_contract'].queryset = Contract.objects.filter(project_id=project_id)
+                self.fields['log_contract'].queryset = Contract.objects.filter(project__id=project_id)
             if contract_id:
-                self.fields['log_section'].queryset = Section.objects.filter(contract_id=contract_id)
+                self.fields['log_section'].queryset = Section.objects.filter(contract__id=contract_id)
             if section_id:
-                self.fields['log_Item'].queryset = Item.objects.filter(section_id=section_id)
+                self.fields['log_Item'].queryset = Item.objects.filter(section__id=section_id)
         else:
             self.fields['log_contract'].queryset = Contract.objects.none()
             self.fields['log_section'].queryset = Section.objects.none()
             self.fields['log_Item'].queryset = Item.objects.none()
+
