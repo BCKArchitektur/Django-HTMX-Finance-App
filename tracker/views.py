@@ -208,3 +208,45 @@ def log_create(request):
     }
     return render(request, 'tracker/log_create.html', context)
 
+@login_required
+def project_details(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    contracts = project.contract_set.all()
+
+    contract_data = []
+    for contract in contracts:
+        sections = contract.section_set.all()
+        for section in sections:
+            # Mock data for used budget, replace with actual logic
+            used_budget = section.allocated_budget * 1.2  # Example logic
+            contract_data.append({
+                'contract_name': contract.contract_name,
+                'section_name': section.section_name,
+                'allocated_budget': section.allocated_budget,
+                'used_budget': used_budget
+            })
+
+    response = {
+        'project_name': project.project_name,
+        'contracts': contract_data
+    }
+
+    if request.is_ajax():
+        return JsonResponse(response)
+    else:
+        return render(request, 'tracker/project_details.html', {'project': project, 'contracts': contract_data})
+
+
+@login_required
+def add_project(request):
+    if request.method == 'POST':
+        project_name = request.POST.get('project_name')
+        project_address = request.POST.get('project_address')
+        new_project = Project.objects.create(
+            user=request.user,
+            project_name=project_name,
+            project_address=project_address,
+            project_no="PN-" + str(Project.objects.count() + 1)  # Example project number
+        )
+        return redirect('project_details')
+    return redirect('project_details')

@@ -14,5 +14,6 @@ urlpatterns = [
     path('ajax/load-tasks/', views.load_tasks, name='ajax_load_tasks'),
     path('delete-log/<int:log_id>/', views.delete_log, name='delete_log'),
     path('toggle-dark-mode/', views.toggle_dark_mode, name='toggle_dark_mode'),
-
+    path('project-details/<int:project_id>/',  views.project_details, name='project_details'),  
+    path("add-project/", views.add_project, name='add_project'),
 ]
