@@ -230,12 +230,12 @@
 
                         data.tasks.forEach(function(task) {
                             const button = $('<button>')
-                                .addClass('task-btn btn btn-outline btn-sm')
+                                .addClass('task-btn btn btn-neutral btn-outline btn-sm')
                                 .text(task.task_name)
                                 .attr('data-task-id', task.id)
                                 .on('click', function(e) {
                                     e.preventDefault();  // Prevent form submission
-                                    $(this).toggleClass('btn-primary selected');
+                                    $(this).toggleClass('btn-secondary selected');
                                     updateSelectedTasks();
                                 });
 

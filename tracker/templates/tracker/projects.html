@@ -10,7 +10,7 @@
             <h2 class="text-xl font-semibold">Projects ({{ projects.count }})</h2>
             <button class="btn btn-sm btn-accent" onclick="openProjectModal()">+ New Project</button>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-auto">
             <table class="table">
               <!-- head -->
               <thead>
@@ -20,7 +20,7 @@
                   <th>Client Name</th>
                   <th>Status</th>
                   <th>Team</th>
-                  <th>Action</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -36,11 +36,20 @@
                         {% endfor %}
                     </td>
                     <td>
-                        <button class="btn btn-circle btn-outline btn-xs" onclick="deleteProject({{ project.id }}, '{{ csrf_token }}')">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
+                        <div class="tooltip" data-tip="Delete">
+                            <button class="btn btn-circle btn-outline btn-xs" onclick="deleteProject({{ project.id }}, '{{ csrf_token }}')">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="tooltip" data-tip="Edit">
+                            <button class="btn btn-circle btn-outline btn-xs" onclick="openEditProjectModal({{ project.id }})">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 3.515a1.5 1.5 0 012.121 0l3.132 3.131a1.5 1.5 0 010 2.122L8.464 21.788a2 2 0 01-.878.506l-4.785 1.263a.5.5 0 01-.62-.62l1.263-4.785a2 2 0 01.506-.878L15.232 3.515zm1.768 2.122L18.25 5.88l-3.5 3.5-1.25-1.25 3.5-3.5zm-9.5 9.5L8 17.75l-2.25-.75-.75-2.25 1.5-1.5z" />
+                                </svg>
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
@@ -69,7 +78,7 @@
                   <th>Client Address</th>
                   <th>City</th>
                   <th>Country</th>
-                  <th>Action</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -81,11 +90,20 @@
                     <td>{{ client.city }}</td>
                     <td>{{ client.country.name }}</td>
                     <td>
-                        <button class="btn btn-circle btn-outline btn-xs" onclick="deleteClient({{ client.id }}, '{{ csrf_token }}')">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
+                        <div class="tooltip" data-tip="Delete">
+                            <button class="btn btn-circle btn-outline btn-xs" onclick="deleteClient({{ client.id }}, '{{ csrf_token }}')">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="tooltip" data-tip="Edit">
+                            <button class="btn btn-circle btn-outline btn-xs" onclick="openEditProjectModal({{ project.id }})">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 3.515a1.5 1.5 0 012.121 0l3.132 3.131a1.5 1.5 0 010 2.122L8.464 21.788a2 2 0 01-.878.506l-4.785 1.263a.5.5 0 01-.62-.62l1.263-4.785a2 2 0 01.506-.878L15.232 3.515zm1.768 2.122L18.25 5.88l-3.5 3.5-1.25-1.25 3.5-3.5zm-9.5 9.5L8 17.75l-2.25-.75-.75-2.25 1.5-1.5z" />
+                                </svg>
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
@@ -100,25 +118,31 @@
 </div>
 
 <!-- Project Modal -->
+<!-- Project Modal -->
 <div id="projectModal" class="modal">
     <div class="modal-box">
         <h3 class="font-bold text-lg">New Project</h3>
         <form id="project-form" method="post">
             {% csrf_token %}
-            <div class="form-control">
-                {{ project_form.project_name.label_tag }} {{ project_form.project_name }}
+            <div class="input input-bordered flex items-center gap-2">
+                {{ project_form.project_name.label_tag }}
+                {{ project_form.project_name }}
             </div>
-            <div class="form-control">
-                {{ project_form.project_address.label_tag }} {{ project_form.project_address }}
+            <div class="input input-bordered flex items-center gap-2">
+                {{ project_form.project_address.label_tag }}
+                {{ project_form.project_address }}
             </div>
-            <div class="form-control">
-                {{ project_form.client_name.label_tag }} {{ project_form.client_name }}
+            <div class="select select-bordered w-full max-w-xs">
+                {{ project_form.client_name.label_tag }}
+                {{ project_form.client_name }}
             </div>
-            <div class="form-control">
-                {{ project_form.status.label_tag }} {{ project_form.status }}
+            <div class="select select-bordered w-full max-w-xs">
+                {{ project_form.status.label_tag }}
+                {{ project_form.status }}
             </div>
-            <div class="form-control">
-                {{ project_form.user.label_tag }} {{ project_form.user }}
+            <div class="select select-bordered w-full max-w-xs">
+                {{ project_form.user.label_tag }}
+                {{ project_form.user }}
             </div>
             <div class="modal-action">
                 <button type="submit" class="btn btn-primary">Save</button>
@@ -134,26 +158,33 @@
         <h3 class="font-bold text-lg">New Client</h3>
         <form id="client-form" method="post">
             {% csrf_token %}
-            <div class="form-control">
-                {{ client_form.client_name.label_tag }} {{ client_form.client_name }}
+            <div class="input input-bordered flex items-center gap-2">
+                {{ client_form.client_name.label_tag }}
+                {{ client_form.client_name }}
             </div>
-            <div class="form-control">
-                {{ client_form.client_mail.label_tag }} {{ client_form.client_mail }}
+            <div class="input input-bordered flex items-center gap-2">
+                {{ client_form.client_mail.label_tag }}
+                {{ client_form.client_mail }}
             </div>
-            <div class="form-control">
-                {{ client_form.firm_name.label_tag }} {{ client_form.firm_name }}
+            <div class="input input-bordered flex items-center gap-2">
+                {{ client_form.firm_name.label_tag }}
+                {{ client_form.firm_name }}
             </div>
-            <div class="form-control">
-                {{ client_form.street_address.label_tag }} {{ client_form.street_address }}
+            <div class="input input-bordered flex items-center gap-2">
+                {{ client_form.street_address.label_tag }}
+                {{ client_form.street_address }}
             </div>
-            <div class="form-control">
-                {{ client_form.postal_code.label_tag }} {{ client_form.postal_code }}
+            <div class="input input-bordered flex items-center gap-2">
+                {{ client_form.postal_code.label_tag }}
+                {{ client_form.postal_code }}
             </div>
-            <div class="form-control">
-                {{ client_form.city.label_tag }} {{ client_form.city }}
+            <div class="input input-bordered flex items-center gap-2">
+                {{ client_form.city.label_tag }}
+                {{ client_form.city }}
             </div>
-            <div class="form-control">
-                {{ client_form.country.label_tag }} {{ client_form.country }}
+            <div class="select select-bordered w-full max-w-xs">
+                {{ client_form.country.label_tag }}
+                {{ client_form.country }}
             </div>
             <div class="modal-action">
                 <button type="submit" class="btn btn-primary">Save</button>
