@@ -1,9 +1,9 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from .models import Project , Logs , Contract , Section , Item , Task , ProjectPreset , UserPreset , Employee ,User
+from .models import Project , Logs , Contract , Section , Item , Task , ProjectPreset , UserPreset , Employee ,User , Client
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
-from .forms import LogForm  , Hiddenform
+from .forms import LogForm  , Hiddenform ,ProjectForm, ClientForm
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, FloatField, Value
@@ -103,10 +103,71 @@ def index(request):
 @login_required
 def projects(request):
     projects = Project.objects.filter(user=request.user)
+    clients = Client.objects.all()  # Assuming all clients should be shown
+    project_form = ProjectForm()
+    client_form = ClientForm()
+
+    if request.method == 'POST':
+        if 'project_name' in request.POST:
+            project_form = ProjectForm(request.POST)
+            if project_form.is_valid():
+                project_form.save()
+                return redirect('projects')
+        elif 'client_name' in request.POST:
+            client_form = ClientForm(request.POST)
+            if client_form.is_valid():
+                client_form.save()
+                return redirect('projects')
+
     context = {
-        'projects': projects
+        'projects': projects,
+        'clients': clients,
+        'project_form': project_form,
+        'client_form': client_form,
     }
     return render(request, 'tracker/projects.html', context)
+
+@csrf_exempt
+@login_required
+def delete_project(request, project_id):
+    if request.method == 'POST':
+        project = get_object_or_404(Project, id=project_id)
+        project.delete()
+        return JsonResponse({'status': 'success'})
+    return HttpResponseBadRequest("Invalid request")
+
+@csrf_exempt
+@login_required
+def delete_client(request, client_id):
+    if request.method == 'POST':
+        client = get_object_or_404(Client, id=client_id)
+        client.delete()
+        return JsonResponse({'status': 'success'})
+    return HttpResponseBadRequest("Invalid request")
+
+@login_required
+def edit_project(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    if request.method == 'POST':
+        form = ProjectForm(request.POST, instance=project)
+        if form.is_valid():
+            form.save()
+            return redirect('projects')
+    else:
+        form = ProjectForm(instance=project)
+    return render(request, 'tracker/edit_project.html', {'form': form})
+
+@login_required
+def edit_client(request, client_id):
+    client = get_object_or_404(Client, id=client_id)
+    if request.method == 'POST':
+        form = ClientForm(request.POST, instance=client)
+        if form.is_valid():
+            form.save()
+            return redirect('projects')
+    else:
+        form = ClientForm(instance=client)
+    return render(request, 'tracker/edit_client.html', {'form': form})
 
 @login_required
 def dashboard(request):

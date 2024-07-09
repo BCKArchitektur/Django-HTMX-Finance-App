@@ -6,129 +6,231 @@
 <div role="tablist" class="tabs tabs-bordered align-middle items-center">
     <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Projects" checked="checked"/>
     <div role="tabpanel" class="tab-content p-10">
-
-
-        <button class="btn btn-sm btn-accent">+ New Project</button>
-
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold">Projects ({{ projects.count }})</h2>
+            <button class="btn btn-sm btn-accent" onclick="openProjectModal()">+ New Project</button>
+        </div>
         <div class="overflow-x-auto">
             <table class="table">
               <!-- head -->
               <thead>
                 <tr>
-                  <th></th>
+                  <th>#</th>
                   <th>Project Name</th>
                   <th>Client Name</th>
                   <th>Status</th>
                   <th>Team</th>
                   <th>Action</th>
-
                 </tr>
               </thead>
               <tbody>
-                <!-- row 1 -->
-                <tr class="hover">
-
-                    <th>
-                        <input type="checkbox" checked="checked" class="checkbox checkbox-sm checkbox-secondary   " />
-                    </th>
-                    <td>Cy Ganderton</td>
-                    <td>Quality Control Specialist</td>
-                    <td>Blue</td>
+                {% for project in projects %}
+                <tr class="hover" onclick="openEditProjectModal({{ project.id }})">
+                    <th>{{ project.project_no }}</th>
+                    <td>{{ project.project_name }}</td>
+                    <td>{{ project.client_name.client_name }}</td>
+                    <td> <div class="badge badge-secondary badge-outline badge-md">{{ project.get_status_display }} </div>  </td>
+                    <td>
+                        {% for user in project.user.all %}
+                            {{ user.username }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <button class="btn btn-circle btn-outline btn-xs" onclick="deleteProject({{ project.id }}, '{{ csrf_token }}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </td>
                 </tr>
-                <!-- row 2 -->
-                <tr class="hover">
-                  <th>2</th>
-                  <td>Hart Hagerty</td>
-                  <td>Desktop Support Technician</td>
-                  <td>Purple</td>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">No projects have been added yet.</td>
                 </tr>
-                <!-- row 3 -->
-                <tr class="hover">
-                    <th>3</th>
-                    <td>Brice Swyre</td>
-                    <td>Tax Accountant</td>
-                    <td>Red</td>
-                </tr>
-                <!-- row 4 -->
-                <tr class="hover">
-                    <th>4</th>
-                    <td>Brice Swyre</td>
-                    <td>Tax Accountant</td>
-                    <td>Red</td>
-                </tr>
+                {% endfor %}
               </tbody>
             </table>
         </div>
-
-
-
     </div>
-  
-    <input
-      type="radio"
-      name="my_tabs_1"
-      role="tab"
-      class="tab"
-      aria-label="Clients"  />
+
+    <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Clients" />
     <div role="tabpanel" class="tab-content p-10">
-        
-        <button class="btn btn-sm btn-accent">+ New Client</button>
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold">Clients ({{ clients.count }})</h2>
+            <button class="btn btn-sm btn-accent" onclick="openClientModal()">+ New Client</button>
+        </div>
         <div class="overflow-x-auto">
             <table class="table">
               <!-- head -->
               <thead>
                 <tr>
-                  <th></th>
+                  <th>#</th>
                   <th>Client Name</th>
                   <th>Client Address</th>
-                  <th>Status</th>
-                  <th>Status</th>
+                  <th>City</th>
+                  <th>Country</th>
                   <th>Action</th>
-
                 </tr>
               </thead>
               <tbody>
-                <!-- row 1 -->
-                <tr class="hover">
-                    <th>1</th>
-                    <td>Cy Ganderton</td>
-                    <td>Quality Control Specialist</td>
-                    <td>Blue</td>
+                {% for client in clients %}
+                <tr class="hover" onclick="openEditClientModal({{ client.id }})">
+                    <th>{{ forloop.counter }}</th>
+                    <td>{{ client.client_name }}</td>
+                    <td>{{ client.street_address }}</td>
+                    <td>{{ client.city }}</td>
+                    <td>{{ client.country.name }}</td>
+                    <td>
+                        <button class="btn btn-circle btn-outline btn-xs" onclick="deleteClient({{ client.id }}, '{{ csrf_token }}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </td>
                 </tr>
-                <!-- row 2 -->
-                <tr class="hover">
-                  <th>2</th>
-                  <td>Hart Hagerty</td>
-                  <td>Desktop Support Technician</td>
-                  <td>Purple</td>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">No clients have been added yet.</td>
                 </tr>
-                <!-- row 3 -->
-                <tr class="hover">
-                    <th>3</th>
-                    <td>Brice Swyre</td>
-                    <td>Tax Accountant</td>
-                    <td>Red</td>
-                </tr>
-                <!-- row 4 -->
-                <tr class="hover">
-                    <th>4</th>
-                    <td>Brice Swyre</td>
-                    <td>Tax Accountant</td>
-                    <td>Red</td>
-                </tr>
+                {% endfor %}
               </tbody>
             </table>
         </div>
-    
-    
     </div>
-  
-  </div>
+</div>
+
+<!-- Project Modal -->
+<div id="projectModal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg">New Project</h3>
+        <form id="project-form" method="post">
+            {% csrf_token %}
+            <div class="form-control">
+                {{ project_form.project_name.label_tag }} {{ project_form.project_name }}
+            </div>
+            <div class="form-control">
+                {{ project_form.project_address.label_tag }} {{ project_form.project_address }}
+            </div>
+            <div class="form-control">
+                {{ project_form.client_name.label_tag }} {{ project_form.client_name }}
+            </div>
+            <div class="form-control">
+                {{ project_form.status.label_tag }} {{ project_form.status }}
+            </div>
+            <div class="form-control">
+                {{ project_form.user.label_tag }} {{ project_form.user }}
+            </div>
+            <div class="modal-action">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a href="#" class="btn" onclick="closeProjectModal()">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Client Modal -->
+<div id="clientModal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg">New Client</h3>
+        <form id="client-form" method="post">
+            {% csrf_token %}
+            <div class="form-control">
+                {{ client_form.client_name.label_tag }} {{ client_form.client_name }}
+            </div>
+            <div class="form-control">
+                {{ client_form.client_mail.label_tag }} {{ client_form.client_mail }}
+            </div>
+            <div class="form-control">
+                {{ client_form.firm_name.label_tag }} {{ client_form.firm_name }}
+            </div>
+            <div class="form-control">
+                {{ client_form.street_address.label_tag }} {{ client_form.street_address }}
+            </div>
+            <div class="form-control">
+                {{ client_form.postal_code.label_tag }} {{ client_form.postal_code }}
+            </div>
+            <div class="form-control">
+                {{ client_form.city.label_tag }} {{ client_form.city }}
+            </div>
+            <div class="form-control">
+                {{ client_form.country.label_tag }} {{ client_form.country }}
+            </div>
+            <div class="modal-action">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a href="#" class="btn" onclick="closeClientModal()">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
 
 {% endblock content %}
 
 {% block extra_scripts %}
 <script>
+    function openProjectModal() {
+        document.getElementById('projectModal').classList.add('modal-open');
+    }
 
+    function closeProjectModal() {
+        document.getElementById('projectModal').classList.remove('modal-open');
+    }
+
+    function openClientModal() {
+        document.getElementById('clientModal').classList.add('modal-open');
+    }
+
+    function closeClientModal() {
+        document.getElementById('clientModal').classList.remove('modal-open');
+    }
+
+    function openEditProjectModal(projectId) {
+        // Add your code to load project details and open the modal for editing
+    }
+
+    function openEditClientModal(clientId) {
+        // Add your code to load client details and open the modal for editing
+    }
+
+    function deleteProject(projectId, csrfToken) {
+        if (confirm('Are you sure you want to delete this project?')) {
+            fetch(`/delete-project/${projectId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Failed to delete the project.');
+                }
+            })
+            .catch(error => alert('Error deleting project: ' + error));
+        }
+    }
+
+    function deleteClient(clientId, csrfToken) {
+        if (confirm('Are you sure you want to delete this client?')) {
+            fetch(`/delete-client/${clientId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Failed to delete the client.');
+                }
+            })
+            .catch(error => alert('Error deleting client: ' + error));
+        }
+    }
 </script>
 {% endblock extra_scripts %}

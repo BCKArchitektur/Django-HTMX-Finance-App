@@ -1,5 +1,5 @@
 from django import forms
-from .models import Project, Contract, Section, Item, Logs , Task
+from .models import Project, Contract, Section, Item, Logs , Task , Client , User
 
 class LogForm(forms.ModelForm):
     log_project_name = forms.ModelChoiceField(queryset=Project.objects.none(), label="Project")
@@ -101,3 +101,8 @@ class ProjectForm(forms.ModelForm):
             'user': forms.SelectMultiple(attrs={'class': 'select2'}),  # Assuming multiple users can be selected
             'contract': forms.SelectMultiple(attrs={'class': 'select2'}),  # Assuming multiple contracts can be selected
         }
+
+class ClientForm(forms.ModelForm):
+    class Meta:
+        model = Client
+        fields = ['client_name', 'client_mail', 'firm_name', 'street_address', 'postal_code', 'city', 'country']
