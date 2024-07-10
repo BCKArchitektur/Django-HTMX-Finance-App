@@ -13,7 +13,7 @@
                 <button class="btn btn-sm btn-accent" onclick="openProjectModal()">+ New Project</button>
             </div>
         </div>
-        <div class="overflow-auto">
+        <div class="overflow-x-auto h-80">
             <table class="table" id="project-table">
               <!-- head -->
               <thead>
@@ -80,7 +80,7 @@
                 <button class="btn btn-sm btn-accent" onclick="openClientModal()">+ New Client</button>
             </div>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto h-80 justify-center">
             <table class="table" id="client-table">
               <!-- head -->
               <thead>
@@ -132,40 +132,55 @@
 <!-- Project Modal -->
 <div id="projectModal" class="modal">
     <div class="modal-box">
-        <h3 class="font-bold text-lg">New Project</h3>
+        <h3 class="font-bold text-lg m-4">Add a New Project</h3>
         <form id="project-form" method="post" action="{% url 'projects' %}">
             {% csrf_token %}
-            <div class="input input-bordered flex items-center gap-2">
-                {{ project_form.project_name.label_tag }}
-                {{ project_form.project_name }}
+            
+            <div class="form-control w-full max-w-xs">
+                <input type="text" name="project_name" placeholder="Project Name" class="input input-bordered w-full max-w-xs m-2" id="id_project_name">
             </div>
-            <div class="input input-bordered flex items-center gap-2">
-                {{ project_form.project_address.label_tag }}
-                {{ project_form.project_address }}
+            
+            <div class="form-control w-full max-w-xs">
+                <input type="text" name="project_address" placeholder="Project Address" class="input input-bordered w-full max-w-xs m-2" id="id_project_address">
             </div>
-            <div class="select select-bordered w-full max-w-xs">
-                {{ project_form.client_name.label_tag }}
-                {{ project_form.client_name }}
+            
+            <div class="form-control w-full max-w-xs">
+                <select name="client_name" class="select select-bordered w-full max-w-xs m-2">
+                    <option disabled selected class="font-extralight">Select Client</option>
+                    {% for client in clients %}
+                        <option value="{{ client.id }}">{{ client.client_name }}</option>
+                    {% endfor %}
+                </select>
             </div>
-            <div class="input input-bordered flex items-center gap-2">
-                {{ project_form.project_no.label_tag }}
-                {{ project_form.project_no }}
+            
+            <div class="form-control w-full max-w-xs">
+                <input type="text" name="project_no" placeholder="Project Number" class="input input-bordered w-full max-w-xs m-2" id="id_project_no">
             </div>
-            <div class="select select-bordered w-full max-w-xs">
-                {{ project_form.status.label_tag }}
-                {{ project_form.status }}
+            
+            <div class="form-control w-full max-w-xs">
+                <select name="status" class="select select-bordered w-full max-w-xs m-2">
+                    <option disabled selected>Select Status</option>
+                    {% for choice in project_form.status.field.choices %}
+                        <option value="{{ choice.0 }}" {% if project_form.status.value == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                    {% endfor %}
+                </select>
             </div>
-            <div class="select select-bordered w-full max-w-xs">
-                {{ project_form.user.label_tag }}
+            
+            <div class="form-control w-full max-w-xs m-2 bg-transparent">
                 {{ project_form.user }}
             </div>
+            
+            
             <div class="modal-action">
-                <button type="submit" class="btn btn-primary">Save</button>
-                <a href="#" class="btn" onclick="closeProjectModal()">Cancel</a>
+                <button type="submit" class="btn btn-secondary btn-sm">Save</button>
+                <a href="#" class="btn btn-sm" onclick="closeProjectModal()">Cancel</a>
             </div>
         </form>
     </div>
 </div>
+
+
+
 
 <!-- Client Modal -->
 <div id="clientModal" class="modal">
@@ -299,11 +314,11 @@
         document.getElementById('clientModal').classList.remove('modal-open');
     }
 
-    function openEditProjectModal(projectId) {
+    function openEditProjectview(projectId) {
         // Add your code to load project details and open the modal for editing
     }
 
-    function openEditClientModal(clientId) {
+    function openEditClientview(clientId) {
         // Add your code to load client details and open the modal for editing
     }
 

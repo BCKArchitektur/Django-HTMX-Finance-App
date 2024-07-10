@@ -102,8 +102,8 @@ def index(request):
 
 @login_required
 def projects(request):
-    projects = Project.objects.filter(user=request.user)
-    clients = Client.objects.all()
+    projects = Project.objects.all()  # Show all projects
+    clients = Client.objects.all()  # Assuming all clients should be shown
     project_form = ProjectForm()
     client_form = ClientForm()
 
@@ -111,19 +111,13 @@ def projects(request):
         if 'project_name' in request.POST:
             project_form = ProjectForm(request.POST)
             if project_form.is_valid():
-                project = project_form.save(commit=False)
-                project.user.add(request.user)
-                project.save()
+                project_form.save()
                 return redirect('projects')
-            else:
-                print(project_form.errors)
         elif 'client_name' in request.POST:
             client_form = ClientForm(request.POST)
             if client_form.is_valid():
                 client_form.save()
-                return redirect('projects')  # Use the query parameter to indicate the clients tab should be active
-            else:
-                print(client_form.errors)
+                return redirect('projects')
 
     context = {
         'projects': projects,
@@ -132,6 +126,7 @@ def projects(request):
         'client_form': client_form,
     }
     return render(request, 'tracker/projects.html', context)
+
 
 
 
