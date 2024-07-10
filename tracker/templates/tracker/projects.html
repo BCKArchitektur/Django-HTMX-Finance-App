@@ -8,17 +8,20 @@
     <div role="tabpanel" class="tab-content p-10">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold">Projects ({{ projects.count }})</h2>
-            <button class="btn btn-sm btn-accent" onclick="openProjectModal()">+ New Project</button>
+            <div class="flex items-center gap-2">
+                <input type="text" id="project-search" placeholder="Search Projects..." class="input input-bordered input-sm" onkeyup="filterTable('project-search', 'project-table')">
+                <button class="btn btn-sm btn-accent" onclick="openProjectModal()">+ New Project</button>
+            </div>
         </div>
         <div class="overflow-auto">
-            <table class="table">
+            <table class="table" id="project-table">
               <!-- head -->
               <thead>
                 <tr>
                   <th>#</th>
                   <th>Project Name</th>
                   <th>Client Name</th>
-                  <th>Status</th>
+                  <th>Contracts</th>
                   <th>Team</th>
                   <th>Actions</th>
                 </tr>
@@ -29,7 +32,13 @@
                     <th>{{ project.project_no }}</th>
                     <td>{{ project.project_name }}</td>
                     <td>{{ project.client_name.client_name }}</td>
-                    <td> <div class="badge badge-secondary badge-outline badge-md">{{ project.get_status_display }} </div>  </td>
+                    <td>
+                        {% if project.contract.exists %}
+                            <div class="badge badge-success badge-outline badge-md">Assigned</div>
+                        {% else %}
+                            <div class="badge badge-error badge-outline badge-md">Unassigned</div>
+                        {% endif %}
+                    </td>
                     <td>
                         {% for user in project.user.all %}
                             {{ user.username }}{% if not forloop.last %}, {% endif %}
@@ -66,10 +75,13 @@
     <div role="tabpanel" class="tab-content p-10">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold">Clients ({{ clients.count }})</h2>
-            <button class="btn btn-sm btn-accent" onclick="openClientModal()">+ New Client</button>
+            <div class="flex items-center gap-2">
+                <input type="text" id="client-search" placeholder="Search Clients..." class="input input-bordered input-sm" onkeyup="filterTable('client-search', 'client-table')">
+                <button class="btn btn-sm btn-accent" onclick="openClientModal()">+ New Client</button>
+            </div>
         </div>
         <div class="overflow-x-auto">
-            <table class="table">
+            <table class="table" id="client-table">
               <!-- head -->
               <thead>
                 <tr>
@@ -98,7 +110,7 @@
                             </button>
                         </div>
                         <div class="tooltip" data-tip="Edit">
-                            <button class="btn btn-circle btn-outline btn-xs" onclick="openEditProjectModal({{ project.id }})">
+                            <button class="btn btn-circle btn-outline btn-xs" onclick="openEditClientModal({{ client.id }})">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 3.515a1.5 1.5 0 012.121 0l3.132 3.131a1.5 1.5 0 010 2.122L8.464 21.788a2 2 0 01-.878.506l-4.785 1.263a.5.5 0 01-.62-.62l1.263-4.785a2 2 0 01.506-.878L15.232 3.515zm1.768 2.122L18.25 5.88l-3.5 3.5-1.25-1.25 3.5-3.5zm-9.5 9.5L8 17.75l-2.25-.75-.75-2.25 1.5-1.5z" />
                                 </svg>
@@ -118,11 +130,10 @@
 </div>
 
 <!-- Project Modal -->
-<!-- Project Modal -->
 <div id="projectModal" class="modal">
     <div class="modal-box">
         <h3 class="font-bold text-lg">New Project</h3>
-        <form id="project-form" method="post">
+        <form id="project-form" method="post" action="{% url 'projects' %}">
             {% csrf_token %}
             <div class="input input-bordered flex items-center gap-2">
                 {{ project_form.project_name.label_tag }}
@@ -135,6 +146,10 @@
             <div class="select select-bordered w-full max-w-xs">
                 {{ project_form.client_name.label_tag }}
                 {{ project_form.client_name }}
+            </div>
+            <div class="input input-bordered flex items-center gap-2">
+                {{ project_form.project_no.label_tag }}
+                {{ project_form.project_no }}
             </div>
             <div class="select select-bordered w-full max-w-xs">
                 {{ project_form.status.label_tag }}
@@ -156,7 +171,7 @@
 <div id="clientModal" class="modal">
     <div class="modal-box">
         <h3 class="font-bold text-lg">New Client</h3>
-        <form id="client-form" method="post">
+        <form id="client-form" method="post" action="{% url 'projects' %}?tab=clients">
             {% csrf_token %}
             <div class="input input-bordered flex items-center gap-2">
                 {{ client_form.client_name.label_tag }}
@@ -198,6 +213,76 @@
 
 {% block extra_scripts %}
 <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById('project-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const form = event.target;
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    response.text().then(text => console.error(text)); // Log response text for error details
+                    alert('Failed to add project');
+                }
+            })
+            .catch(error => alert('Error adding project: ' + error));
+        });
+
+        document.getElementById('client-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const form = event.target;
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            })
+            .then(response => {
+                if (response.ok) {
+                    const url = new URL(window.location);
+                    url.searchParams.set('tab', 'clients');
+                    window.location = url;
+                } else {
+                    response.text().then(text => console.error(text)); // Log response text for error details
+                    alert('Failed to add client');
+                }
+            })
+            .catch(error => alert('Error adding client: ' + error));
+        });
+    });
+
+    function filterTable(inputId, tableId) {
+        const input = document.getElementById(inputId);
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById(tableId);
+        const rows = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName('td');
+            let rowContainsFilter = false;
+
+            for (let j = 0; j < cells.length; j++) {
+                if (cells[j]) {
+                    const cellContent = cells[j].textContent || cells[j].innerText;
+                    if (cellContent.toLowerCase().indexOf(filter) > -1) {
+                        rowContainsFilter = true;
+                        break;
+                    }
+                }
+            }
+
+            rows[i].style.display = rowContainsFilter ? '' : 'none';
+        }
+    }
+
     function openProjectModal() {
         document.getElementById('projectModal').classList.add('modal-open');
     }

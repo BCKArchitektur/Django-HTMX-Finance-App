@@ -91,16 +91,8 @@ class ProjectPresetForm(forms.Form):
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
-        fields = ['project_name', 'project_address', 'client_name', 'project_no', 'status', 'user', 'contract']
-        widgets = {
-            'project_name': forms.TextInput(attrs={'class': 'select2'}),  # Assuming single project name selection
-            'project_address': forms.TextInput(attrs={'class': 'select2'}),  # Assuming single project address selection
-            'client_name': forms.Select(attrs={'class': 'select2'}),  # Assuming single client selection
-            'project_no': forms.TextInput(attrs={'class': 'select2'}),  # Assuming project number as text input
-            'status': forms.Select(attrs={'class': 'select2'}),  # Assuming single status selection
-            'user': forms.SelectMultiple(attrs={'class': 'select2'}),  # Assuming multiple users can be selected
-            'contract': forms.SelectMultiple(attrs={'class': 'select2'}),  # Assuming multiple contracts can be selected
-        }
+        fields = ['project_name', 'project_address', 'client_name', 'project_no', 'status', 'user']
+
 
 class ClientForm(forms.ModelForm):
     class Meta:
