@@ -28,7 +28,7 @@
               </thead>
               <tbody>
                 {% for project in projects %}
-                <tr class="hover" onclick="openEditProjectModal({{ project.id }})">
+                <tr class="hover">
                     <th>{{ project.project_no }}</th>
                     <td>{{ project.project_name }}</td>
                     <td>{{ project.client_name.client_name }}</td>
@@ -53,11 +53,11 @@
                             </button>
                         </div>
                         <div class="tooltip" data-tip="Edit">
-                            <button class="btn btn-circle btn-outline btn-xs" onclick="openEditProjectModal({{ project.id }})">
+                            <a href="{% url 'edit_project' project.id %}" class="btn btn-circle btn-outline btn-xs">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 3.515a1.5 1.5 0 012.121 0l3.132 3.131a1.5 1.5 0 010 2.122L8.464 21.788a2 2 0 01-.878.506l-4.785 1.263a.5.5 0 01-.62-.62l1.263-4.785a2 2 0 01.506-.878L15.232 3.515zm1.768 2.122L18.25 5.88l-3.5 3.5-1.25-1.25 3.5-3.5zm-9.5 9.5L8 17.75l-2.25-.75-.75-2.25 1.5-1.5z" />
                                 </svg>
-                            </button>
+                            </a>
                         </div>
                     </td>
                 </tr>
@@ -95,7 +95,7 @@
               </thead>
               <tbody>
                 {% for client in clients %}
-                <tr class="hover" onclick="openEditClientModal({{ client.id }})">
+                <tr class="hover">
                     <th>{{ forloop.counter }}</th>
                     <td>{{ client.client_name }}</td>
                     <td>{{ client.street_address }}</td>
@@ -110,11 +110,11 @@
                             </button>
                         </div>
                         <div class="tooltip" data-tip="Edit">
-                            <button class="btn btn-circle btn-outline btn-xs" onclick="openEditClientModal({{ client.id }})">
+                            <a href="{% url 'edit_client' client.id %}" class="btn btn-circle btn-outline btn-xs">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 3.515a1.5 1.5 0 012.121 0l3.132 3.131a1.5 1.5 0 010 2.122L8.464 21.788a2 2 0 01-.878.506l-4.785 1.263a.5.5 0 01-.62-.62l1.263-4.785a2 2 0 01.506-.878L15.232 3.515zm1.768 2.122L18.25 5.88l-3.5 3.5-1.25-1.25 3.5-3.5zm-9.5 9.5L8 17.75l-2.25-.75-.75-2.25 1.5-1.5z" />
                                 </svg>
-                            </button>
+                            </a>
                         </div>
                     </td>
                 </tr>
@@ -170,7 +170,6 @@
                 {{ project_form.user }}
             </div>
             
-            
             <div class="modal-action">
                 <button type="submit" class="btn btn-secondary btn-sm">Save</button>
                 <a href="#" class="btn btn-sm" onclick="closeProjectModal()">Cancel</a>
@@ -179,46 +178,49 @@
     </div>
 </div>
 
-
-
-
 <!-- Client Modal -->
 <div id="clientModal" class="modal">
     <div class="modal-box">
-        <h3 class="font-bold text-lg">New Client</h3>
+        <h3 class="font-bold text-lg m-4">Add a New Client</h3>
         <form id="client-form" method="post" action="{% url 'projects' %}?tab=clients">
             {% csrf_token %}
-            <div class="input input-bordered flex items-center gap-2">
-                {{ client_form.client_name.label_tag }}
-                {{ client_form.client_name }}
+            
+            <div class="form-control w-full max-w-xs">
+                <input type="text" name="client_name" placeholder="Client Name" class="input input-bordered w-full max-w-xs m-2" id="id_client_name">
             </div>
-            <div class="input input-bordered flex items-center gap-2">
-                {{ client_form.client_mail.label_tag }}
-                {{ client_form.client_mail }}
+            
+            <div class="form-control w-full max-w-xs">
+                <input type="email" name="client_mail" placeholder="Client Email" class="input input-bordered w-full max-w-xs m-2" id="id_client_mail">
             </div>
-            <div class="input input-bordered flex items-center gap-2">
-                {{ client_form.firm_name.label_tag }}
-                {{ client_form.firm_name }}
+            
+            <div class="form-control w-full max-w-xs">
+                <input type="text" name="firm_name" placeholder="Firm Name" class="input input-bordered w-full max-w-xs m-2" id="id_firm_name">
             </div>
-            <div class="input input-bordered flex items-center gap-2">
-                {{ client_form.street_address.label_tag }}
-                {{ client_form.street_address }}
+            
+            <div class="form-control w-full max-w-xs">
+                <input type="text" name="street_address" placeholder="Street Address" class="input input-bordered w-full max-w-xs m-2" id="id_street_address">
             </div>
-            <div class="input input-bordered flex items-center gap-2">
-                {{ client_form.postal_code.label_tag }}
-                {{ client_form.postal_code }}
+            
+            <div class="form-control w-full max-w-xs">
+                <input type="text" name="postal_code" placeholder="Postal Code" class="input input-bordered w-full max-w-xs m-2" id="id_postal_code">
             </div>
-            <div class="input input-bordered flex items-center gap-2">
-                {{ client_form.city.label_tag }}
-                {{ client_form.city }}
+            
+            <div class="form-control w-full max-w-xs">
+                <input type="text" name="city" placeholder="City" class="input input-bordered w-full max-w-xs m-2" id="id_city">
             </div>
-            <div class="select select-bordered w-full max-w-xs">
-                {{ client_form.country.label_tag }}
-                {{ client_form.country }}
+            
+            <div class="form-control w-full max-w-xs">
+                <select name="country" class="select select-bordered w-full max-w-xs m-2">
+                    <option disabled selected>Select Country</option>
+                    {% for choice in client_form.country.field.choices %}
+                        <option value="{{ choice.0 }}" {% if client_form.country.value == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                    {% endfor %}
+                </select>
             </div>
+            
             <div class="modal-action">
-                <button type="submit" class="btn btn-primary">Save</button>
-                <a href="#" class="btn" onclick="closeClientModal()">Cancel</a>
+                <button type="submit" class="btn btn-secondary btn-sm">Save</button>
+                <a href="#" class="btn btn-sm" onclick="closeClientModal()">Cancel</a>
             </div>
         </form>
     </div>
@@ -312,14 +314,6 @@
 
     function closeClientModal() {
         document.getElementById('clientModal').classList.remove('modal-open');
-    }
-
-    function openEditProjectview(projectId) {
-        // Add your code to load project details and open the modal for editing
-    }
-
-    function openEditClientview(clientId) {
-        // Add your code to load client details and open the modal for editing
     }
 
     function deleteProject(projectId, csrfToken) {

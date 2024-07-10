@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from .models import Project , Logs , Contract , Section , Item , Task , ProjectPreset , UserPreset , Employee ,User , Client
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
-from .forms import LogForm  , Hiddenform ,ProjectForm, ClientForm
+from .forms import LogForm  , Hiddenform ,ProjectForm, ClientForm , ContractForm
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, FloatField, Value
@@ -153,14 +153,33 @@ def delete_client(request, client_id):
 @login_required
 def edit_project(request, project_id):
     project = get_object_or_404(Project, id=project_id)
+    contracts = project.contract.all()  # Accessing the many-to-many field directly
+    contract_form = ContractForm()
+
     if request.method == 'POST':
-        form = ProjectForm(request.POST, instance=project)
-        if form.is_valid():
-            form.save()
-            return redirect('projects')
+        if 'project_name' in request.POST:
+            form = ProjectForm(request.POST, instance=project)
+            if form.is_valid():
+                form.save()
+                return redirect('projects')
+        elif 'contract_name' in request.POST:
+            contract_form = ContractForm(request.POST)
+            if contract_form.is_valid():
+                contract = contract_form.save(commit=False)
+                contract.save()
+                project.contract.add(contract)  # Adding contract to the many-to-many field
+                return redirect('edit_project', project_id=project.id)
     else:
         form = ProjectForm(instance=project)
-    return render(request, 'tracker/edit_project.html', {'form': form})
+
+    context = {
+        'form': form,
+        'project': project,
+        'contracts': contracts,
+        'contract_form': contract_form,
+    }
+    return render(request, 'tracker/edit_project.html', context)
+
 
 @login_required
 def edit_client(request, client_id):

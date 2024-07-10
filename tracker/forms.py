@@ -98,3 +98,8 @@ class ClientForm(forms.ModelForm):
     class Meta:
         model = Client
         fields = ['client_name', 'client_mail', 'firm_name', 'street_address', 'postal_code', 'city', 'country']
+
+class ContractForm(forms.ModelForm):
+    class Meta:
+        model = Contract
+        fields = ['contract_name', 'user', 'section']
