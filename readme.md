@@ -13,3 +13,17 @@ step 1 - create a venv
     create a new database, update in settings file
 3 - run npm build in jstoolchain folder 
 4 - i another terminal make migrations , migrate and runserver
+
+
+
+python -m venv venv
+
+
+npm init -y
+npm install -D tailwindcss
+npx tailwindcss init
+
+npm install daisyui
+
+
+npm run tailwind-watch

@@ -264,9 +264,7 @@
             })
             .then(response => {
                 if (response.ok) {
-                    const url = new URL(window.location);
-                    url.searchParams.set('tab', 'clients');
-                    window.location = url;
+                    location.reload();
                 } else {
                     response.text().then(text => console.error(text)); // Log response text for error details
                     alert('Failed to add client');

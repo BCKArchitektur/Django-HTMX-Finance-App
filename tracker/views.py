@@ -154,6 +154,10 @@ def delete_client(request, client_id):
 def edit_project(request, project_id):
     project = get_object_or_404(Project, id=project_id)
     contracts = project.contract.all()  # Accessing the many-to-many field directly
+    clients = Client.objects.all()
+    sections = Section.objects.all()
+    items = Item.objects.all()
+    tasks = Task.objects.all()
     contract_form = ContractForm()
 
     if request.method == 'POST':
@@ -177,6 +181,10 @@ def edit_project(request, project_id):
         'project': project,
         'contracts': contracts,
         'contract_form': contract_form,
+        'clients': clients,
+        'sections': sections,
+        'items': items,
+        'tasks': tasks,
     }
     return render(request, 'tracker/edit_project.html', context)
 

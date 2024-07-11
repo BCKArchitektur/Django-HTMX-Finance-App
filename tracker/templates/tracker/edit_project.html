@@ -4,30 +4,222 @@
 
 {% block content %}
 <div class="container mx-auto p-4">
-    <h2 class="text-2xl font-semibold mb-4">Edit Project: {{ project.project_name }}</h2>
+    <div class="flex justify-between items-center mb-4">
+        <div class="join align-middle justify-center items-center"> 
+            <h2 class="text-lg font-thin"> Edit  - </h2>
 
-    <form method="post" action="{% url 'edit_project' project.id %}">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Save Changes</button>
-    </form>
-
-    <h3 class="text-xl font-semibold mt-6">Contracts</h3>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-        {% for contract in contracts %}
-        <div class="card bg-base-100 shadow-xl p-4">
-            <h4 class="text-lg font-semibold">{{ contract.contract_name }}</h4>
-            <p>Users: {% for user in contract.user.all %}{{ user.username }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
-            <p>Sections: {% for section in contract.section.all %}{{ section.section_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+            <h2 class="text-2xl font-semibold m-2">  {{ project.project_name }}</h2>
         </div>
-        {% endfor %}
+
+
+        <button class="btn btn-circle btn-outline btn-error" onclick="window.history.back();">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
     </div>
 
-    <h3 class="text-xl font-semibold mt-6">Add New Contract</h3>
     <form method="post" action="{% url 'edit_project' project.id %}">
         {% csrf_token %}
-        {{ contract_form.as_p }}
-        <button type="submit" class="btn btn-primary">Add Contract</button>
+        <div class="grid grid-cols-3 gap-4">
+            <div class="form-control">
+                <input type="text" name="project_name" value="{{ project.project_name }}" placeholder="Project Name" class="input input-bordered m-2" id="id_project_name">
+            </div>
+            <div class="form-control">
+                <input type="text" name="project_address" value="{{ project.project_address }}" placeholder="Project Address" class="input input-bordered m-2" id="id_project_address">
+            </div>
+            <div class="form-control">
+                <select name="client_name" class="select select-bordered m-2">
+                    {% for client in clients %}
+                        <option value="{{ client.id }}" {% if project.client_name.id == client.id %}selected{% endif %}>{{ client.client_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-control">
+                <input type="text" name="project_no" value="{{ project.project_no }}" placeholder="Project Number" class="input input-bordered m-2" id="id_project_no">
+            </div>
+            <div class="form-control">
+                <select name="status" class="select select-bordered m-2">
+                    {% for choice in form.status.field.choices %}
+                        <option value="{{ choice.0 }}" {% if form.status.value == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-control m-2">
+                {{ form.user }}
+            </div>
+        </div>
+        <div class="modal-action">
+            <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+        </div>
     </form>
+
+
+    <div class="divider lg:divider-neutral"></div>
+
+
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-semibold">Manage Contracts</h2>
+        <button class="btn btn-sm btn-accent" onclick="openContractModal()">+ New Contract</button>
+    </div>
+    <div class="overflow-x-auto h-80">
+        <table class="table" id="contract-table">
+            <thead>
+                <tr>
+                    <th>Contract Name</th>
+                    <th>Users</th>
+                    <th>Sections</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contract in contracts %}
+                <tr class="hover">
+                    <td>{{ contract.contract_name }}</td>
+                    <td>
+                        {% for user in contract.user.all %}
+                            {{ user.username }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for section in contract.section.all %}
+                            {{ section.section_name }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <div class="tooltip" data-tip="Edit">
+                            <button class="btn btn-circle btn-outline btn-xs" onclick="openEditContractModal({{ contract.id }})">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 3.515a1.5 1.5 0 012.121 0l3.132 3.131a1.5 1.5 0 010 2.122L8.464 21.788a2 2 0 01-.878.506l-4.785 1.263a.5.5 0 01-.62-.62l1.263-4.785a2 2 0 01.506-.878L15.232 3.515zm1.768 2.122L18.25 5.88l-3.5 3.5-1.25-1.25 3.5-3.5zm-9.5 9.5L8 17.75l-2.25-.75-.75-2.25 1.5-1.5z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">No contracts have been added yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
+
+<!-- New Contract Modal -->
+<div id="contractModal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg m-4">Add a New Contract</h3>
+        <form id="contract-form" method="post" action="{% url 'edit_project' project.id %}">
+            {% csrf_token %}
+            <div class="form-control w-full max-w-xs">
+                <input type="text" name="contract_name" placeholder="Contract Name" class="input input-bordered w-full max-w-xs m-2" id="id_contract_name">
+            </div>
+            <div class="form-control w-full max-w-xs m-2 bg-transparent">
+                {{ contract_form.user }}
+            </div>
+            <div class="form-control w-full max-w-xs m-2 bg-transparent">
+                {{ contract_form.section }}
+            </div>
+            <div class="modal-action">
+                <button type="submit" class="btn btn-secondary btn-sm">Save</button>
+                <a href="#" class="btn btn-sm" onclick="closeContractModal()">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Contract Modal -->
+<div id="editContractModal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg m-4">Edit Contract</h3>
+        <form id="edit-contract-form" method="post" action="{% url 'edit_project' project.id %}">
+            {% csrf_token %}
+            <div class="form-control w-full max-w-xs">
+                <input type="text" name="contract_name" placeholder="Contract Name" class="input input-bordered w-full max-w-xs m-2" id="edit_id_contract_name">
+            </div>
+            <div class="form-control w-full max-w-xs m-2 bg-transparent">
+                {{ contract_form.user }}
+            </div>
+            <div class="form-control w-full max-w-xs m-2 bg-transparent">
+                {{ contract_form.section }}
+            </div>
+            <div class="modal-action">
+                <button type="submit" class="btn btn-secondary btn-sm">Save Changes</button>
+                <a href="#" class="btn btn-sm" onclick="closeEditContractModal()">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById('contract-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const form = event.target;
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    response.text().then(text => console.error(text)); // Log response text for error details
+                    alert('Failed to add contract');
+                }
+            })
+            .catch(error => alert('Error adding contract: ' + error));
+        });
+
+        document.getElementById('edit-contract-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const form = event.target;
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    response.text().then(text => console.error(text)); // Log response text for error details
+                    alert('Failed to edit contract');
+                }
+            })
+            .catch(error => alert('Error editing contract: ' + error));
+        });
+    });
+
+    function openContractModal() {
+        document.getElementById('contractModal').classList.add('modal-open');
+    }
+
+    function closeContractModal() {
+        document.getElementById('contractModal').classList.remove('modal-open');
+    }
+
+    function openEditContractModal(contractId) {
+        fetch(`/ajax/load-contracts/?contract_id=${contractId}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('edit_id_contract_name').value = data.contract_name;
+                document.getElementById('editContractModal').classList.add('modal-open');
+            })
+            .catch(error => alert('Error loading contract data: ' + error));
+    }
+
+    function closeEditContractModal() {
+        document.getElementById('editContractModal').classList.remove('modal-open');
+    }
+</script>
 {% endblock %}

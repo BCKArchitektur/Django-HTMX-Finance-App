@@ -1,0 +1,30 @@
+Metadata-Version: 2.1
+Name: django_addanother
+Version: 2.2.2
+Summary: "Add another" buttons outside the Django admin
+Home-page: https://github.com/jonashaag/django-addanother
+Author: Jonas Haag, James Pic
+Author-email: jonas@lophus.org, jamespic@gmail.com
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: ISC License (ISCL)
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+License-File: LICENSE
+
+.. image:: https://travis-ci.org/jonashaag/django-addanother.svg?branch=master
+    :target: https://travis-ci.org/jonashaag/django-addanother
+
+django-addanother provides you with add-another buttons for forms outside the Django administration interface. It also provides an optional integration with django-select2_.
+
+See documentation_ for details.
+
+django-addanother has been extracted from django-autocomplete-light v2, after noticing that other apps copied the same code, to ease community maintenance.
+
+.. _django-select2: http://django-select2.readthedocs.org/
+.. _documentation: http://django-addanother.readthedocs.org/

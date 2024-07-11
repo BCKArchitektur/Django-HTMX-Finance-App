@@ -8,12 +8,12 @@
 
 <div id="preset-container" class="flex flex-col lg:flex-row justify-center items-center space-y-4 lg:space-y-0 lg:space-x-4">
     <!-- Fixed Preset Card -->
-    <div class="fixed_preset card bg-base-100 w-3/5 h-60 shadow-md " id="fixed_preset" 
+    <div class="fixed_preset card bg-base-100 w-3/5 h-56 shadow-md " id="fixed_preset" 
         data-project-name="Büro" 
         data-contract-name="Allgemein" 
         data-section-name="Allgemein" 
         data-Item-name="Allgemein" 
-        data-Item-id="3" 
+        data-Item-id="1" 
         data-task-id="1">
         
         <div class="card-body">
@@ -36,7 +36,7 @@
     <div class="divider lg:divider-horizontal"></div>
     
     {% for preset in project_presets %}
-    <div class="card bg-base-100 w-96 h-60 shadow-md  preset-card" id="preset-{{ preset.id }}" 
+    <div class="card bg-base-100 w-96 h-56 shadow-md  preset-card" id="preset-{{ preset.id }}" 
          data-project-name="{{ preset.project.project_name }}" 
          data-contract-name="{{ preset.default_contract.contract_name }}" 
          data-section-name="{{ preset.default_section.section_name }}" 
