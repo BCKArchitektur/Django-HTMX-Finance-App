@@ -22,6 +22,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+from .forms import AddUsersForm, AddBudgetForm
 
 @login_required
 def toggle_dark_mode(request):
@@ -186,15 +187,15 @@ def edit_project(request, project_id):
             created_sections = {}
 
             for section_name in section_names:
-                section = Section.objects.create(section_name=section_name)
+                section, created = Section.objects.get_or_create(section_name=section_name)
                 created_sections[section_name] = section
 
                 for item_name in item_names:
-                    item = Item.objects.create(Item_name=item_name)
+                    item, created = Item.objects.get_or_create(Item_name=item_name)
                     created_items[item_name] = item
 
                     for task_name in task_names:
-                        task = Task.objects.create(task_name=task_name)
+                        task, created = Task.objects.get_or_create(task_name=task_name)
                         created_tasks[task_name] = task
                         item.tasks.add(task)
 
@@ -493,22 +494,28 @@ def add_project(request):
     return redirect('project_details')
 
 
-@login_required
 def load_contract_data(request):
     contract_id = request.GET.get('contract_id')
     contract = get_object_or_404(Contract, id=contract_id)
 
+    sections = contract.section.all()
+    section_data = []
+
+    for section in sections:
+        items = section.Item.all()
+        item_data = [{'id': item.id, 'Item_name': item.Item_name} for item in items]
+        section_data.append({
+            'section_name': section.section_name,
+            'items': item_data
+        })
+
     contract_data = {
         'contract_name': contract.contract_name,
-        'users': [
-            {'id': user.id, 'username': user.username, 'selected': user in contract.user.all()}
-        for user in User.objects.all()],
-        'sections': [
-            {'id': section.id, 'section_name': section.section_name, 'selected': section in contract.section.all()}
-        for section in Section.objects.all()]
+        'sections': section_data
     }
 
     return JsonResponse(contract_data)
+
 
 
 def check_task_name(request):
@@ -546,3 +553,51 @@ def check_contract_name(request):
         'message': 'Contract name is already taken.' if is_taken else 'Contract name is available.'
     }
     return JsonResponse(data)
+
+@login_required
+def add_users(request):
+    if request.method == 'POST':
+        form = AddUsersForm(request.POST)
+        if form.is_valid():
+            item = form.cleaned_data['items']
+            users = form.cleaned_data['users']
+            item.users.set(users)
+            item.save()
+            
+            # Update users for related sections and contracts
+            sections = Section.objects.filter(Item=item)
+            for section in sections:
+                section.user.set(users)
+                section.save()
+
+                contracts = Contract.objects.filter(section=section)
+                for contract in contracts:
+                    contract.user.set(users)
+                    contract.save()
+
+                    projects = contract.project_set.all()
+                    for project in projects:
+                        project.user.set(users)
+                        project.save()
+
+            return redirect('edit_project', projects.first().id if projects.exists() else None)
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@login_required
+def add_budget(request):
+    if request.method == 'POST':
+        form = AddBudgetForm(request.POST)
+        if form.is_valid():
+            item = form.cleaned_data['budget_items']
+            item.budget = form.cleaned_data['budget']
+            item.save()
+            
+            # Get the related project
+            sections = Section.objects.filter(Item=item)
+            for section in sections:
+                contracts = Contract.objects.filter(section=section)
+                for contract in contracts:
+                    project = contract.project_set.first()
+                    return redirect('edit_project', project.id)
+    return JsonResponse({'error': 'Invalid request'}, status=400)

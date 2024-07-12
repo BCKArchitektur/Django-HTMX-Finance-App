@@ -107,3 +107,13 @@ class ContractForm(forms.ModelForm):
             'user': forms.CheckboxSelectMultiple(),
             'section': forms.CheckboxSelectMultiple(),
         }
+
+
+
+class AddUsersForm(forms.Form):
+    items = forms.ModelChoiceField(queryset=Item.objects.all(), label="Select Item")
+    users = forms.ModelMultipleChoiceField(queryset=User.objects.all(), widget=forms.CheckboxSelectMultiple, label="Select Users")
+
+class AddBudgetForm(forms.Form):
+    budget_items = forms.ModelChoiceField(queryset=Item.objects.all(), label="Select Item")
+    budget = forms.DecimalField(max_digits=10, decimal_places=2, label="Budget")

@@ -51,12 +51,16 @@ class Task(models.Model):
         return self.task_name
 
 
-#Creating Item model
+
 class Item(models.Model):
     Item_name = models.CharField(max_length=255, unique=True)
     tasks = models.ManyToManyField(Task)
+    users = models.ManyToManyField(User, blank=True)
+    budget = models.FloatField(default=0.0)  # Add this field
+    
     def __str__(self):
         return self.Item_name
+
 
 
 #Creating Section model
