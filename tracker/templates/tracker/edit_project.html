@@ -102,24 +102,33 @@
     </div>
 </div>
 
-<!-- New Contract Modal -->
 <div id="contractModal" class="modal">
-    <div class="modal-box">
+    <div class="modal-box max-w-5xl">
         <h3 class="font-bold text-lg m-4">Add a New Contract</h3>
         <form id="contract-form" method="post" action="{% url 'edit_project' project.id %}">
             {% csrf_token %}
-            <div class="form-control w-full max-w-xs">
-                <input type="text" name="contract_name" placeholder="Contract Name" class="input input-bordered w-full max-w-xs m-2" id="id_contract_name">
+            <div class="form-control w-full mb-4">
+                <input type="text" name="contract_name" placeholder="Contract Name" class="input input-bordered w-full m-2" id="id_contract_name" hx-get="{% url 'check_contract_name' %}" hx-trigger="blur" hx-target="#contract-name-error" hx-swap="innerHTML">
+                <div id="contract-name-error" class="text-red-500 text-sm"></div>
             </div>
-            <div class="form-control w-full max-w-xs m-2 bg-transparent">
-                {{ contract_form.user }}
+            <div class="form-control w-full mb-4">
+                <label for="id_users" class="block text-sm font-medium text-gray-700">Select Users</label>
+                <select name="users" multiple class="select select-bordered w-full m-2" id="id_users">
+                    {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.username }}</option>
+                    {% endfor %}
+                </select>
             </div>
-            <div class="form-control w-full max-w-xs m-2 bg-transparent">
-                {{ contract_form.section }}
+
+            <div class="mb-4">
+                <button type="button" class="btn btn-primary mb-2" onclick="addSection()">+ New Section</button>
             </div>
+
+            <div id="sections-container"></div>
+
             <div class="modal-action">
-                <button type="submit" class="btn btn-secondary btn-sm">Save</button>
-                <a href="#" class="btn btn-sm" onclick="closeContractModal()">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a href="#" class="btn" onclick="closeContractModal()">Cancel</a>
             </div>
         </form>
     </div>
@@ -133,18 +142,19 @@
             {% csrf_token %}
             <input type="hidden" name="contract_id" id="edit_id_contract_id">
             <div class="form-control w-full max-w-xs">
-                <input type="text" name="contract_name" placeholder="Contract Name" class="input input-bordered w-full max-w-xs m-2" id="edit_id_contract_name">
+                <input type="text" name="contract_name" placeholder="Contract Name" class="input input-bordered w-full max-w-xs m-2" id="edit_id_contract_name" hx-get="{% url 'check_contract_name' %}" hx-trigger="blur" hx-target="#edit-contract-name-error" hx-swap="innerHTML">
+                <div id="edit-contract-name-error" class="text-red-500 text-sm"></div>
             </div>
-            <div class="form-control w-full max-w-xs m-2 bg-transparent">
-                <select name="user" id="edit_id_users" class="select select-bordered" multiple>
-                    <!-- User options will be populated by JavaScript -->
+            <div class="form-control w-full max-w-xs">
+                <label for="edit_id_users" class="block text-sm font-medium text-gray-700">Select Users</label>
+                <select name="users" multiple class="select select-bordered w-full max-w-xs m-2" id="edit_id_users">
+                    {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.username }}</option>
+                    {% endfor %}
                 </select>
             </div>
-            <div class="form-control w-full max-w-xs m-2 bg-transparent">
-                <select name="section" id="edit_id_sections" class="select select-bordered" multiple>
-                    <!-- Section options will be populated by JavaScript -->
-                </select>
-            </div>
+            <div id="edit-sections-container"></div>
+            <button type="button" class="btn btn-sm btn-secondary m-2 edit-add-section-btn">Add Section</button>
             <div class="modal-action">
                 <button type="submit" class="btn btn-secondary btn-sm">Save Changes</button>
                 <a href="#" class="btn btn-sm" onclick="closeEditContractModal()">Cancel</a>
@@ -153,53 +163,188 @@
     </div>
 </div>
 
-
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    document.getElementById('contract-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const form = event.target;
-        fetch(form.action, {
-            method: 'POST',
-            body: new FormData(form),
-            headers: {
-                'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
-            },
-        })
-        .then(response => {
-            if (response.ok) {
-                location.reload();
-            } else {
-                response.text().then(text => console.error(text)); // Log response text for error details
-                alert('Failed to add contract');
-            }
-        })
-        .catch(error => alert('Error adding contract: ' + error));
+
+    window.addSection = function(containerSelector = '#sections-container') {
+        const sectionId = Math.random().toString(36).substr(2, 9);
+        const sectionTemplate = `
+            <div class="section-block form-control w-full max-w-xs m-2 border p-4">
+                <div class="flex justify-between items-center">
+                    <input type="text" name="section_name" placeholder="Section Name" class="input input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
+                    <button type="button" class="btn btn-secondary m-2 add-item-btn">+ Add Item</button>
+                    <button type="button" class="btn btn-danger m-2 delete-section-btn">Delete Section</button>
+                </div>
+                <div id="section-name-error-${sectionId}" class="text-red-500 text-sm mb-2"></div>
+                <div class="items-container"></div>
+                <div class="form-control mt-4">
+                    <label class="swap swap-flip text-xl">
+                        <input type="checkbox" onchange="toggleBudgetUser(this)">
+                        <div class="swap-on">Assign Budget</div>
+                        <div class="swap-off">Assign Users</div>
+                    </label>
+                    <div class="assign-container">
+                        <!-- Budget or Users input will be added here -->
+                    </div>
+                </div>
+            </div>`;
+        document.querySelector(containerSelector).insertAdjacentHTML('beforeend', sectionTemplate);
+    }
+
+    window.addItem = function(container) {
+        const itemId = Math.random().toString(36).substr(2, 9);
+        const itemTemplate = `
+            <div class="item-block form-control w-full max-w-xs m-2 border p-2">
+                <div class="flex justify-between items-center">
+                    <input type="text" name="item_name" placeholder="Item Name" class="input input-bordered w-full m-2 item-name" hx-get="{% url 'check_item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
+                    <button type="button" class="btn btn-secondary m-2 add-task-btn">+ Add Task</button>
+                    <button type="button" class="btn btn-danger m-2 delete-item-btn">Delete Item</button>
+                </div>
+                <div id="item-name-error-${itemId}" class="text-red-500 text-sm mb-2"></div>
+                <div class="tasks-container"></div>
+                <input type="text" name="item_budget" placeholder="Item Budget" class="input input-bordered w-full m-2 item-budget">
+            </div>`;
+        container.insertAdjacentHTML('beforeend', itemTemplate);
+    }
+
+    window.addTask = function(container) {
+        const taskId = Math.random().toString(36).substr(2, 9);
+        const taskTemplate = `
+            <div class="task-block form-control w-full max-w-xs m-2 border p-2">
+                <div class="flex justify-between items-center">
+                    <input type="text" name="task_name" placeholder="Task Name" class="input input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
+                    <button type="button" class="btn btn-danger m-2 delete-task-btn">Delete Task</button>
+                </div>
+                <div id="task-name-error-${taskId}" class="text-red-500 text-sm mb-2"></div>
+            </div>`;
+        container.insertAdjacentHTML('beforeend', taskTemplate);
+    }
+
+    window.toggleBudgetUser = function(checkbox) {
+        const container = checkbox.closest('.form-control').querySelector('.assign-container');
+        if (checkbox.checked) {
+            container.innerHTML = '<input type="text" name="section_budget" placeholder="Section Budget" class="input input-bordered w-full m-2">';
+        } else {
+            container.innerHTML = `
+                <div class="grid grid-cols-4 gap-2">
+                    {% for user in users %}
+                        <label class="flex items-center">
+                            <input type="checkbox" name="section_users" value="{{ user.id }}" class="checkbox">
+                            <span class="ml-2">{{ user.username }}</span>
+                        </label>
+                    {% endfor %}
+                </div>`;
+        }
+    }
+
+    // Ensure these elements are available in the DOM before adding event listeners
+    const addSectionButton = document.querySelector('.add-section-btn');
+    if (addSectionButton) {
+        addSectionButton.addEventListener('click', function() {
+            addSection('#sections-container');
+        });
+    }
+
+    const editAddSectionButton = document.querySelector('.edit-add-section-btn');
+    if (editAddSectionButton) {
+        editAddSectionButton.addEventListener('click', function() {
+            addSection('#edit-sections-container');
+        });
+    }
+
+    document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('add-item-btn')) {
+            addItem(event.target.closest('.section-block').querySelector('.items-container'));
+        }
+
+        if (event.target.classList.contains('add-task-btn')) {
+            addTask(event.target.closest('.item-block').querySelector('.tasks-container'));
+        }
+
+        if (event.target.classList.contains('delete-section-btn')) {
+            event.target.closest('.section-block').remove();
+        }
+
+        if (event.target.classList.contains('delete-item-btn')) {
+            event.target.closest('.item-block').remove();
+        }
+
+        if (event.target.classList.contains('delete-task-btn')) {
+            event.target.closest('.task-block').remove();
+        }
     });
 
-    document.getElementById('edit-contract-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const form = event.target;
-        fetch(form.action, {
-            method: 'POST',
-            body: new FormData(form),
-            headers: {
-                'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
-            },
-        })
-        .then(response => {
-            if (response.ok) {
-                location.reload();
-            } else {
-                response.text().then(text => console.error(text)); // Log response text for error details
-                alert('Failed to edit contract');
-            }
-        })
-        .catch(error => alert('Error editing contract: ' + error));
+    document.querySelectorAll('input[placeholder="Contract Name"], input[placeholder="Section Name"], input[placeholder="Item Name"], input[placeholder="Task Name"]').forEach(function(input) {
+        input.addEventListener('blur', function(event) {
+            const target = event.target;
+            const hxTargetId = target.getAttribute('hx-target').substring(1);
+            fetch(target.getAttribute('hx-get') + '?name=' + target.value)
+                .then(response => response.json())
+                .then(data => {
+                    const targetElement = document.getElementById(hxTargetId);
+                    if (data.is_taken) {
+                        targetElement.innerHTML = data.message;
+                        targetElement.classList.add('text-red-500');
+                        targetElement.classList.remove('text-green-500');
+                    } else {
+                        targetElement.innerHTML = data.message;
+                        targetElement.classList.add('text-green-500');
+                        targetElement.classList.remove('text-red-500');
+                    }
+                });
+        });
     });
+
+    const contractForm = document.getElementById('contract-form');
+    if (contractForm) {
+        contractForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const form = event.target;
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    response.text().then(text => console.error(text));
+                    alert('Failed to add contract');
+                }
+            })
+            .catch(error => alert('Error adding contract: ' + error));
+        });
+    }
+
+    const editContractForm = document.getElementById('edit-contract-form');
+    if (editContractForm) {
+        editContractForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const form = event.target;
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    response.text().then(text => console.error(text));
+                    alert('Failed to edit contract');
+                }
+            })
+            .catch(error => alert('Error editing contract: ' + error));
+        });
+    }
 });
 
 function openContractModal() {
@@ -222,7 +367,6 @@ function openEditContractModal(contractId) {
             document.getElementById('edit_id_contract_id').value = contractId;
             document.getElementById('edit_id_contract_name').value = data.contract_name;
 
-            // Populate users
             let userSelect = document.getElementById('edit_id_users');
             userSelect.innerHTML = '';
             data.users.forEach(user => {
@@ -235,23 +379,65 @@ function openEditContractModal(contractId) {
                 userSelect.appendChild(option);
             });
 
-            // Populate sections
-            let sectionSelect = document.getElementById('edit_id_sections');
-            sectionSelect.innerHTML = '';
+            const sectionsContainer = document.getElementById('edit-sections-container');
+            sectionsContainer.innerHTML = '';
             data.sections.forEach(section => {
-                let option = document.createElement('option');
-                option.value = section.id;
-                option.text = section.section_name;
-                if (section.selected) {
-                    option.selected = true;
-                }
-                sectionSelect.appendChild(option);
+                const sectionId = Math.random().toString(36).substr(2, 9);
+                const sectionTemplate = `
+                    <div class="section-block form-control w-full max-w-xs m-2 border p-4">
+                        <div class="flex justify-between items-center">
+                            <input type="text" name="section_name" value="${section.section_name}" placeholder="Section Name" class="input input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#edit-section-name-error-${sectionId}" hx-swap="innerHTML">
+                            <button type="button" class="btn btn-secondary m-2 edit-add-item-btn">+ Add Item</button>
+                            <button type="button" class="btn btn-danger m-2 delete-section-btn">Delete Section</button>
+                        </div>
+                        <div id="edit-section-name-error-${sectionId}" class="text-red-500 text-sm mb-2"></div>
+                        <div class="items-container">
+                            ${section.items.map(item => {
+                                const itemId = Math.random().toString(36).substr(2, 9);
+                                return `
+                                    <div class="item-block form-control w-full max-w-xs m-2 border p-2">
+                                        <div class="flex justify-between items-center">
+                                            <input type="text" name="item_name" value="${item.item_name}" placeholder="Item Name" class="input input-bordered w-full m-2 item-name" hx-get="{% url 'check_item_name' %}" hx-trigger="blur" hx-target="#edit-item-name-error-${itemId}" hx-swap="innerHTML">
+                                            <button type="button" class="btn btn-secondary m-2 edit-add-task-btn">+ Add Task</button>
+                                            <button type="button" class="btn btn-danger m-2 delete-item-btn">Delete Item</button>
+                                        </div>
+                                        <div id="edit-item-name-error-${itemId}" class="text-red-500 text-sm mb-2"></div>
+                                        <input type="text" name="item_budget" value="${item.item_budget}" placeholder="Item Budget" class="input input-bordered w-full m-2 item-budget">
+                                        <div class="tasks-container">
+                                            ${item.tasks.map(task => {
+                                                const taskId = Math.random().toString(36).substr(2, 9);
+                                                return `
+                                                    <div class="task-block form-control w-full max-w-xs m-2 border p-2">
+                                                        <div class="flex justify-between items-center">
+                                                            <input type="text" name="task_name" value="${task.task_name}" placeholder="Task Name" class="input input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#edit-task-name-error-${taskId}" hx-swap="innerHTML">
+                                                            <button type="button" class="btn btn-danger m-2 delete-task-btn">Delete Task</button>
+                                                        </div>
+                                                        <div id="edit-task-name-error-${taskId}" class="text-red-500 text-sm mb-2"></div>
+                                                    </div>`;
+                                            }).join('')}
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-secondary m-2 edit-add-task-btn">Add Task</button>
+                                    </div>`;
+                            }).join('')}
+                        </div>
+                        <div class="form-control mt-4">
+                            <label class="swap swap-flip text-xl">
+                                <input type="checkbox" onchange="toggleBudgetUser(this)">
+                                <div class="swap-on">Assign Budget</div>
+                                <div class="swap-off">Assign Users</div>
+                            </label>
+                            <div class="assign-container">
+                                <!-- Budget or Users input will be added here -->
+                            </div>
+                        </div>
+                    </div>`;
+                sectionsContainer.insertAdjacentHTML('beforeend', sectionTemplate);
             });
 
             document.getElementById('editContractModal').classList.add('modal-open');
         })
         .catch(error => {
-            console.error('Error loading contract data:', error); // More detailed logging
+            console.error('Error loading contract data:', error);
             alert('Error loading contract data: ' + error);
         });
 }

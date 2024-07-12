@@ -150,14 +150,13 @@ def delete_client(request, client_id):
         return JsonResponse({'status': 'success'})
     return HttpResponseBadRequest("Invalid request")
 
+
 @login_required
 def edit_project(request, project_id):
     project = get_object_or_404(Project, id=project_id)
     contracts = project.contract.all()
     clients = Client.objects.all()
-    sections = Section.objects.all()
-    items = Item.objects.all()
-    tasks = Task.objects.all()
+    users = User.objects.all()
     contract_form = ContractForm()
 
     if request.method == 'POST':
@@ -171,17 +170,42 @@ def edit_project(request, project_id):
                 return redirect('projects')
             else:
                 print("Project form errors:", form.errors)  # Debugging line
+
         elif 'contract_name' in request.POST and 'contract_id' not in request.POST:
-            contract_form = ContractForm(request.POST)
-            if contract_form.is_valid():
-                contract = contract_form.save()
-                project.contract.add(contract)  # Adding contract to the many-to-many field
-                contract.user.set(contract_form.cleaned_data['user'])
-                contract.section.set(contract_form.cleaned_data['section'])
-                print("New contract added successfully")  # Debugging line
-                return redirect('edit_project', project_id=project.id)
-            else:
-                print("Contract form errors:", contract_form.errors)  # Debugging line
+            contract_name = request.POST.get('contract_name')
+            user_ids = request.POST.getlist('users')
+            section_names = request.POST.getlist('section_name')
+            item_names = request.POST.getlist('item_name')
+            task_names = request.POST.getlist('task_name')
+
+            contract = Contract.objects.create(contract_name=contract_name)
+            contract.user.set(user_ids)
+
+            created_tasks = {}
+            created_items = {}
+            created_sections = {}
+
+            for section_name in section_names:
+                section = Section.objects.create(section_name=section_name)
+                created_sections[section_name] = section
+
+                for item_name in item_names:
+                    item = Item.objects.create(Item_name=item_name)
+                    created_items[item_name] = item
+
+                    for task_name in task_names:
+                        task = Task.objects.create(task_name=task_name)
+                        created_tasks[task_name] = task
+                        item.tasks.add(task)
+
+                    section.Item.add(item)
+                contract.section.add(section)
+
+            contract.save()
+            project.contract.add(contract)
+            project.save()
+            return redirect('edit_project', project_id=project.id)
+
         elif 'contract_id' in request.POST:
             contract_id = request.POST['contract_id']
             contract = get_object_or_404(Contract, id=contract_id)
@@ -203,11 +227,10 @@ def edit_project(request, project_id):
         'contracts': contracts,
         'contract_form': contract_form,
         'clients': clients,
-        'sections': sections,
-        'items': items,
-        'tasks': tasks,
+        'users': users,
     }
     return render(request, 'tracker/edit_project.html', context)
+
 
 
 
@@ -486,3 +509,40 @@ def load_contract_data(request):
     }
 
     return JsonResponse(contract_data)
+
+
+def check_task_name(request):
+    task_name = request.GET.get('task_name', None)
+    is_taken = Task.objects.filter(task_name__iexact=task_name).exists()
+    data = {
+        'is_taken': is_taken,
+        'message': 'Task name is already taken.' if is_taken else 'Task name is available.'
+    }
+    return JsonResponse(data)
+
+def check_section_name(request):
+    section_name = request.GET.get('section_name', None)
+    is_taken = Section.objects.filter(section_name__iexact=section_name).exists()
+    data = {
+        'is_taken': is_taken,
+        'message': 'Section name is already taken.' if is_taken else 'Section name is available.'
+    }
+    return JsonResponse(data)
+
+def check_item_name(request):
+    item_name = request.GET.get('item_name', None)
+    is_taken = Item.objects.filter(Item_name__iexact=item_name).exists()
+    data = {
+        'is_taken': is_taken,
+        'message': 'Item name is already taken.' if is_taken else 'Item name is available.'
+    }
+    return JsonResponse(data)
+
+def check_contract_name(request):
+    contract_name = request.GET.get('contract_name', None)
+    is_taken = Contract.objects.filter(contract_name__iexact=contract_name).exists()
+    data = {
+        'is_taken': is_taken,
+        'message': 'Contract name is already taken.' if is_taken else 'Contract name is available.'
+    }
+    return JsonResponse(data)
