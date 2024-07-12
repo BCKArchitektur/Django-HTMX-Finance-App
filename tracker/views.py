@@ -153,7 +153,7 @@ def delete_client(request, client_id):
 @login_required
 def edit_project(request, project_id):
     project = get_object_or_404(Project, id=project_id)
-    contracts = project.contract.all()  # Accessing the many-to-many field directly
+    contracts = project.contract.all()
     clients = Client.objects.all()
     sections = Section.objects.all()
     items = Item.objects.all()
@@ -169,9 +169,10 @@ def edit_project(request, project_id):
         elif 'contract_name' in request.POST:
             contract_form = ContractForm(request.POST)
             if contract_form.is_valid():
-                contract = contract_form.save(commit=False)
-                contract.save()
+                contract = contract_form.save()
                 project.contract.add(contract)  # Adding contract to the many-to-many field
+                contract.user.set(contract_form.cleaned_data['user'])
+                contract.section.set(contract_form.cleaned_data['section'])
                 return redirect('edit_project', project_id=project.id)
     else:
         form = ProjectForm(instance=project)
