@@ -51,15 +51,24 @@ class Task(models.Model):
         return self.task_name
 
 
-
+# Creating Item model
 class Item(models.Model):
     Item_name = models.CharField(max_length=255, unique=True)
     tasks = models.ManyToManyField(Task)
     users = models.ManyToManyField(User, blank=True)
-    budget = models.FloatField(default=0.0)  # Add this field
-    
+    budget = models.FloatField(default=0.0)
+
     def __str__(self):
         return self.Item_name
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.update_parent_users()
+
+    def update_parent_users(self):
+        for section in self.section_set.all():
+            section.update_users_from_items()
+
 
 
 
@@ -67,11 +76,25 @@ class Item(models.Model):
 class Section(models.Model):
     section_name = models.CharField(max_length=255, unique=True)
     user = models.ManyToManyField(User)
-    allocated_budget = models.FloatField(default='0' )
+    allocated_budget = models.FloatField(default='0')
     Item = models.ManyToManyField(Item)
     section_billed_hourly = models.BooleanField(default='False')
+
     def __str__(self):
         return self.section_name
+
+    def update_users_from_items(self):
+        users = set()
+        for item in self.Item.all():
+            users.update(item.users.all())
+        self.user.set(users)
+        self.save()
+        self.update_contract_users()
+
+    def update_contract_users(self):
+        for contract in self.contract_set.all():
+            contract.update_users_from_sections()
+
 
 
 #Creating Contract model
@@ -79,8 +102,22 @@ class Contract(models.Model):
     contract_name = models.CharField(max_length=255, unique=True)
     user = models.ManyToManyField(User)
     section = models.ManyToManyField(Section)
+
     def __str__(self):
         return self.contract_name
+
+    def update_users_from_sections(self):
+        users = set()
+        for section in self.section.all():
+            users.update(section.user.all())
+        self.user.set(users)
+        self.save()
+        self.update_project_users()
+
+    def update_project_users(self):
+        for project in self.project_set.all():
+            project.update_users_from_contracts()
+
 
 
 #Creating Project model
@@ -93,8 +130,17 @@ class Project(models.Model):
     user = models.ManyToManyField(User)
     status = models.CharField(choices=status_choices, max_length=20)
     contract = models.ManyToManyField('Contract', blank=True)
+
     def __str__(self):
         return f"{self.project_no}-{self.project_name}"
+
+    def update_users_from_contracts(self):
+        users = set()
+        for contract in self.contract.all():
+            users.update(contract.user.all())
+        self.user.set(users)
+        self.save()
+
 
 
 #Creating Logs model

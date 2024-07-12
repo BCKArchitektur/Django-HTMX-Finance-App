@@ -9,7 +9,7 @@
             <h2 class="text-lg font-thin">Edit - </h2>
             <h2 class="text-2xl font-semibold m-2">{{ project.project_name }}</h2>
         </div>
-        <button class="btn btn-circle btn-outline btn-error" onclick="window.history.back();">
+        <button class="btn btn-circle btn-outline btn-error" onclick="window.location.href='{% url 'projects' %}';">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -78,6 +78,7 @@
                     <td>{{ contract.contract_name }}</td>
                     <td>
                         {% for section in contract.section.all %}
+                            <strong>{{ section.section_name }}</strong><br>
                             {% for item in section.Item.all %}
                                 {{ item.Item_name }}: 
                                 {% for user in item.users.all %}
@@ -89,14 +90,15 @@
                     </td>
                     <td>
                         {% for section in contract.section.all %}
+                            <strong>{{ section.section_name }}</strong><br>
                             {% for item in section.Item.all %}
                                 {{ item.Item_name }}: {{ item.budget }}<br>
                             {% endfor %}
                         {% endfor %}
                     </td>
                     <td>
-                        <button class="btn btn-sm btn-primary" onclick="openAddUsersModal({{ contract.id }})">Add Users</button>
-                        <button class="btn btn-sm btn-secondary" onclick="openAddBudgetModal({{ contract.id }})">Add Budget</button>
+                        <button class="btn btn-sm btn-primary" onclick="openAddUsersModal({{ contract.id }})">Add/Edit Users</button>
+                        <button class="btn btn-sm btn-secondary" onclick="openAddBudgetModal({{ contract.id }})">Add/Edit Budget</button>
                     </td>
                 </tr>
                 {% empty %}
@@ -131,16 +133,16 @@
     </div>
 </div>
 
-<!-- Add Users Modal -->
+<!-- Add/Edit Users Modal -->
 <div id="addUsersModal" class="modal">
     <div class="modal-box">
-        <h3 class="font-bold text-lg m-4">Add Users</h3>
+        <h3 class="font-bold text-lg m-4">Add/Edit Users</h3>
         <form id="add-users-form" method="post" action="{% url 'add_users' %}">
             {% csrf_token %}
             <input type="hidden" name="contract_id" id="add_users_contract_id">
             <div class="form-control w-full mb-4">
                 <label for="id_items" class="block text-sm font-medium text-gray-700">Select Item</label>
-                <select name="items" class="select select-bordered w-full m-2" id="id_items">
+                <select name="items" class="select select-bordered w-full m-2" id="id_items" onchange="populateUsers()">
                     <!-- Options will be populated by JavaScript -->
                 </select>
             </div>
@@ -160,16 +162,16 @@
     </div>
 </div>
 
-<!-- Add Budget Modal -->
+<!-- Add/Edit Budget Modal -->
 <div id="addBudgetModal" class="modal">
     <div class="modal-box">
-        <h3 class="font-bold text-lg m-4">Add Budget</h3>
+        <h3 class="font-bold text-lg m-4">Add/Edit Budget</h3>
         <form id="add-budget-form" method="post" action="{% url 'add_budget' %}">
             {% csrf_token %}
             <input type="hidden" name="contract_id" id="add_budget_contract_id">
             <div class="form-control w-full mb-4">
                 <label for="id_budget_items" class="block text-sm font-medium text-gray-700">Select Item</label>
-                <select name="budget_items" class="select select-bordered w-full m-2" id="id_budget_items">
+                <select name="budget_items" class="select select-bordered w-full m-2" id="id_budget_items" onchange="populateBudget()">
                     <!-- Options will be populated by JavaScript -->
                 </select>
             </div>
@@ -198,22 +200,22 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('contractModal').classList.remove('modal-open');
     }
 
-    // Function to open the Add Users Modal
+    // Function to open the Add/Edit Users Modal
     window.openAddUsersModal = function(contractId) {
         document.getElementById('add_users_contract_id').value = contractId;
         document.getElementById('addUsersModal').classList.add('modal-open');
-        populateItemsDropdown(contractId, 'id_items');
+        populateItemsDropdown(contractId, 'id_items', populateUsers);
     }
 
     window.closeAddUsersModal = function() {
         document.getElementById('addUsersModal').classList.remove('modal-open');
     }
 
-    // Function to open the Add Budget Modal
+    // Function to open the Add/Edit Budget Modal
     window.openAddBudgetModal = function(contractId) {
         document.getElementById('add_budget_contract_id').value = contractId;
         document.getElementById('addBudgetModal').classList.add('modal-open');
-        populateItemsDropdown(contractId, 'id_budget_items');
+        populateItemsDropdown(contractId, 'id_budget_items', populateBudget);
     }
 
     window.closeAddBudgetModal = function() {
@@ -221,7 +223,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     // Function to populate items dropdown in the modals
-    window.populateItemsDropdown = function(contractId, dropdownId) {
+    window.populateItemsDropdown = function(contractId, dropdownId, callback) {
         fetch(`/ajax/load-contract-data/?contract_id=${contractId}`)
             .then(response => response.json())
             .then(data => {
@@ -240,10 +242,45 @@ document.addEventListener("DOMContentLoaded", function() {
                         }
                     });
                 }
+
+                if (callback) {
+                    callback();
+                }
             })
             .catch(error => {
                 console.error('Error loading contract data:', error);
                 alert('Error loading contract data: ' + error);
+            });
+    }
+
+    // Function to populate existing users in the Add/Edit Users modal
+    window.populateUsers = function() {
+        let itemId = document.getElementById('id_items').value;
+        fetch(`/ajax/load-item-users/?item_id=${itemId}`)
+            .then(response => response.json())
+            .then(data => {
+                let usersDropdown = document.getElementById('id_users');
+                usersDropdown.querySelectorAll('option').forEach(option => {
+                    option.selected = data.users.includes(parseInt(option.value));
+                });
+            })
+            .catch(error => {
+                console.error('Error loading item users:', error);
+                alert('Error loading item users: ' + error);
+            });
+    }
+
+    // Function to populate existing budget in the Add/Edit Budget modal
+    window.populateBudget = function() {
+        let itemId = document.getElementById('id_budget_items').value;
+        fetch(`/ajax/load-item-budget/?item_id=${itemId}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('id_budget').value = data.budget;
+            })
+            .catch(error => {
+                console.error('Error loading item budget:', error);
+                alert('Error loading item budget: ' + error);
             });
     }
 
@@ -308,6 +345,5 @@ document.addEventListener("DOMContentLoaded", function() {
         button.closest('.item-block').querySelector('.tasks-container').insertAdjacentHTML('beforeend', taskTemplate);
     }
 });
-
 </script>
 {% endblock %}

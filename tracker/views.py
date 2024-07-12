@@ -601,3 +601,28 @@ def add_budget(request):
                     project = contract.project_set.first()
                     return redirect('edit_project', project.id)
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+def load_item_users(request):
+    item_id = request.GET.get('item_id')
+    item = get_object_or_404(Item, id=item_id)
+    users = list(item.users.values_list('id', flat=True))
+    return JsonResponse({'users': users})
+
+def load_item_budget(request):
+    item_id = request.GET.get('item_id')
+    item = get_object_or_404(Item, id=item_id)
+    budget = item.budget
+    return JsonResponse({'budget': budget})
+
+from django.shortcuts import get_object_or_404, redirect
+from django.http import JsonResponse
+from .models import Item
+
+def add_users_to_item(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    if request.method == 'POST':
+        user_ids = request.POST.getlist('users')
+        item.users.set(user_ids)
+        item.save()  # This will trigger the cascading update
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'fail'}, status=400)

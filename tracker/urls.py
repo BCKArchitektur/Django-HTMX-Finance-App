@@ -27,4 +27,6 @@ urlpatterns = [
     path('check-contract-name/', views.check_contract_name, name='check_contract_name'),
     path("add-users/", views.add_users, name='add_users'),
     path("add-budget/", views.add_budget, name='add_budget'),
+    path('ajax/load-item-users/', views.load_item_users, name='load_item_users'),
+    path('ajax/load-item-budget/', views.load_item_budget, name='load_item_budget'),
 ]
