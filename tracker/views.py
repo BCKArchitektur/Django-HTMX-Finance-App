@@ -498,12 +498,18 @@ def load_contract_data(request):
     contract_id = request.GET.get('contract_id')
     contract = get_object_or_404(Contract, id=contract_id)
 
+    users = list(User.objects.all().values('id', 'username'))
     sections = contract.section.all()
     section_data = []
 
     for section in sections:
         items = section.Item.all()
-        item_data = [{'id': item.id, 'Item_name': item.Item_name} for item in items]
+        item_data = [{
+            'id': item.id, 
+            'Item_name': item.Item_name,
+            'budget': item.budget,  # Ensure budget is included here
+            'users': list(item.users.values_list('id', flat=True))  # Get user IDs for the item
+        } for item in items]
         section_data.append({
             'section_name': section.section_name,
             'items': item_data
@@ -511,10 +517,13 @@ def load_contract_data(request):
 
     contract_data = {
         'contract_name': contract.contract_name,
+        'users': users,
         'sections': section_data
     }
 
     return JsonResponse(contract_data)
+
+
 
 
 
@@ -554,52 +563,51 @@ def check_contract_name(request):
     }
     return JsonResponse(data)
 
+@csrf_exempt
 @login_required
 def add_users(request):
     if request.method == 'POST':
-        form = AddUsersForm(request.POST)
-        if form.is_valid():
-            item = form.cleaned_data['items']
-            users = form.cleaned_data['users']
-            item.users.set(users)
-            item.save()
-            
-            # Update users for related sections and contracts
-            sections = Section.objects.filter(Item=item)
-            for section in sections:
-                section.user.set(users)
-                section.save()
+        contract_id = request.POST.get('contract_id')
+        contract = get_object_or_404(Contract, id=contract_id)
+        
+        for section in contract.section.all():
+            for item in section.Item.all():
+                for user in User.objects.all():
+                    user_checkbox = f'user_item_{user.id}_{item.id}'
+                    if user_checkbox in request.POST:
+                        item.users.add(user)
+                    else:
+                        item.users.remove(user)
 
-                contracts = Contract.objects.filter(section=section)
-                for contract in contracts:
-                    contract.user.set(users)
-                    contract.save()
-
-                    projects = contract.project_set.all()
-                    for project in projects:
-                        project.user.set(users)
-                        project.save()
-
-            return redirect('edit_project', projects.first().id if projects.exists() else None)
+        return JsonResponse({'status': 'success'})
+    
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
+@csrf_exempt
 @login_required
 def add_budget(request):
     if request.method == 'POST':
-        form = AddBudgetForm(request.POST)
-        if form.is_valid():
-            item = form.cleaned_data['budget_items']
-            item.budget = form.cleaned_data['budget']
-            item.save()
-            
-            # Get the related project
-            sections = Section.objects.filter(Item=item)
-            for section in sections:
-                contracts = Contract.objects.filter(section=section)
-                for contract in contracts:
-                    project = contract.project_set.first()
-                    return redirect('edit_project', project.id)
+        print(request.POST)  # Debugging line
+        contract_id = request.POST.get('contract_id')
+        if not contract_id:
+            return JsonResponse({'error': 'Missing contract ID'}, status=400)
+
+        contract = get_object_or_404(Contract, id=contract_id)
+
+        for section in contract.section.all():
+            for item in section.Item.all():
+                budget_key = f'budget_{item.id}'
+                if budget_key in request.POST:
+                    try:
+                        print(f"Updating item {item.id} with budget {request.POST[budget_key]}")  # Debugging line
+                        item.budget = request.POST[budget_key]
+                        item.save()
+                    except Item.DoesNotExist:
+                        continue
+
+        return JsonResponse({'status': 'success'})
+
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 def load_item_users(request):
