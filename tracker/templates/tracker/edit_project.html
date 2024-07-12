@@ -7,10 +7,8 @@
     <div class="flex justify-between items-center mb-4">
         <div class="join align-middle justify-center items-center"> 
             <h2 class="text-lg font-thin"> Edit  - </h2>
-
             <h2 class="text-2xl font-semibold m-2">  {{ project.project_name }}</h2>
         </div>
-
 
         <button class="btn btn-circle btn-outline btn-error" onclick="window.history.back();">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -54,9 +52,7 @@
         </div>
     </form>
 
-
     <div class="divider lg:divider-neutral"></div>
-
 
     <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-semibold">Manage Contracts</h2>
@@ -129,21 +125,25 @@
     </div>
 </div>
 
-
 <!-- Edit Contract Modal -->
 <div id="editContractModal" class="modal">
     <div class="modal-box">
         <h3 class="font-bold text-lg m-4">Edit Contract</h3>
-        <form id="edit-contract-form" method="post" action="{% url 'edit_project' project.id %}">
+        <form id="edit-contract-form" method="post" action="{% url 'edit_contract' %}">
             {% csrf_token %}
+            <input type="hidden" name="contract_id" id="edit_id_contract_id">
             <div class="form-control w-full max-w-xs">
                 <input type="text" name="contract_name" placeholder="Contract Name" class="input input-bordered w-full max-w-xs m-2" id="edit_id_contract_name">
             </div>
             <div class="form-control w-full max-w-xs m-2 bg-transparent">
-                {{ contract_form.user }}
+                <select name="user" id="edit_id_users" class="select select-bordered" multiple>
+                    <!-- User options will be populated by JavaScript -->
+                </select>
             </div>
             <div class="form-control w-full max-w-xs m-2 bg-transparent">
-                {{ contract_form.section }}
+                <select name="section" id="edit_id_sections" class="select select-bordered" multiple>
+                    <!-- Section options will be populated by JavaScript -->
+                </select>
             </div>
             <div class="modal-action">
                 <button type="submit" class="btn btn-secondary btn-sm">Save Changes</button>
@@ -153,75 +153,111 @@
     </div>
 </div>
 
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        document.getElementById('contract-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-            const form = event.target;
-            fetch(form.action, {
-                method: 'POST',
-                body: new FormData(form),
-                headers: {
-                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
-                },
-            })
-            .then(response => {
-                if (response.ok) {
-                    location.reload();
-                } else {
-                    response.text().then(text => console.error(text)); // Log response text for error details
-                    alert('Failed to add contract');
-                }
-            })
-            .catch(error => alert('Error adding contract: ' + error));
-        });
-
-        document.getElementById('edit-contract-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-            const form = event.target;
-            fetch(form.action, {
-                method: 'POST',
-                body: new FormData(form),
-                headers: {
-                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
-                },
-            })
-            .then(response => {
-                if (response.ok) {
-                    location.reload();
-                } else {
-                    response.text().then(text => console.error(text)); // Log response text for error details
-                    alert('Failed to edit contract');
-                }
-            })
-            .catch(error => alert('Error editing contract: ' + error));
-        });
+document.addEventListener("DOMContentLoaded", function() {
+    document.getElementById('contract-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const form = event.target;
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: {
+                'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                response.text().then(text => console.error(text)); // Log response text for error details
+                alert('Failed to add contract');
+            }
+        })
+        .catch(error => alert('Error adding contract: ' + error));
     });
 
-    function openContractModal() {
-        document.getElementById('contractModal').classList.add('modal-open');
-    }
+    document.getElementById('edit-contract-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const form = event.target;
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: {
+                'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                response.text().then(text => console.error(text)); // Log response text for error details
+                alert('Failed to edit contract');
+            }
+        })
+        .catch(error => alert('Error editing contract: ' + error));
+    });
+});
 
-    function closeContractModal() {
-        document.getElementById('contractModal').classList.remove('modal-open');
-    }
+function openContractModal() {
+    document.getElementById('contractModal').classList.add('modal-open');
+}
 
-    function openEditContractModal(contractId) {
-        fetch(`/ajax/load-contracts/?contract_id=${contractId}`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('edit_id_contract_name').value = data.contract_name;
-                document.getElementById('editContractModal').classList.add('modal-open');
-            })
-            .catch(error => alert('Error loading contract data: ' + error));
-    }
+function closeContractModal() {
+    document.getElementById('contractModal').classList.remove('modal-open');
+}
 
-    function closeEditContractModal() {
-        document.getElementById('editContractModal').classList.remove('modal-open');
-    }
+function openEditContractModal(contractId) {
+    fetch(`/ajax/load-contract-data/?contract_id=${contractId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            document.getElementById('edit_id_contract_id').value = contractId;
+            document.getElementById('edit_id_contract_name').value = data.contract_name;
+
+            // Populate users
+            let userSelect = document.getElementById('edit_id_users');
+            userSelect.innerHTML = '';
+            data.users.forEach(user => {
+                let option = document.createElement('option');
+                option.value = user.id;
+                option.text = user.username;
+                if (user.selected) {
+                    option.selected = true;
+                }
+                userSelect.appendChild(option);
+            });
+
+            // Populate sections
+            let sectionSelect = document.getElementById('edit_id_sections');
+            sectionSelect.innerHTML = '';
+            data.sections.forEach(section => {
+                let option = document.createElement('option');
+                option.value = section.id;
+                option.text = section.section_name;
+                if (section.selected) {
+                    option.selected = true;
+                }
+                sectionSelect.appendChild(option);
+            });
+
+            document.getElementById('editContractModal').classList.add('modal-open');
+        })
+        .catch(error => {
+            console.error('Error loading contract data:', error); // More detailed logging
+            alert('Error loading contract data: ' + error);
+        });
+}
+
+function closeEditContractModal() {
+    document.getElementById('editContractModal').classList.remove('modal-open');
+}
 </script>
 {% endblock %}
-

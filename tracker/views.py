@@ -161,19 +161,39 @@ def edit_project(request, project_id):
     contract_form = ContractForm()
 
     if request.method == 'POST':
+        print("POST data received:", request.POST)  # Debugging line
+
         if 'project_name' in request.POST:
             form = ProjectForm(request.POST, instance=project)
             if form.is_valid():
                 form.save()
+                print("Project form saved successfully")  # Debugging line
                 return redirect('projects')
-        elif 'contract_name' in request.POST:
+            else:
+                print("Project form errors:", form.errors)  # Debugging line
+        elif 'contract_name' in request.POST and 'contract_id' not in request.POST:
             contract_form = ContractForm(request.POST)
             if contract_form.is_valid():
                 contract = contract_form.save()
                 project.contract.add(contract)  # Adding contract to the many-to-many field
                 contract.user.set(contract_form.cleaned_data['user'])
                 contract.section.set(contract_form.cleaned_data['section'])
+                print("New contract added successfully")  # Debugging line
                 return redirect('edit_project', project_id=project.id)
+            else:
+                print("Contract form errors:", contract_form.errors)  # Debugging line
+        elif 'contract_id' in request.POST:
+            contract_id = request.POST['contract_id']
+            contract = get_object_or_404(Contract, id=contract_id)
+            contract_form = ContractForm(request.POST, instance=contract)
+            if contract_form.is_valid():
+                contract_form.save()
+                print("Contract form updated successfully")  # Debugging line
+                return redirect('edit_project', project_id=project.id)
+            else:
+                print("Contract form errors:", contract_form.errors)  # Debugging line
+        else:
+            form = ProjectForm(instance=project)
     else:
         form = ProjectForm(instance=project)
 
@@ -188,6 +208,37 @@ def edit_project(request, project_id):
         'tasks': tasks,
     }
     return render(request, 'tracker/edit_project.html', context)
+
+
+
+
+def edit_contract(request):
+    if request.method == 'POST':
+        # Log the entire POST data
+        print("Received POST request with data:", request.POST)
+        
+        contract_id = request.POST.get('contract_id')
+        if not contract_id:
+            print("Missing contract ID")
+            return HttpResponseBadRequest("Missing contract ID")
+        
+        contract = get_object_or_404(Contract, id=contract_id)
+        
+        form = ContractForm(request.POST, instance=contract)
+        
+        # Log form validation
+        if form.is_valid():
+            print("Form is valid")
+            form.save()
+            print("Form saved successfully")
+            return JsonResponse({'status': 'success'})
+        else:
+            print("Form is not valid, errors:", form.errors)
+            return JsonResponse({'status': 'fail', 'errors': form.errors})
+    
+    print("Invalid request method")
+    return HttpResponseBadRequest("Invalid request")
+
 
 
 @login_required
@@ -417,3 +468,21 @@ def add_project(request):
         )
         return redirect('project_details')
     return redirect('project_details')
+
+
+@login_required
+def load_contract_data(request):
+    contract_id = request.GET.get('contract_id')
+    contract = get_object_or_404(Contract, id=contract_id)
+
+    contract_data = {
+        'contract_name': contract.contract_name,
+        'users': [
+            {'id': user.id, 'username': user.username, 'selected': user in contract.user.all()}
+        for user in User.objects.all()],
+        'sections': [
+            {'id': section.id, 'section_name': section.section_name, 'selected': section in contract.section.all()}
+        for section in Section.objects.all()]
+    }
+
+    return JsonResponse(contract_data)
