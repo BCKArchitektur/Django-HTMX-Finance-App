@@ -195,7 +195,115 @@
 {% block extra_scripts %}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    // Function to open the Add/Edit Users Modal
+    function fetchData(url, callback) {
+        fetch(url)
+            .then(response => response.json())
+            .then(data => callback(data))
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error: ' + error);
+            });
+    }
+
+    function populateUsersTable(contractId) {
+        fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
+            const usersTable = document.getElementById('users-table');
+            const thead = usersTable.querySelector('thead tr');
+            const tbody = usersTable.querySelector('tbody');
+
+            thead.innerHTML = '<th>NO.</th><th>SECTION</th><th>ITEM</th>';
+            tbody.innerHTML = '';
+
+            data.users.forEach(user => {
+                const th = document.createElement('th');
+                th.textContent = user.username;
+                thead.appendChild(th);
+            });
+
+            data.sections.forEach((section, sectionIndex) => {
+                section.items.forEach((item, itemIndex) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${sectionIndex + 1},${itemIndex + 1}</td>
+                        <td>${section.section_name}</td>
+                        <td>${item.Item_name}</td>
+                    `;
+                    
+                    data.users.forEach(user => {
+                        const td = document.createElement('td');
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.name = `user_item_${user.id}_${item.id}`;
+                        checkbox.checked = item.users.includes(user.id);
+                        td.appendChild(checkbox);
+                        tr.appendChild(td);
+                    });
+
+                    tbody.appendChild(tr);
+                });
+            });
+        });
+    }
+
+    function populateBudgetTable(contractId) {
+        fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
+            const budgetTable = document.getElementById('budget-table');
+            const thead = budgetTable.querySelector('thead tr');
+            const tbody = budgetTable.querySelector('tbody');
+
+            thead.innerHTML = '<th>NO.</th><th>SECTION</th><th>ITEM</th><th>BUDGET</th>';
+            tbody.innerHTML = '';
+
+            data.sections.forEach((section, sectionIndex) => {
+                section.items.forEach((item, itemIndex) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${sectionIndex + 1},${itemIndex + 1}</td>
+                        <td>${section.section_name}</td>
+                        <td>${item.Item_name}</td>
+                        <td><input type="text" name="budget_${item.id}" value="${item.budget || ''}" class="input input-bordered w-full" /></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        });
+    }
+
+    function handleFormSubmission(event, form, url) {
+        event.preventDefault();
+        const formData = new FormData(form);
+
+        fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                console.error('Error:', data.error);
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error submitting form:', error);
+            alert('Error submitting form: ' + error);
+        });
+    }
+
+    // Attach event listeners
+    document.getElementById('add-users-form').addEventListener('submit', function(event) {
+        handleFormSubmission(event, this, this.action);
+    });
+
+    document.getElementById('add-budget-form').addEventListener('submit', function(event) {
+        handleFormSubmission(event, this, this.action);
+    });
+
     window.openAddUsersModal = function(contractId) {
         document.getElementById('add_users_contract_id').value = contractId;
         document.getElementById('addUsersModal').classList.add('modal-open');
@@ -206,7 +314,6 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('addUsersModal').classList.remove('modal-open');
     }
 
-    // Function to open the Add/Edit Budget Modal
     window.openAddBudgetModal = function(contractId) {
         document.getElementById('add_budget_contract_id').value = contractId;
         document.getElementById('addBudgetModal').classList.add('modal-open');
@@ -217,146 +324,6 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('addBudgetModal').classList.remove('modal-open');
     }
 
-    // Function to populate users and sections in the table
-    function populateUsersTable(contractId) {
-        fetch(`/ajax/load-contract-data/?contract_id=${contractId}`)
-            .then(response => response.json())
-            .then(data => {
-                const usersTable = document.getElementById('users-table');
-                const thead = usersTable.querySelector('thead tr');
-                const tbody = usersTable.querySelector('tbody');
-
-                // Clear previous data
-                thead.innerHTML = '<th>NO.</th><th>SECTION</th><th>ITEM</th>';
-                tbody.innerHTML = '';
-
-                // Populate user columns
-                data.users.forEach(user => {
-                    const th = document.createElement('th');
-                    th.textContent = user.username;
-                    thead.appendChild(th);
-                });
-
-                // Populate sections and items
-                data.sections.forEach((section, sectionIndex) => {
-                    section.items.forEach((item, itemIndex) => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${sectionIndex + 1},${itemIndex + 1}</td>
-                            <td>${section.section_name}</td>
-                            <td>${item.Item_name}</td>
-                        `;
-                        
-                        data.users.forEach(user => {
-                            const td = document.createElement('td');
-                            const checkbox = document.createElement('input');
-                            checkbox.type = 'checkbox';
-                            checkbox.name = `user_item_${user.id}_${item.id}`;
-                            checkbox.checked = item.users.includes(user.id);
-                            td.appendChild(checkbox);
-                            tr.appendChild(td);
-                        });
-
-                        tbody.appendChild(tr);
-                    });
-                });
-            })
-            .catch(error => {
-                console.error('Error loading contract data:', error);
-                alert('Error loading contract data: ' + error);
-            });
-    }
-
-    // Function to populate budget table
-    function populateBudgetTable(contractId) {
-        fetch(`/ajax/load-contract-data/?contract_id=${contractId}`)
-            .then(response => response.json())
-            .then(data => {
-                const budgetTable = document.getElementById('budget-table');
-                const thead = budgetTable.querySelector('thead tr');
-                const tbody = budgetTable.querySelector('tbody');
-
-                // Clear previous data
-                thead.innerHTML = '<th>NO.</th><th>SECTION</th><th>ITEM</th><th>BUDGET</th>';
-                tbody.innerHTML = '';
-
-                // Populate sections and items with budget input fields
-                data.sections.forEach((section, sectionIndex) => {
-                    section.items.forEach((item, itemIndex) => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${sectionIndex + 1},${itemIndex + 1}</td>
-                            <td>${section.section_name}</td>
-                            <td>${item.Item_name}</td>
-                            <td><input type="text" name="budget_${item.id}" value="${item.budget || ''}" class="input input-bordered w-full" /></td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                });
-            })
-            .catch(error => {
-                console.error('Error loading contract data:', error);
-                alert('Error loading contract data: ' + error);
-            });
-    }
-
-    // Function to handle form submission for Add/Edit Users
-    document.getElementById('add-users-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const form = event.target;
-        const formData = new FormData(form);
-
-        fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                location.reload();
-            } else {
-                console.error('Error:', data.error);
-                alert('Error: ' + data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error submitting form:', error);
-            alert('Error submitting form: ' + error);
-        });
-    });
-
-    // Function to handle form submission for Add/Edit Budget
-    document.getElementById('add-budget-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const form = event.target;
-        const formData = new FormData(form);
-
-        fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                location.reload();
-            } else {
-                console.error('Error:', data.error);
-                alert('Error: ' + data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error submitting form:', error);
-            alert('Error submitting form: ' + error);
-        });
-    });
-
-    // Function to open the Add Contract Modal
     window.openContractModal = function() {
         document.getElementById('contractModal').classList.add('modal-open');
     }
@@ -365,70 +332,6 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('contractModal').classList.remove('modal-open');
     }
 
-    // Function to populate items dropdown in the modals
-    window.populateItemsDropdown = function(contractId, dropdownId, callback) {
-        fetch(`/ajax/load-contract-data/?contract_id=${contractId}`)
-            .then(response => response.json())
-            .then(data => {
-                let itemsDropdown = document.getElementById(dropdownId);
-                itemsDropdown.innerHTML = '';
-
-                if (data.sections) {
-                    data.sections.forEach(section => {
-                        if (section.items) {
-                            section.items.forEach(item => {
-                                let option = document.createElement('option');
-                                option.value = item.id;
-                                option.text = `${section.section_name} - ${item.Item_name}`;
-                                itemsDropdown.appendChild(option);
-                            });
-                        }
-                    });
-                }
-
-                if (callback) {
-                    callback();
-                }
-            })
-            .catch(error => {
-                console.error('Error loading contract data:', error);
-                alert('Error loading contract data: ' + error);
-            });
-    }
-
-    // Function to populate existing users in the Add/Edit Users modal
-    window.populateUsers = function() {
-        let itemId = document.getElementById('id_items').value;
-        fetch(`/ajax/load-item-users/?item_id=${itemId}`)
-            .then(response => response.json())
-            .then(data => {
-                let usersDropdown = document.getElementById('id_users');
-                usersDropdown.querySelectorAll('option').forEach(option => {
-                    option.selected = data.users.includes(parseInt(option.value));
-                });
-            })
-            .catch(error => {
-                console.error('Error loading item users:', error);
-                alert('Error loading item users: ' + error);
-            });
-    }
-
-    // Event listener for adding new sections
-    document.querySelector('#contract-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        let form = event.target;
-        fetch(form.action, {
-            method: 'POST',
-            body: new FormData(form),
-            headers: {
-                'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
-            },
-        })
-        .then(response => response.ok ? location.reload() : response.text().then(text => console.error(text)))
-        .catch(error => alert('Error adding contract: ' + error));
-    });
-
-    // Add Section function
     window.addSection = function() {
         const sectionId = Math.random().toString(36).substr(2, 9);
         const sectionTemplate = `
@@ -444,7 +347,6 @@ document.addEventListener("DOMContentLoaded", function() {
         document.querySelector('#sections-container').insertAdjacentHTML('beforeend', sectionTemplate);
     }
 
-    // Add Item function
     window.addItem = function(button) {
         const itemId = Math.random().toString(36).substr(2, 9);
         const itemTemplate = `
@@ -460,7 +362,6 @@ document.addEventListener("DOMContentLoaded", function() {
         button.closest('.section-block').querySelector('.items-container').insertAdjacentHTML('beforeend', itemTemplate);
     }
 
-    // Add Task function
     window.addTask = function(button) {
         const taskId = Math.random().toString(36).substr(2, 9);
         const taskTemplate = `
@@ -475,4 +376,5 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 </script>
+
 {% endblock %}
