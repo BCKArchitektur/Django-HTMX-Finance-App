@@ -92,9 +92,12 @@
                         {% endfor %}
                     </td>
                     <td>
-                        <button class="btn btn-sm btn-primary" onclick="openAddUsersModal({{ contract.id }})">Add/Edit Users</button>
-                        <button class="btn btn-sm btn-secondary" onclick="openAddBudgetModal({{ contract.id }})">Add/Edit Budget</button>
+
+                        <button class="btn btn-sm btn-primary btn-outline" onclick="openAddUsersModal({{ contract.id }})">✎ Users</button>
+                        <button class="btn btn-sm btn-primary btn-outline" onclick="openAddBudgetModal({{ contract.id }})">✎ Budget</button>
+                        <button class="btn btn-sm btn-secondary btn-outline" onclick="openEditContractModal({{ contract.id }})">✎ Contract</button>
                     </td>
+                    
                 </tr>
                 {% empty %}
                 <tr>
@@ -106,12 +109,13 @@
     </div>
 </div>
 
-<!-- Add Contract Modal -->
+<!-- Add/Edit Contract Modal -->
 <div id="contractModal" class="modal">
     <div class="modal-box max-w-5xl">
-        <h3 class="font-bold text-lg m-4">Add a New Contract</h3>
+        <h3 class="font-bold text-lg m-4" id="contractModalTitle">Add a New Contract</h3>
         <form id="contract-form" method="post" action="{% url 'edit_project' project.id %}">
             {% csrf_token %}
+            <input type="hidden" name="contract_id" id="contract_id">
             <div class="form-control w-full mb-4">
                 <input type="text" name="contract_name" placeholder="Contract Name" class="input input-bordered w-full m-2" id="id_contract_name" hx-get="{% url 'check_contract_name' %}" hx-trigger="blur" hx-target="#contract-name-error" hx-swap="innerHTML">
                 <div id="contract-name-error" class="text-red-500 text-sm"></div>
@@ -127,6 +131,8 @@
         </form>
     </div>
 </div>
+
+
 
 <!-- Add/Edit Users Modal -->
 <div id="addUsersModal" class="modal">
@@ -228,7 +234,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         <td>${section.section_name}</td>
                         <td>${item.Item_name}</td>
                     `;
-                    
+
                     data.users.forEach(user => {
                         const td = document.createElement('td');
                         const checkbox = document.createElement('input');
@@ -295,7 +301,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // Attach event listeners
     document.getElementById('add-users-form').addEventListener('submit', function(event) {
         handleFormSubmission(event, this, this.action);
     });
@@ -325,6 +330,10 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     window.openContractModal = function() {
+        document.getElementById('contractModalTitle').innerText = 'Add a New Contract';
+        document.getElementById('contract_id').value = '';
+        document.getElementById('id_contract_name').value = '';
+        document.getElementById('sections-container').innerHTML = '';
         document.getElementById('contractModal').classList.add('modal-open');
     }
 
@@ -332,10 +341,77 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('contractModal').classList.remove('modal-open');
     }
 
+    window.openEditContractModal = function(contractId) {
+        document.getElementById('contractModalTitle').innerText = 'Edit Contract';
+        document.getElementById('contract_id').value = contractId;
+        fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
+            document.getElementById('id_contract_name').value = data.contract_name;
+            const sectionsContainer = document.getElementById('sections-container');
+            sectionsContainer.innerHTML = '';
+            if (data.sections) {
+                data.sections.forEach((section, sectionIndex) => {
+                    const sectionId = Math.random().toString(36).substr(2, 9);
+                    const sectionTemplate = `
+                        <div class="section-block form-control w-full m-2 p-4">
+                            <div class="flex justify-between items-center">
+                                <input type="text" name="section_name" value="${section.section_name}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
+                                <button type="button" class="btn btn-sm btn-primary m-2" onclick="addItem(this)">+ Item</button>
+                                <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
+                            </div>
+                            <div id="section-name-error-${sectionId}" class="text-red-500 text-sm mb-2"></div>
+                            <div class="items-container">
+                                ${section.items ? section.items.map(item => {
+                                    const itemId = Math.random().toString(36).substr(2, 9);
+                                    const itemTemplate = `
+                                        <div class="item-block form-control w-full m-2 p-2">
+                                            <div class="flex justify-between items-center">
+                                                <input type="text" name="item_name" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
+                                                <button type="button" class="btn btn-sm btn-primary m-2" onclick="addTask(this)">+ Task</button>
+                                                <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
+                                            </div>
+                                            <div id="item-name-error-${itemId}" class="text-red-500 text-sm m-1"></div>
+                                            <div class="tasks-container">
+                                                ${item.tasks ? item.tasks.map(task => {
+                                                    const taskId = Math.random().toString(36).substr(2, 9);
+                                                    const taskTemplate = `
+                                                        <div class="task-block form-control w-full max-w-xs m-2">
+                                                            <div class="flex justify-between items-center">
+                                                                <input type="text" name="task_name" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
+                                                                <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">Delete Task</button>
+                                                            </div>
+                                                            <div id="task-name-error-${taskId}" class="text-red-500 text-sm mb-2"></div>
+                                                        </div>
+                                                    `;
+                                                    return taskTemplate;
+                                                }).join('') : ''}
+                                            </div>
+                                        </div>
+                                    `;
+                                    return itemTemplate;
+                                }).join('') : ''}
+                            </div>
+                        </div>
+                    `;
+                    sectionsContainer.insertAdjacentHTML('beforeend', sectionTemplate);
+                });
+            }
+        });
+        document.getElementById('contractModal').classList.add('modal-open');
+    }
+
+    window.closeContractModal = function() {
+        document.getElementById('contractModal').classList.remove('modal-open');
+        // Clear form data
+        document.getElementById('contract-form').reset();
+        document.getElementById('contractModalTitle').innerText = 'Add a New Contract';
+        document.getElementById('contract_id').value = '';
+        document.getElementById('sections-container').innerHTML = '';
+    }
+
     window.addSection = function() {
         const sectionId = Math.random().toString(36).substr(2, 9);
         const sectionTemplate = `
-            <div class="section-block form-control w-full  m-2  p-4">
+            <div class="section-block form-control w-full m-2 p-4">
                 <div class="flex justify-between items-center">
                     <input type="text" name="section_name" placeholder="Section Name" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
                     <button type="button" class="btn btn-sm btn-primary m-2" onclick="addItem(this)">+ Item</button>
@@ -350,7 +426,7 @@ document.addEventListener("DOMContentLoaded", function() {
     window.addItem = function(button) {
         const itemId = Math.random().toString(36).substr(2, 9);
         const itemTemplate = `
-            <div class="item-block form-control w-full  m-2  p-2">
+            <div class="item-block form-control w-full m-2 p-2">
                 <div class="flex justify-between items-center">
                     <input type="text" name="item_name" placeholder="Item Name" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
                     <button type="button" class="btn btn-sm btn-primary m-2" onclick="addTask(this)">+ Task</button>
@@ -365,7 +441,7 @@ document.addEventListener("DOMContentLoaded", function() {
     window.addTask = function(button) {
         const taskId = Math.random().toString(36).substr(2, 9);
         const taskTemplate = `
-            <div class="task-block form-control w-full max-w-xs m-2 ">
+            <div class="task-block form-control w-full max-w-xs m-2">
                 <div class="flex justify-between items-center">
                     <input type="text" name="task_name" placeholder="Task Name" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
                     <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">Delete Task</button>
@@ -375,6 +451,9 @@ document.addEventListener("DOMContentLoaded", function() {
         button.closest('.item-block').querySelector('.tasks-container').insertAdjacentHTML('beforeend', taskTemplate);
     }
 });
+
+
+
 </script>
 
 {% endblock %}
