@@ -432,7 +432,7 @@ document.addEventListener("DOMContentLoaded", function() {
     window.addSection = function() {
         const sectionId = Math.random().toString(36).substr(2, 9);
         const sectionTemplate = `
-            <div class="section-block form-control w-full max-w-xs m-2 border p-4">
+            <div class="section-block form-control w-full  m-2  p-4">
                 <div class="flex justify-between items-center">
                     <input type="text" name="section_name" placeholder="Section Name" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
                     <button type="button" class="btn btn-sm btn-primary m-2" onclick="addItem(this)">+ Item</button>
@@ -448,7 +448,7 @@ document.addEventListener("DOMContentLoaded", function() {
     window.addItem = function(button) {
         const itemId = Math.random().toString(36).substr(2, 9);
         const itemTemplate = `
-            <div class="item-block form-control w-full max-w-xs m-2 border p-2">
+            <div class="item-block form-control w-full  m-2  p-2">
                 <div class="flex justify-between items-center">
                     <input type="text" name="item_name" placeholder="Item Name" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
                     <button type="button" class="btn btn-sm btn-primary m-2" onclick="addTask(this)">+ Task</button>
@@ -464,7 +464,7 @@ document.addEventListener("DOMContentLoaded", function() {
     window.addTask = function(button) {
         const taskId = Math.random().toString(36).substr(2, 9);
         const taskTemplate = `
-            <div class="task-block form-control w-full max-w-xs m-2 border p-2">
+            <div class="task-block form-control w-full max-w-xs m-2 ">
                 <div class="flex justify-between items-center">
                     <input type="text" name="task_name" placeholder="Task Name" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
                     <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">Delete Task</button>
