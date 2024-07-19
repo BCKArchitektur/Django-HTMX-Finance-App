@@ -228,3 +228,31 @@ class ProjectPresetAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'project__project_name', 'default_contract__contract_name', 'default_section__section_name', 'default_Item__Item_name', 'default_task__task_name')
 
 admin.site.register(ProjectPreset, ProjectPresetAdmin)
+
+
+
+
+from .models import SectionLibrary, ItemLibrary, TaskLibrary
+
+class ItemLibraryInline(admin.TabularInline):
+    model = ItemLibrary
+    extra = 1
+
+class TaskLibraryInline(admin.TabularInline):
+    model = TaskLibrary
+    extra = 1
+
+@admin.register(SectionLibrary)
+class SectionLibraryAdmin(admin.ModelAdmin):
+    inlines = [ItemLibraryInline]
+
+@admin.register(ItemLibrary)
+class ItemLibraryAdmin(admin.ModelAdmin):
+    inlines = [TaskLibraryInline]
+    list_display = ('name', 'section')
+    list_filter = ('section',)
+
+@admin.register(TaskLibrary)
+class TaskLibraryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'item')
+    list_filter = ('item',)

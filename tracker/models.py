@@ -181,3 +181,24 @@ class UserPreset(models.Model):
     default_task = models.ForeignKey('Task', on_delete=models.SET_NULL, null=True, blank=True)
     def __str__(self):
         return f"Preset for {self.user.username} - {self.project.project_name}"
+    
+
+class SectionLibrary(models.Model):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+class ItemLibrary(models.Model):
+    section = models.ForeignKey(SectionLibrary, related_name='items', on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+class TaskLibrary(models.Model):
+    item = models.ForeignKey(ItemLibrary, related_name='tasks', on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name

@@ -127,10 +127,20 @@
                 <a href="#" class="btn" onclick="closeContractModal()">Cancel</a>
             </div>
         </form>
+        <!-- Section Library -->
+        <div id="sectionLibrary" class="mt-8">
+            <h3 class="text-lg font-semibold">Library</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for section in section_library %}
+                <div class="p-4 border rounded-lg shadow-md draggable" draggable="true" ondragstart="event.dataTransfer.setData('sectionId', '{{ section.id }}');">
+                    <h4 class="font-semibold">{{ section.name }}</h4>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
     </div>
 </div>
-
-
 
 <!-- Add/Edit Users Modal -->
 <div id="addUsersModal" class="modal">
@@ -199,11 +209,16 @@
 document.addEventListener("DOMContentLoaded", function() {
     function fetchData(url, callback) {
         fetch(url)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => callback(data))
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error: ' + error);
+                alert('Error fetching data: ' + error.message);
             });
     }
 
@@ -218,7 +233,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
             data.users.forEach(user => {
                 const th = document.createElement('th');
-                th.textContent = user.username;
+                th.innerHTML = `
+                    ${user.username}<br>
+                    <input type="checkbox" onclick="toggleUserCheckboxes(${user.id}, this)">
+                `;
                 thead.appendChild(th);
             });
 
@@ -237,6 +255,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         checkbox.type = 'checkbox';
                         checkbox.name = `user_item_${user.id}_${item.id}`;
                         checkbox.checked = item.users.includes(user.id);
+                        checkbox.classList.add(`user-checkbox-${user.id}`);
                         td.appendChild(checkbox);
                         tr.appendChild(td);
                     });
@@ -270,6 +289,15 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         });
     }
+
+    function toggleUserCheckboxes(userId, masterCheckbox) {
+        const checkboxes = document.querySelectorAll(`.user-checkbox-${userId}`);
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = masterCheckbox.checked;
+        });
+    }
+
+    window.toggleUserCheckboxes = toggleUserCheckboxes;
 
     function handleFormSubmission(event, form, url) {
         event.preventDefault();
@@ -448,6 +476,59 @@ document.addEventListener("DOMContentLoaded", function() {
             </div>`;
         button.closest('.item-block').querySelector('.tasks-container').insertAdjacentHTML('beforeend', taskTemplate);
     }
+
+    window.addSectionFromLibrary = function(sectionId, sectionName, projectNo) {
+        fetchData(`/ajax/get-library-section/${sectionId}/`, data => {
+            const sectionTemplate = `
+                <div class="section-block form-control w-full m-2 p-4">
+                    <div class="flex justify-between items-center">
+                        <input type="text" name="section_name" value="${data.section_name}-${projectNo}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error" hx-swap="innerHTML">
+                        <button type="button" class="btn btn-sm btn-primary m-2" onclick="addItem(this)">+ Item</button>
+                        <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
+                    </div>
+                    <div id="section-name-error" class="text-red-500 text-sm mb-2"></div>
+                    <div class="items-container">
+                        ${data.items.map(item => {
+                            const itemId = Math.random().toString(36).substr(2, 9);
+                            return `
+                                <div class="item-block form-control w-full m-2 p-2">
+                                    <div class="flex justify-between items-center">
+                                        <input type="text" name="item_name" value="${item.item_name}-${projectNo}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_item_name' %}" hx-trigger="blur" hx-target="#item-name-error" hx-swap="innerHTML">
+                                        <button type="button" class="btn btn-sm btn-primary m-2" onclick="addTask(this)">+ Task</button>
+                                        <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
+                                    </div>
+                                    <div id="item-name-error" class="text-red-500 text-sm m-1"></div>
+                                    <div class="tasks-container">
+                                        ${item.tasks.map(task => `
+                                            <div class="task-block form-control w-full max-w-xs m-2">
+                                                <div class="flex justify-between items-center">
+                                                    <input type="text" name="task_name" value="${task.task_name}-${projectNo}" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error" hx-swap="innerHTML">
+                                                    <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">Delete Task</button>
+                                                </div>
+                                                <div id="task-name-error" class="text-red-500 text-sm mb-2"></div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+            document.getElementById('sections-container').insertAdjacentHTML('beforeend', sectionTemplate);
+        });
+    }
+
+    document.addEventListener('dragover', function(event) {
+        event.preventDefault();
+    });
+
+    document.getElementById('sections-container').addEventListener('drop', function(event) {
+        event.preventDefault();
+        const sectionId = event.dataTransfer.getData('sectionId');
+        const projectNo = '{{ project.project_no }}';
+        addSectionFromLibrary(sectionId, sectionId, projectNo);
+    });
 });
 </script>
 {% endblock %}

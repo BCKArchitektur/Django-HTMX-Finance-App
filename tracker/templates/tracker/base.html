@@ -27,6 +27,13 @@
 <body class="{% if user.is_authenticated and user.dark_mode %}dark{% endif %}">
 
     {% include 'tracker/partials/navbar.html' %}
+    {% if messages %}
+        <div>
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
 
     <div class="max-w-screen-lg mx-auto p-4">
 

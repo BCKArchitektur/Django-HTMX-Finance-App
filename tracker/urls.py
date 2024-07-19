@@ -20,7 +20,7 @@ urlpatterns = [
     path('toggle-dark-mode/', views.toggle_dark_mode, name='toggle_dark_mode'),
     path('project-details/<int:project_id>/', views.project_details, name='project_details'),
     path("add-project/", views.add_project, name='add_project'),
-    path('edit-contract/', views.edit_contract, name='edit_contract'),
+    # path('edit-contract/', views.edit_contract, name='edit_contract'),
     path('check-task-name/', views.check_task_name, name='check_task_name'),
     path('check-section-name/', views.check_section_name, name='check_section_name'),
     path('check-item-name/', views.check_item_name, name='check_item_name'),
@@ -29,4 +29,6 @@ urlpatterns = [
     path("add-budget/", views.add_budget, name='add_budget'),
     path('ajax/load-item-users/', views.load_item_users, name='load_item_users'),
     path('ajax/load-item-budget/', views.load_item_budget, name='load_item_budget'),
+    path('edit-project/<int:project_id>/', views.edit_project, name='edit_project'),
+    path('ajax/get-library-section/<int:section_id>/', views.get_library_section, name='get_library_section'),
 ]
