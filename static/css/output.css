@@ -4771,6 +4771,37 @@ details.collapse summary::-webkit-details-marker {
   }
 }
 
+.hover\:font-semibold:hover {
+  font-weight: 600;
+}
+
+.hover\:font-extrabold:hover {
+  font-weight: 800;
+}
+
+.hover\:font-bold:hover {
+  font-weight: 700;
+}
+
+.hover\:font-black:hover {
+  font-weight: 900;
+}
+
+.hover\:text-success-content:hover {
+  --tw-text-opacity: 1;
+  color: var(--fallback-suc,oklch(var(--suc)/var(--tw-text-opacity)));
+}
+
+.hover\:text-accent:hover {
+  --tw-text-opacity: 1;
+  color: var(--fallback-a,oklch(var(--a)/var(--tw-text-opacity)));
+}
+
+.hover\:text-secondary:hover {
+  --tw-text-opacity: 1;
+  color: var(--fallback-s,oklch(var(--s)/var(--tw-text-opacity)));
+}
+
 .hover\:underline:hover {
   text-decoration-line: underline;
 }
