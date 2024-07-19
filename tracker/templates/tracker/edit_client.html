@@ -1,0 +1,48 @@
+{% extends 'tracker/base.html' %}
+
+{% block content %}
+<div class="container mx-auto">
+    <h3 class="font-bold text-lg m-4">Edit Client</h3>
+    <form id="edit-client-form" method="post" action="{% url 'edit_client' client.id %}">
+        {% csrf_token %}
+        
+        <div class="form-control w-full max-w-xs">
+            <input type="text" name="client_name" placeholder="Client Name" class="input input-bordered w-full max-w-xs m-2" value="{{ client.client_name }}" id="id_client_name">
+        </div>
+        
+        <div class="form-control w-full max-w-xs">
+            <input type="email" name="client_mail" placeholder="Client Email" class="input input-bordered w-full max-w-xs m-2" value="{{ client.client_mail }}" id="id_client_mail">
+        </div>
+        
+        <div class="form-control w-full max-w-xs">
+            <input type="text" name="firm_name" placeholder="Firm Name" class="input input-bordered w-full max-w-xs m-2" value="{{ client.firm_name }}" id="id_firm_name">
+        </div>
+        
+        <div class="form-control w-full max-w-xs">
+            <input type="text" name="street_address" placeholder="Street Address" class="input input-bordered w-full max-w-xs m-2" value="{{ client.street_address }}" id="id_street_address">
+        </div>
+        
+        <div class="form-control w-full max-w-xs">
+            <input type="text" name="postal_code" placeholder="Postal Code" class="input input-bordered w-full max-w-xs m-2" value="{{ client.postal_code }}" id="id_postal_code">
+        </div>
+        
+        <div class="form-control w-full max-w-xs">
+            <input type="text" name="city" placeholder="City" class="input input-bordered w-full max-w-xs m-2" value="{{ client.city }}" id="id_city">
+        </div>
+        
+        <div class="form-control w-full max-w-xs">
+            <select name="country" class="select select-bordered w-full max-w-xs m-2">
+                <option disabled>Select Country</option>
+                {% for choice in client_form.fields.country.choices %}
+                    <option value="{{ choice.0 }}" {% if client.country.id == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="modal-action">
+            <button type="submit" class="btn btn-secondary btn-sm">Save</button>
+            <a href="{% url 'projects' %}" class="btn btn-sm">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock content %}

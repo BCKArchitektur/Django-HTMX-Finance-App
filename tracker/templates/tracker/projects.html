@@ -30,8 +30,14 @@
                 {% for project in projects %}
                 <tr class="hover">
                     <th>{{ project.project_no }}</th>
-                    <td>{{ project.project_name }}</td>
-                    <td>{{ project.client_name.client_name }}</td>
+                    <td> 
+                        <a href="{% url 'edit_project' project.id %}" class="  hover:underline">
+                            {{ project.project_name }}
+                        </a>
+                    </td>
+                    <td>
+                            {{ project.client_name.client_name }}
+                    </td>
                     <td>
                         {% if project.contract.exists %}
                             <div class="badge badge-success badge-outline badge-md">Assigned</div>

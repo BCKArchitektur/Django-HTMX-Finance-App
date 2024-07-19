@@ -4771,6 +4771,10 @@ details.collapse summary::-webkit-details-marker {
   }
 }
 
+.hover\:underline:hover {
+  text-decoration-line: underline;
+}
+
 .focus\:outline-none:focus {
   outline: 2px solid transparent;
   outline-offset: 2px;
