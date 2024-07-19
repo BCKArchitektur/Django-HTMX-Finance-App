@@ -92,12 +92,10 @@
                         {% endfor %}
                     </td>
                     <td>
-
-                        <button class="btn btn-sm btn-primary btn-outline" onclick="openAddUsersModal({{ contract.id }})">✎ Users</button>
-                        <button class="btn btn-sm btn-primary btn-outline" onclick="openAddBudgetModal({{ contract.id }})">✎ Budget</button>
-                        <button class="btn btn-sm btn-secondary btn-outline" onclick="openEditContractModal({{ contract.id }})">✎ Contract</button>
+                        <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openAddUsersModal({{ contract.id }})">✎ Users</button>
+                        <button class="btn btn-sm btn-primary btn-outline  m-1" onclick="openAddBudgetModal({{ contract.id }})">✎ Budget</button>
+                        <button class="btn btn-sm btn-secondary btn-outline  m-1" onclick="openEditContractModal({{ contract.id }})">✎ Contract</button>
                     </td>
-                    
                 </tr>
                 {% empty %}
                 <tr>
@@ -164,7 +162,6 @@
     </div>
 </div>
 
-
 <!-- Add/Edit Budget Modal -->
 <div id="addBudgetModal" class="modal">
     <div class="modal-box max-w-5xl">
@@ -194,7 +191,6 @@
         </form>
     </div>
 </div>
-
 
 {% endblock %}
 
@@ -345,6 +341,7 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('contractModalTitle').innerText = 'Edit Contract';
         document.getElementById('contract_id').value = contractId;
         fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
+            console.log('Fetched Data:', data); // Debugging line to check the fetched data
             document.getElementById('id_contract_name').value = data.contract_name;
             const sectionsContainer = document.getElementById('sections-container');
             sectionsContainer.innerHTML = '';
@@ -362,6 +359,19 @@ document.addEventListener("DOMContentLoaded", function() {
                             <div class="items-container">
                                 ${section.items ? section.items.map(item => {
                                     const itemId = Math.random().toString(36).substr(2, 9);
+                                    const tasksHTML = item.tasks ? item.tasks.map(task => {
+                                        const taskId = Math.random().toString(36).substr(2, 9);
+                                        const taskTemplate = `
+                                            <div class="task-block form-control w-full max-w-xs m-2">
+                                                <div class="flex justify-between items-center">
+                                                    <input type="text" name="task_name" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
+                                                    <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">Delete Task</button>
+                                                </div>
+                                                <div id="task-name-error-${taskId}" class="text-red-500 text-sm mb-2"></div>
+                                            </div>
+                                        `;
+                                        return taskTemplate;
+                                    }).join('') : '';
                                     const itemTemplate = `
                                         <div class="item-block form-control w-full m-2 p-2">
                                             <div class="flex justify-between items-center">
@@ -371,19 +381,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                             </div>
                                             <div id="item-name-error-${itemId}" class="text-red-500 text-sm m-1"></div>
                                             <div class="tasks-container">
-                                                ${item.tasks ? item.tasks.map(task => {
-                                                    const taskId = Math.random().toString(36).substr(2, 9);
-                                                    const taskTemplate = `
-                                                        <div class="task-block form-control w-full max-w-xs m-2">
-                                                            <div class="flex justify-between items-center">
-                                                                <input type="text" name="task_name" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
-                                                                <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">Delete Task</button>
-                                                            </div>
-                                                            <div id="task-name-error-${taskId}" class="text-red-500 text-sm mb-2"></div>
-                                                        </div>
-                                                    `;
-                                                    return taskTemplate;
-                                                }).join('') : ''}
+                                                ${tasksHTML}
                                             </div>
                                         </div>
                                     `;
@@ -451,9 +449,5 @@ document.addEventListener("DOMContentLoaded", function() {
         button.closest('.item-block').querySelector('.tasks-container').insertAdjacentHTML('beforeend', taskTemplate);
     }
 });
-
-
-
 </script>
-
 {% endblock %}

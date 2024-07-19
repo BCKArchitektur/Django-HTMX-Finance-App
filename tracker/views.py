@@ -129,10 +129,6 @@ def projects(request):
     return render(request, 'tracker/projects.html', context)
 
 
-
-
-
-
 @csrf_exempt
 @login_required
 def delete_project(request, project_id):
@@ -172,7 +168,7 @@ def edit_project(request, project_id):
             else:
                 print("Project form errors:", form.errors)  # Debugging line
 
-        elif 'contract_name' in request.POST and 'contract_id' not in request.POST:
+        elif 'contract_name' in request.POST and not request.POST.get('contract_id'):
             contract_name = request.POST.get('contract_name')
             user_ids = request.POST.getlist('users')
             section_names = request.POST.getlist('section_name')
@@ -207,7 +203,7 @@ def edit_project(request, project_id):
             project.save()
             return redirect('edit_project', project_id=project.id)
 
-        elif 'contract_id' in request.POST:
+        elif request.POST.get('contract_id'):
             contract_id = request.POST['contract_id']
             contract = get_object_or_404(Contract, id=contract_id)
             contract_form = ContractForm(request.POST, instance=contract)
@@ -231,6 +227,7 @@ def edit_project(request, project_id):
         'users': users,
     }
     return render(request, 'tracker/edit_project.html', context)
+
 
 
 
@@ -508,7 +505,8 @@ def load_contract_data(request):
             'id': item.id, 
             'Item_name': item.Item_name,
             'budget': item.budget,  # Ensure budget is included here
-            'users': list(item.users.values_list('id', flat=True))  # Get user IDs for the item
+            'users': list(item.users.values_list('id', flat=True)),  # Get user IDs for the item
+            'tasks': list(item.tasks.values('id', 'task_name'))  # Include tasks for each item
         } for item in items]
         section_data.append({
             'section_name': section.section_name,
@@ -522,6 +520,7 @@ def load_contract_data(request):
     }
 
     return JsonResponse(contract_data)
+
 
 
 
