@@ -36,8 +36,8 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "widget_tweaks",
     'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
+    # 'allauth.account',
+    # 'allauth.socialaccount',
     
     # project apps
     "tracker",

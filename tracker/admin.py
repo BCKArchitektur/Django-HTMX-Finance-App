@@ -132,7 +132,7 @@ class ProjectAdmin(admin.ModelAdmin):
         return ", ".join([user.username for user in obj.user.all()])
     display_users.short_description = 'Users'
 
-admin.site.register(Project, ProjectAdmin)
+# admin.site.register(Project, ProjectAdmin)
 
 # Item Admin
 class ItemAdminForm(forms.ModelForm):
@@ -149,7 +149,7 @@ class ItemAdminForm(forms.ModelForm):
 class ItemAdmin(admin.ModelAdmin):
     form = ItemAdminForm
 
-admin.site.register(Item, ItemAdmin)
+# admin.site.register(Item, ItemAdmin)
 
 # Section Admin
 class SectionAdminForm(forms.ModelForm):
@@ -168,7 +168,7 @@ class SectionAdmin(admin.ModelAdmin):
     list_display = ('section_name', 'section_billed_hourly')
     search_fields = ('section_name', 'section_billed_hourly')
 
-admin.site.register(Section, SectionAdmin)
+# admin.site.register(Section, SectionAdmin)
 
 # Contract Admin
 class ContractAdminForm(forms.ModelForm):
@@ -185,11 +185,11 @@ class ContractAdminForm(forms.ModelForm):
 class ContractAdmin(admin.ModelAdmin):
     form = ContractAdminForm
 
-admin.site.register(Contract, ContractAdmin)
+# admin.site.register(Contract, ContractAdmin)
 
 
 # Task Admin
-@admin.register(Task)
+# @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
     list_display = ('task_name', )
     search_fields = ('task_name',)  
@@ -215,7 +215,7 @@ class UserPresetAdminForm(forms.ModelForm):
         if user:
             self.fields['project'].queryset = Project.objects.filter(user=user)
 
-@admin.register(UserPreset)
+# @admin.register(UserPreset)
 class UserPresetAdmin(admin.ModelAdmin):
     form = UserPresetAdminForm
     list_display = ('user', 'project', 'default_contract', 'default_section', 'default_Item', 'default_task')
@@ -227,7 +227,7 @@ class ProjectPresetAdmin(admin.ModelAdmin):
     list_display = ('user', 'project', 'default_contract', 'default_section', 'default_Item', 'default_task')
     search_fields = ('user__username', 'project__project_name', 'default_contract__contract_name', 'default_section__section_name', 'default_Item__Item_name', 'default_task__task_name')
 
-admin.site.register(ProjectPreset, ProjectPresetAdmin)
+# admin.site.register(ProjectPreset, ProjectPresetAdmin)
 
 
 
