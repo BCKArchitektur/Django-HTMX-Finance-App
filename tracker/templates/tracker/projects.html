@@ -36,7 +36,7 @@
                         </a>
                     </td>
                     <td>
-                            {{ project.client_name.client_name }}
+                            {{ project.client_name.firm_name }}
                     </td>
                     <td>
                         {% if project.contract.exists %}
@@ -92,6 +92,7 @@
               <thead>
                 <tr>
                   <th>#</th>
+                  <th>Firm Name</th>
                   <th>Client Name</th>
                   <th>Client Address</th>
                   <th>City</th>
@@ -103,6 +104,7 @@
                 {% for client in clients %}
                 <tr class="hover">
                     <th>{{ forloop.counter }}</th>
+                    <th>{{ client.firm_name }}</th>
                     <td>{{ client.client_name }}</td>
                     <td>{{ client.street_address }}</td>
                     <td>{{ client.city }}</td>
@@ -154,7 +156,7 @@
                 <select name="client_name" class="select select-bordered w-full max-w-xs m-2">
                     <option disabled selected class="font-extralight">Select Client</option>
                     {% for client in clients %}
-                        <option value="{{ client.id }}">{{ client.client_name }}</option>
+                        <option value="{{ client.id }}">{{ client.firm_name }}</option>
                     {% endfor %}
                 </select>
             </div>

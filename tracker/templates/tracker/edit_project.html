@@ -267,7 +267,7 @@ document.addEventListener("DOMContentLoaded", function() {
             });
     }
 
-    function populateUsersTable(contractId) {
+    function populateUsersTable(contractId, projectUsers) {
         fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
             const usersTable = document.getElementById('users-table');
             const thead = usersTable.querySelector('thead tr');
@@ -276,7 +276,7 @@ document.addEventListener("DOMContentLoaded", function() {
             thead.innerHTML = '<th>NO.</th><th>SECTION</th><th>ITEM</th>';
             tbody.innerHTML = '';
 
-            data.users.forEach(user => {
+            projectUsers.forEach(user => {
                 const th = document.createElement('th');
                 th.innerHTML = `
                     ${user.username}<br>
@@ -294,7 +294,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         <td>${item.Item_name}</td>
                     `;
 
-                    data.users.forEach(user => {
+                    projectUsers.forEach(user => {
                         const td = document.createElement('td');
                         const checkbox = document.createElement('input');
                         checkbox.type = 'checkbox';
@@ -310,6 +310,9 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         });
     }
+
+
+
 
     function populateBudgetTable(contractId) {
         fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
@@ -380,9 +383,33 @@ document.addEventListener("DOMContentLoaded", function() {
 
     window.openAddUsersModal = function(contractId) {
         document.getElementById('add_users_contract_id').value = contractId;
+        const projectId = {{ project.id }}; // Ensure project.id is correctly passed here
         document.getElementById('addUsersModal').classList.add('modal-open');
-        populateUsersTable(contractId);
+        fetch(`/ajax/get-project-users/?project_id=${projectId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    console.error('Error:', data.error);
+                    alert('Error: ' + data.error);
+                } else {
+                    // Populate users table
+                    populateUsersTable(contractId, data.project_users);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching project users:', error);
+                alert('Error fetching project users: ' + error.message);
+            });
     }
+
+
+
+
 
     window.closeAddUsersModal = function() {
         document.getElementById('addUsersModal').classList.remove('modal-open');

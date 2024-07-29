@@ -291,24 +291,20 @@ def handle_project_form(request, project):
 def handle_existing_contract_form(request, project):
     contract_id = request.POST['contract_id']
     contract = get_object_or_404(Contract, id=contract_id)
-    
-    contract_data = request.POST.copy()
-    user_ids = request.POST.getlist('users')
-    contract_data.setlist('user', user_ids)
-
-    contract_form = ContractForm(contract_data, instance=contract)
+    contract_form = ContractForm(request.POST, instance=contract)
 
     if contract_form.is_valid():
         contract_form.save()
         contract_json = request.POST.get('contract_json')
-        
-        print("Received contract JSON:", contract_json)  # Debugging line
 
         if contract_json:
             try:
                 contract_data = json.loads(contract_json)
+                
+                # To keep track of all users
+                all_users = set()
 
-                # Handle section updates and additions
+                # Process sections, items, and tasks
                 for section_data in contract_data['sections']:
                     section_name = section_data['section_name']
                     section, created = Section.objects.get_or_create(section_name=section_name)
@@ -317,17 +313,26 @@ def handle_existing_contract_form(request, project):
                         item_name = item_data['item_name']
                         item, created = Item.objects.get_or_create(Item_name=item_name)
 
-                        item.tasks.clear()  # Clear existing tasks before updating
                         for task_data in item_data['tasks']:
                             task_name = task_data['task_name']
                             task, created = Task.objects.get_or_create(task_name=task_name)
-                            item.tasks.add(task)
+                            if created:
+                                item.tasks.add(task)
 
-                        section.Item.add(item)
+                        if created:
+                            section.Item.add(item)
 
-                    contract.section.add(section)
+                        # Add users of this item to the all_users set
+                        for user in item.users.all():
+                            all_users.add(user)
 
+                    if created:
+                        contract.section.add(section)
+
+                # Set all users to the contract
+                contract.user.set(all_users)
                 contract.save()
+
                 project.contract.add(contract)
                 project.save()
 
@@ -337,15 +342,15 @@ def handle_existing_contract_form(request, project):
         else:
             messages.error(request, "No contract JSON data provided.")
     else:
-        print("Contract form errors:", contract_form.errors)  # Debugging line
         messages.error(request, "Error updating contract: {}".format(contract_form.errors))
 
     return redirect('edit_project', project_id=project.id)
-
 def handle_new_contract_form(request, project):
     contract_name = request.POST.get('contract_name')
-    user_ids = request.POST.getlist('users')
-
+    
+    # Retrieve all users associated with the project
+    user_ids = project.user.values_list('id', flat=True)
+    
     # Debugging print statement
     print("POST data:", request.POST)
 
@@ -400,6 +405,7 @@ def handle_new_contract_form(request, project):
         messages.error(request, "No contract JSON data provided.")
 
     return redirect('edit_project', project_id=project.id)
+
 
 
 
@@ -798,3 +804,16 @@ def add_users_to_item(request, item_id):
         item.save()  # This will trigger the cascading update
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'fail'}, status=400)
+
+def get_project_users(request):
+    project_id = request.GET.get('project_id')
+    print(f"Received project_id: {project_id}")  # Debugging line
+    try:
+        project = Project.objects.get(id=project_id)
+        users = project.user.all()
+        user_list = [{'id': user.id, 'username': user.username} for user in users]
+        return JsonResponse({'project_users': user_list})
+    except Project.DoesNotExist:
+        return JsonResponse({'error': 'Project not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

@@ -41,7 +41,7 @@ class Client(models.Model):
     city = models.CharField(max_length=100,default='Unknown')
     country = CountryField()  # Using django-countries for country field
     def __str__(self):
-        return self.client_name
+        return self.firm_name
 
 
 #Creating Task model
