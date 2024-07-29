@@ -46,14 +46,14 @@ class Client(models.Model):
 
 #Creating Task model
 class Task(models.Model):
-    task_name = models.CharField(max_length=255, unique=True)
+    task_name = models.CharField(max_length=255, unique=False)
     def __str__(self):
         return self.task_name
 
 
 # Creating Item model
 class Item(models.Model):
-    Item_name = models.CharField(max_length=255, unique=True)
+    Item_name = models.CharField(max_length=255, unique=False)
     tasks = models.ManyToManyField(Task)
     users = models.ManyToManyField(User, blank=True)
     budget = models.FloatField(default=0.0)
@@ -74,7 +74,7 @@ class Item(models.Model):
 
 #Creating Section model
 class Section(models.Model):
-    section_name = models.CharField(max_length=255, unique=True)
+    section_name = models.CharField(max_length=255, unique=False)
     user = models.ManyToManyField(User)
     allocated_budget = models.FloatField(default='0')
     Item = models.ManyToManyField(Item)
@@ -99,7 +99,7 @@ class Section(models.Model):
 
 #Creating Contract model
 class Contract(models.Model):
-    contract_name = models.CharField(max_length=255, unique=True)
+    contract_name = models.CharField(max_length=255, unique=False)
     user = models.ManyToManyField(User)
     section = models.ManyToManyField(Section)
 

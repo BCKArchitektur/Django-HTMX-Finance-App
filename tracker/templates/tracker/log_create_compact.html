@@ -15,9 +15,10 @@
         data-Item-name="Allgemein" 
         data-Item-id="1" 
         data-task-id="1">
-        
         <div class="card-body">
-            <h2 class="card-title font-bold">Büro</h2>
+            <div class="tooltip" data-tip="Fills up the rest.">
+                <h2 class="card-title font-bold">Büro</h2>
+            </div>
             <div class="task-container flex flex-wrap gap-2 mb-2"></div>
             <input class="input input-bordered input-xs w-full text-xs mb-2" type="text" name="custom_tasks" id="custom-tasks-fixed" placeholder="Custom tasks">
             <form>
@@ -52,7 +53,7 @@
           <p class=" from-info-content text-xs font-extralight text-clip  max-w-4 h-5">{% if preset.default_section %}{{ preset.default_section.section_name }}{% else %}N/A{% endif %}</p>
 
             <div class="task-container flex flex-wrap gap-2 mb-2"></div>
-          <div class="join justify-between items-center">  
+        <div class="join justify-between items-center">  
             <input class="input input-bordered input-xs w-2/3 text-xs mb-2" type="text" name="custom_tasks" id="custom-tasks-{{ forloop.counter }}" placeholder="Custom tasks">
             <div class="mb-2">
                 <select id="time-select-{{ forloop.counter }}" name="time-select-{{ forloop.counter }}" class="select select-xs select-bordered w-full text-xs">
@@ -76,7 +77,7 @@
                     <option value="7.50">7hr 30min</option>
                     <option value="8.00">8hr</option>
                 </select>
-            </div>
+        </div>
           </div>
             <form>
                 {% csrf_token %}
