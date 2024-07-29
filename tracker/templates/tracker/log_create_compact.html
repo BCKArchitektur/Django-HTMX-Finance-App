@@ -37,65 +37,78 @@
     <div class="divider lg:divider-horizontal"></div>
     
     {% for preset in project_presets %}
-    <div class="card bg-base-100 w-96 h-56 shadow-md  preset-card" id="preset-{{ preset.id }}" 
-         data-project-name="{{ preset.project.project_name }}" 
-         data-contract-name="{{ preset.default_contract.contract_name }}" 
-         data-section-name="{{ preset.default_section.section_name }}" 
-         data-Item-name="{{ preset.default_Item.Item_name }}" 
-         data-Item-id="{{ preset.default_Item.id }}" 
-         data-task-id="{{ preset.default_task.id }}">
-        
+    <div class="card bg-base-100 w-96 h-56 shadow-md preset-card" id="preset-{{ preset.id }}" 
+    data-project-name="{{ preset.project.project_name }}" 
+    data-contract-name="{{ preset.default_contract.contract_name }}" 
+    data-section-name="{{ preset.default_section.section_name }}" 
+    data-Item-name="{{ preset.default_Item.Item_name }}" 
+    data-Item-id="{{ preset.default_Item.id }}" 
+    data-task-id="{{ preset.default_task.id }}">
+   
+   <div class="card-body p-2">
+   <div class="join"> 
+        <h2 class="card-title font-semibold text-lg p-0">{{ preset.project.project_name }}</h2>
+        {% if preset.default_section.section_billed_hourly %}
+            <div class="tooltip" data-tip="Billed Hourly">
+                <div class="badge badge-error badge-xs"></div>
+            </div>
+        {% endif %}
+   </div>
 
-        <div class="card-body p-2">
-            <div class="join">
-                <h2 class="card-title font-bold p-0">{{ preset.project.project_name }}</h2>
-            </div> 
-            <div class="sm:tooltip" data-tip="{% if preset.default_section %}{{ preset.default_section.section_name }}{% else %}N/A{% endif %}">
-                <p class=" from-info-content  text-xs font-extralight line-clamp-1">{% if preset.default_section %}{{ preset.default_section.section_name }}{% else %}N/A{% endif %}</p>
-              </div>
-            <div class="task-container flex flex-wrap gap-1 mb-1"></div>
-            <div class="join justify-between items-center">  
-            <input class="input input-bordered input-xs w-2/3 text-xs mb-2" type="text" name="custom_tasks" id="custom-tasks-{{ forloop.counter }}" placeholder="Custom tasks">
-            <div class="mb-2">
-                <select id="time-select-{{ forloop.counter }}" name="time-select-{{ forloop.counter }}" class="select select-xs select-bordered w-full text-xs">
-                    <option value="">Time</option>
-                    <option value="0.25">15min</option>
-                    <option value="0.50">30min</option>
-                    <option value="0.75">45min</option>
-                    <option value="1.00">1hr</option>
-                    <option value="1.50">1hr 30min</option>
-                    <option value="2.00">2hr</option>
-                    <option value="2.50">2hr 30min</option>
-                    <option value="3.00">3hr</option>
-                    <option value="3.50">3hr 30min</option>
-                    <option value="4.00">4hr</option>
-                    <option value="4.50">4hr 30min</option>
-                    <option value="5.00">5hr</option>
-                    <option value="5.50">5hr 30min</option>
-                    <option value="6.00">6hr</option>
-                    <option value="6.50">6hr 30min</option>
-                    <option value="7.00">7hr</option>
-                    <option value="7.50">7hr 30min</option>
-                    <option value="8.00">8hr</option>
-                </select>
-        </div>
-          </div>
-            <form>
-                {% csrf_token %}
-                {% for field in form %}
-                    <div style="display: none;">
-                        {{ field.errors }}
-                        {{ field }}
-                    </div>
-                {% endfor %}
-                <button type="submit" class="btn btn-xs btn-primary   w-full">Submit</button>
-            </form>
-        </div>
-    </div>
-    {% empty %}
-    <div class="card bg-primary text-primary-content w-80 p-4">
-        <p>No logs have been added yet.</p>
-    </div>
+       <div class="sm:tooltip" data-tip="{% if preset.default_section %}{{ preset.default_section.section_name }}{% else %}N/A{% endif %}">
+           <p class="from-info-content text-xs font-extralight line-clamp-1">
+               {% if preset.default_section %}
+                   {{ preset.default_section.section_name }}
+
+               {% else %}
+                   N/A
+               {% endif %}
+           </p>
+       </div>
+       <div class="task-container flex flex-wrap gap-1 mb-1"></div>
+       <div class="join justify-between items-center">  
+           <input class="input input-bordered input-xs w-2/3 text-xs mb-2" type="text" name="custom_tasks" id="custom-tasks-{{ forloop.counter }}" placeholder="Custom tasks">
+           <div class="mb-2">
+               <select id="time-select-{{ forloop.counter }}" name="time-select-{{ forloop.counter }}" class="select select-xs select-bordered w-full text-xs">
+                   <option value="">Time</option>
+                   <option value="0.25">15min</option>
+                   <option value="0.50">30min</option>
+                   <option value="0.75">45min</option>
+                   <option value="1.00">1hr</option>
+                   <option value="1.50">1hr 30min</option>
+                   <option value="2.00">2hr</option>
+                   <option value="2.50">2hr 30min</option>
+                   <option value="3.00">3hr</option>
+                   <option value="3.50">3hr 30min</option>
+                   <option value="4.00">4hr</option>
+                   <option value="4.50">4hr 30min</option>
+                   <option value="5.00">5hr</option>
+                   <option value="5.50">5hr 30min</option>
+                   <option value="6.00">6hr</option>
+                   <option value="6.50">6hr 30min</option>
+                   <option value="7.00">7hr</option>
+                   <option value="7.50">7hr 30min</option>
+                   <option value="8.00">8hr</option>
+               </select>
+           </div>
+       </div>
+       <form>
+           {% csrf_token %}
+           {% for field in form %}
+               <div style="display: none;">
+                   {{ field.errors }}
+                   {{ field }}
+               </div>
+           {% endfor %}
+           <button type="submit" class="btn btn-xs btn-primary w-full">Submit</button>
+       </form>
+   </div>
+</div>
+{% empty %}
+<div class="card bg-primary text-primary-content w-80 p-4">
+   <p>No logs have been added yet.</p>
+</div>
+
     {% endfor %}
 </div>
 
