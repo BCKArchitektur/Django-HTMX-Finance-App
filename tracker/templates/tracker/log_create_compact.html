@@ -47,13 +47,14 @@
         
 
         <div class="card-body p-2">
-          <div class="join">
-            <h2 class="card-title font-bold p-0">{{ preset.project.project_name }}</h2>
-          </div> 
-          <p class=" from-info-content text-xs font-extralight text-clip  max-w-4 h-5">{% if preset.default_section %}{{ preset.default_section.section_name }}{% else %}N/A{% endif %}</p>
-
+            <div class="join">
+                <h2 class="card-title font-bold p-0">{{ preset.project.project_name }}</h2>
+            </div> 
+            <div class="sm:tooltip" data-tip="{% if preset.default_section %}{{ preset.default_section.section_name }}{% else %}N/A{% endif %}">
+                <p class=" from-info-content  text-xs font-extralight line-clamp-1">{% if preset.default_section %}{{ preset.default_section.section_name }}{% else %}N/A{% endif %}</p>
+              </div>
             <div class="task-container flex flex-wrap gap-2 mb-2"></div>
-        <div class="join justify-between items-center">  
+            <div class="join justify-between items-center">  
             <input class="input input-bordered input-xs w-2/3 text-xs mb-2" type="text" name="custom_tasks" id="custom-tasks-{{ forloop.counter }}" placeholder="Custom tasks">
             <div class="mb-2">
                 <select id="time-select-{{ forloop.counter }}" name="time-select-{{ forloop.counter }}" class="select select-xs select-bordered w-full text-xs">
