@@ -207,6 +207,51 @@
 {% block extra_scripts %}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+    function buildContractJSON() {
+        let contract = {
+            contract_name: document.getElementById('id_contract_name').value,
+            sections: []
+        };
+
+        document.querySelectorAll('.section-block').forEach(sectionBlock => {
+            let section = {
+                section_name: sectionBlock.querySelector('.section-name').value,
+                items: []
+            };
+
+            sectionBlock.querySelectorAll('.item-block').forEach(itemBlock => {
+                let item = {
+                    item_name: itemBlock.querySelector('.item-name').value,
+                    tasks: []
+                };
+
+                itemBlock.querySelectorAll('.task-block').forEach(taskBlock => {
+                    let task = {
+                        task_name: taskBlock.querySelector('.task-name').value
+                    };
+                    item.tasks.push(task);
+                });
+
+                section.items.push(item);
+            });
+
+            contract.sections.push(section);
+        });
+
+        return contract;
+    }
+
+    function addHiddenInputToForm() {
+        let contractJSON = buildContractJSON();
+        let jsonInput = document.createElement('input');
+        jsonInput.type = 'hidden';
+        jsonInput.name = 'contract_json';
+        jsonInput.value = JSON.stringify(contractJSON);
+        document.getElementById('contract-form').appendChild(jsonInput);
+    }
+
+
+
     function fetchData(url, callback) {
         fetch(url)
             .then(response => {
@@ -432,15 +477,38 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('contractModalTitle').innerText = 'Add a New Contract';
         document.getElementById('contract_id').value = '';
         document.getElementById('sections-container').innerHTML = '';
+
+        // Optional: Remove any hidden JSON inputs if they exist
+        let jsonInput = document.querySelector('input[name="contract_json"]');
+        if (jsonInput) {
+            jsonInput.remove();
+        }
     }
+
+    document.getElementById('contract-form').addEventListener('submit', function(event) {
+        addHiddenInputToForm();
+
+        // Collect user IDs from the checkboxes
+        let userIds = [];
+        document.querySelectorAll('.user-checkbox:checked').forEach(checkbox => {
+            userIds.push(checkbox.value);
+        });
+
+        let userInput = document.createElement('input');
+        userInput.type = 'hidden';
+        userInput.name = 'users';
+        userInput.value = userIds.join(',');
+        document.getElementById('contract-form').appendChild(userInput);
+    });
+
 
     window.addSection = function() {
         const sectionId = Math.random().toString(36).substr(2, 9);
         const sectionTemplate = `
             <div class="section-block form-control w-full m-2 p-4">
                 <div class="flex justify-between items-center">
-                    <input type="text" name="section_name" placeholder="Section Name" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
-                    <button type="button" class="btn btn-sm btn-primary m-2" onclick="addItem(this)">+ Item</button>
+                    <input type="text" name="sections[${sectionId}][section_name]" placeholder="Section Name" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
+                    <button type="button" class="btn btn-sm btn-primary m-2" onclick="addItem(this, '${sectionId}')">+ Item</button>
                     <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
                 </div>
                 <div id="section-name-error-${sectionId}" class="text-red-500 text-sm mb-2"></div>
@@ -449,32 +517,35 @@ document.addEventListener("DOMContentLoaded", function() {
         document.querySelector('#sections-container').insertAdjacentHTML('beforeend', sectionTemplate);
     }
 
-    window.addItem = function(button) {
-        const sectionIndex = [...document.querySelectorAll('.section-block')].indexOf(button.closest('.section-block'));
+
+    window.addItem = function(button, sectionId) {
         const itemId = Math.random().toString(36).substr(2, 9);
         const itemTemplate = `
             <div class="item-block form-control w-full m-2 p-2">
                 <div class="flex justify-between items-center">
-                    <input type="text" name="section[${sectionIndex}][item][${itemId}][item_name]" placeholder="Item Name" class="input input-sm input-bordered w-full m-2 item-name">
-                    <button type="button" class="btn btn-sm btn-primary m-2" onclick="addTask(this, ${sectionIndex}, '${itemId}')">+ Task</button>
+                    <input type="text" name="sections[${sectionId}][items][${itemId}][item_name]" placeholder="Item Name" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
+                    <button type="button" class="btn btn-sm btn-primary m-2" onclick="addTask(this, '${sectionId}', '${itemId}')">+ Task</button>
                     <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
                 </div>
+                <div id="item-name-error-${itemId}" class="text-red-500 text-sm m-1"></div>
                 <div class="tasks-container"></div>
             </div>`;
         button.closest('.section-block').querySelector('.items-container').insertAdjacentHTML('beforeend', itemTemplate);
     }
 
-    window.addTask = function(button, sectionIndex, itemId) {
+    window.addTask = function(button, sectionId, itemId) {
         const taskId = Math.random().toString(36).substr(2, 9);
         const taskTemplate = `
             <div class="task-block form-control w-full max-w-xs m-2">
                 <div class="flex justify-between items-center">
-                    <input type="text" name="section[${sectionIndex}][item][${itemId}][task][${taskId}][task_name]" placeholder="Task Name" class="input input-sm input-bordered w-full m-2 task-name">
+                    <input type="text" name="sections[${sectionId}][items][${itemId}][tasks][${taskId}][task_name]" placeholder="Task Name" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
                     <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">Delete Task</button>
                 </div>
+                <div id="task-name-error-${taskId}" class="text-red-500 text-sm mb-2"></div>
             </div>`;
         button.closest('.item-block').querySelector('.tasks-container').insertAdjacentHTML('beforeend', taskTemplate);
     }
+
 
 
     window.addSectionFromLibrary = function(sectionId, sectionName, projectNo) {
@@ -529,6 +600,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const projectNo = '{{ project.project_no }}';
         addSectionFromLibrary(sectionId, sectionId, projectNo);
     });
+
 });
 </script>
 {% endblock %}

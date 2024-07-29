@@ -287,44 +287,123 @@ def handle_project_form(request, project):
         messages.error(request, "Error updating project: {}".format(form.errors))
     return redirect('edit_project', project_id=project.id)
 
-def handle_new_contract_form(request, project):
-    contract_name = request.POST.get('contract_name')
-    user_ids = request.POST.getlist('users')
-    section_names = request.POST.getlist('section_name')
-    item_names = request.POST.getlist('item_name')
-    task_names = request.POST.getlist('task_name')
-
-    contract = Contract.objects.create(contract_name=contract_name)
-    contract.user.set(user_ids)
-
-    for section_name in section_names:
-        section, _ = Section.objects.get_or_create(section_name=section_name)
-        for item_name in item_names:
-            item, _ = Item.objects.get_or_create(Item_name=item_name)
-            for task_name in task_names:
-                task, _ = Task.objects.get_or_create(task_name=task_name)
-                item.tasks.add(task)
-            section.Item.add(item)
-        contract.section.add(section)
-
-    contract.save()
-    project.contract.add(contract)
-    project.save()
-    messages.success(request, "New contract added successfully.")
-    return redirect('edit_project', project_id=project.id)
 
 def handle_existing_contract_form(request, project):
     contract_id = request.POST['contract_id']
     contract = get_object_or_404(Contract, id=contract_id)
-    contract_form = ContractForm(request.POST, instance=contract)
+    
+    contract_data = request.POST.copy()
+    user_ids = request.POST.getlist('users')
+    contract_data.setlist('user', user_ids)
+
+    contract_form = ContractForm(contract_data, instance=contract)
+
     if contract_form.is_valid():
         contract_form.save()
-        # Update sections, items, and tasks
-        update_contract_details(request, contract)
-        messages.success(request, "Contract updated successfully.")
+        contract_json = request.POST.get('contract_json')
+        
+        print("Received contract JSON:", contract_json)  # Debugging line
+
+        if contract_json:
+            try:
+                contract_data = json.loads(contract_json)
+
+                # Handle section updates and additions
+                for section_data in contract_data['sections']:
+                    section_name = section_data['section_name']
+                    section, created = Section.objects.get_or_create(section_name=section_name)
+
+                    for item_data in section_data['items']:
+                        item_name = item_data['item_name']
+                        item, created = Item.objects.get_or_create(Item_name=item_name)
+
+                        item.tasks.clear()  # Clear existing tasks before updating
+                        for task_data in item_data['tasks']:
+                            task_name = task_data['task_name']
+                            task, created = Task.objects.get_or_create(task_name=task_name)
+                            item.tasks.add(task)
+
+                        section.Item.add(item)
+
+                    contract.section.add(section)
+
+                contract.save()
+                project.contract.add(contract)
+                project.save()
+
+                messages.success(request, "Contract updated successfully.")
+            except json.JSONDecodeError:
+                messages.error(request, "Error decoding the contract JSON data.")
+        else:
+            messages.error(request, "No contract JSON data provided.")
     else:
+        print("Contract form errors:", contract_form.errors)  # Debugging line
         messages.error(request, "Error updating contract: {}".format(contract_form.errors))
+
     return redirect('edit_project', project_id=project.id)
+
+def handle_new_contract_form(request, project):
+    contract_name = request.POST.get('contract_name')
+    user_ids = request.POST.getlist('users')
+
+    # Debugging print statement
+    print("POST data:", request.POST)
+
+    contract = Contract.objects.create(contract_name=contract_name)
+    contract.user.set(user_ids)
+
+    contract_json = request.POST.get('contract_json')
+    
+    print("Received contract JSON:", contract_json)  # Debugging line
+
+    if contract_json:
+        try:
+            contract_data = json.loads(contract_json)
+            
+            for section_data in contract_data['sections']:
+                section_name = section_data['section_name']
+                section, created = Section.objects.update_or_create(
+                    section_name=section_name,
+                    defaults={'section_name': section_name}
+                )
+                print("Processed section:", section_name)  # Debugging line
+
+                for item_data in section_data['items']:
+                    item_name = item_data['item_name']
+                    item, created = Item.objects.update_or_create(
+                        Item_name=item_name,
+                        defaults={'Item_name': item_name}
+                    )
+                    print("Processed item:", item_name)  # Debugging line
+
+                    for task_data in item_data['tasks']:
+                        task_name = task_data['task_name']
+                        task, created = Task.objects.update_or_create(
+                            task_name=task_name,
+                            defaults={'task_name': task_name}
+                        )
+                        print("Processed task:", task_name)  # Debugging line
+                        item.tasks.add(task)
+
+                    section.Item.add(item)
+
+                contract.section.add(section)
+
+            contract.save()
+            project.contract.add(contract)
+            project.save()
+
+            messages.success(request, "New contract added successfully.")
+        except json.JSONDecodeError:
+            messages.error(request, "Error decoding the contract JSON data.")
+    else:
+        messages.error(request, "No contract JSON data provided.")
+
+    return redirect('edit_project', project_id=project.id)
+
+
+
+
 
 def update_contract_details(request, contract):
     section_names = request.POST.getlist('section_name')
@@ -357,7 +436,6 @@ def edit_client(request, client_id):
     else:
         form = ClientForm(instance=client)
     return render(request, 'tracker/edit_client.html', {'form': form, 'client': client})
-
 
 
 

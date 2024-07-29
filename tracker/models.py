@@ -70,8 +70,6 @@ class Item(models.Model):
             section.update_users_from_items()
 
 
-
-
 #Creating Section model
 class Section(models.Model):
     section_name = models.CharField(max_length=255, unique=False)
