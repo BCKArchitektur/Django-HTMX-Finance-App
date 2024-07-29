@@ -99,6 +99,20 @@ class ClientForm(forms.ModelForm):
         model = Client
         fields = ['client_name', 'client_mail', 'firm_name', 'street_address', 'postal_code', 'city', 'country']
 
+class ClientForm(forms.ModelForm):
+    class Meta:
+        model = Client
+        fields = ['client_name', 'client_mail', 'firm_name', 'street_address', 'postal_code', 'city', 'country']
+        widgets = {
+            'client_name': forms.TextInput(attrs={'class': 'input input-bordered w-full max-w-xs m-2', 'placeholder': 'Client Name'}),
+            'client_mail': forms.EmailInput(attrs={'class': 'input input-bordered w-full max-w-xs m-2', 'placeholder': 'Client Email'}),
+            'firm_name': forms.TextInput(attrs={'class': 'input input-bordered w-full max-w-xs m-2', 'placeholder': 'Firm Name'}),
+            'street_address': forms.TextInput(attrs={'class': 'input input-bordered w-full max-w-xs m-2', 'placeholder': 'Street Address'}),
+            'postal_code': forms.TextInput(attrs={'class': 'input input-bordered w-full max-w-xs m-2', 'placeholder': 'Postal Code'}),
+            'city': forms.TextInput(attrs={'class': 'input input-bordered w-full max-w-xs m-2', 'placeholder': 'City'}),
+            'country': forms.Select(attrs={'class': 'select select-bordered w-full max-w-xs m-2'}),
+        }
+
 class ContractForm(forms.ModelForm):
     class Meta:
         model = Contract

@@ -345,34 +345,6 @@ def update_contract_details(request, contract):
         contract.section.add(section)
     contract.save()
 
-# def edit_contract(request):
-#     if request.method == 'POST':
-#         # Log the entire POST data
-#         print("Received POST request with data:", request.POST)
-        
-#         contract_id = request.POST.get('contract_id')
-#         if not contract_id:
-#             print("Missing contract ID")
-#             return HttpResponseBadRequest("Missing contract ID")
-        
-#         contract = get_object_or_404(Contract, id=contract_id)
-        
-#         form = ContractForm(request.POST, instance=contract)
-        
-#         # Log form validation
-#         if form.is_valid():
-#             print("Form is valid")
-#             form.save()
-#             print("Form saved successfully")
-#             return JsonResponse({'status': 'success'})
-#         else:
-#             print("Form is not valid, errors:", form.errors)
-#             return JsonResponse({'status': 'fail', 'errors': form.errors})
-    
-#     print("Invalid request method")
-#     return HttpResponseBadRequest("Invalid request")
-
-
 
 @login_required
 def edit_client(request, client_id):
@@ -384,7 +356,10 @@ def edit_client(request, client_id):
             return redirect('projects')
     else:
         form = ClientForm(instance=client)
-    return render(request, 'tracker/edit_client.html', {'form': form})
+    return render(request, 'tracker/edit_client.html', {'form': form, 'client': client})
+
+
+
 
 @login_required
 def dashboard(request):

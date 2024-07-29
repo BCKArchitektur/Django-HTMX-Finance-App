@@ -20,7 +20,6 @@ urlpatterns = [
     path('toggle-dark-mode/', views.toggle_dark_mode, name='toggle_dark_mode'),
     path('project-details/<int:project_id>/', views.project_details, name='project_details'),
     path("add-project/", views.add_project, name='add_project'),
-    # path('edit-contract/', views.edit_contract, name='edit_contract'),
     path('check-task-name/', views.check_task_name, name='check_task_name'),
     path('check-section-name/', views.check_section_name, name='check_section_name'),
     path('check-item-name/', views.check_item_name, name='check_item_name'),
