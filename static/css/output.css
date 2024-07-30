@@ -3852,6 +3852,14 @@ details.collapse summary::-webkit-details-marker {
   bottom: var(--tooltip-offset);
 }
 
+.tooltip-left:before {
+  transform: translateY(-50%);
+  top: 50%;
+  left: auto;
+  right: var(--tooltip-offset);
+  bottom: auto;
+}
+
 .avatar.online:before {
   content: "";
   position: absolute;
@@ -4125,6 +4133,15 @@ details.collapse summary::-webkit-details-marker {
   bottom: var(--tooltip-tail-offset);
 }
 
+.tooltip-left:after {
+  transform: translateY(-50%);
+  border-color: transparent transparent transparent var(--tooltip-color);
+  top: 50%;
+  left: auto;
+  right: calc(var(--tooltip-tail-offset) + 0.0625rem);
+  bottom: auto;
+}
+
 .tooltip-secondary {
   --tooltip-color: var(--fallback-s,oklch(var(--s)/1));
   --tooltip-text-color: var(--fallback-sc,oklch(var(--sc)/1));
@@ -4211,6 +4228,14 @@ details.collapse summary::-webkit-details-marker {
   margin: 1.5rem;
 }
 
+.m-0 {
+  margin: 0px;
+}
+
+.m-0\.5 {
+  margin: 0.125rem;
+}
+
 .mx-1 {
   margin-left: 0.25rem;
   margin-right: 0.25rem;
@@ -4269,6 +4294,14 @@ details.collapse summary::-webkit-details-marker {
 
 .mt-8 {
   margin-top: 2rem;
+}
+
+.mb-0 {
+  margin-bottom: 0px;
+}
+
+.mb-0\.5 {
+  margin-bottom: 0.125rem;
 }
 
 .line-clamp-2 {
@@ -4343,6 +4376,18 @@ details.collapse summary::-webkit-details-marker {
 
 .h-80 {
   height: 20rem;
+}
+
+.h-96 {
+  height: 24rem;
+}
+
+.max-h-24 {
+  max-height: 6rem;
+}
+
+.max-h-12 {
+  max-height: 3rem;
 }
 
 .w-10 {
@@ -4466,6 +4511,10 @@ details.collapse summary::-webkit-details-marker {
   align-items: center;
 }
 
+.justify-start {
+  justify-content: flex-start;
+}
+
 .justify-center {
   justify-content: center;
 }
@@ -4494,6 +4543,10 @@ details.collapse summary::-webkit-details-marker {
   gap: 0.25rem;
 }
 
+.gap-0 {
+  gap: 0px;
+}
+
 .space-x-2 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-x-reverse: 0;
   margin-right: calc(0.5rem * var(--tw-space-x-reverse));
@@ -4514,6 +4567,10 @@ details.collapse summary::-webkit-details-marker {
 
 .overflow-x-auto {
   overflow-x: auto;
+}
+
+.overflow-y-auto {
+  overflow-y: auto;
 }
 
 .text-ellipsis {
@@ -4647,6 +4704,10 @@ details.collapse summary::-webkit-details-marker {
 
 .text-center {
   text-align: center;
+}
+
+.align-baseline {
+  vertical-align: baseline;
 }
 
 .align-middle {

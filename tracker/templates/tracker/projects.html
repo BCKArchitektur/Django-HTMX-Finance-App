@@ -13,7 +13,7 @@
                 <button class="btn btn-sm btn-accent" onclick="openProjectModal()">+ New Project</button>
             </div>
         </div>
-        <div class="overflow-x-auto h-80">
+        <div class="overflow-x-auto h-96">
             <table class="table" id="project-table">
               <!-- head -->
               <thead>
@@ -30,10 +30,10 @@
                 {% for project in projects %}
                 <tr class="hover">
                     <th>{{ project.project_no }}</th>
-                    <td> 
-                        <a href="{% url 'edit_project' project.id %}" class="  hover:text-secondary">
-                            {{ project.project_name }}
-                        </a>
+                    <td>
+                            <a href="{% url 'edit_project' project.id %}" class="  hover:text-secondary">
+                                {{ project.project_name }}
+                            </a>
                     </td>
                     <td>
                             {{ project.client_name.firm_name }}
@@ -58,13 +58,6 @@
                                 </svg>
                             </button>
                         </div>
-                        <div class="tooltip" data-tip="Edit">
-                            <a href="{% url 'edit_project' project.id %}" class="btn btn-circle btn-outline btn-xs">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 3.515a1.5 1.5 0 012.121 0l3.132 3.131a1.5 1.5 0 010 2.122L8.464 21.788a2 2 0 01-.878.506l-4.785 1.263a.5.5 0 01-.62-.62l1.263-4.785a2 2 0 01.506-.878L15.232 3.515zm1.768 2.122L18.25 5.88l-3.5 3.5-1.25-1.25 3.5-3.5zm-9.5 9.5L8 17.75l-2.25-.75-.75-2.25 1.5-1.5z" />
-                                </svg>
-                            </a>
-                        </div>
                     </td>
                 </tr>
                 {% empty %}
@@ -86,7 +79,7 @@
                 <button class="btn btn-sm btn-accent" onclick="openClientModal()">+ New Client</button>
             </div>
         </div>
-        <div class="overflow-x-auto h-80 justify-center">
+        <div class="overflow-x-auto h-96 justify-center">
             <table class="table" id="client-table">
               <!-- head -->
               <thead>
