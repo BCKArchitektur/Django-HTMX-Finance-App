@@ -31,9 +31,9 @@
                 <tr class="hover">
                     <th>{{ project.project_no }}</th>
                     <td>
-                            <a href="{% url 'edit_project' project.id %}" class="  hover:text-secondary">
-                                {{ project.project_name }}
-                            </a>
+                        <a href="{% url 'edit_project' project.id %}" class=" font-semibold  hover:text-secondary">
+                            {{ project.project_name }}
+                        </a>
                     </td>
                     <td>
                             {{ project.client_name.firm_name }}
@@ -97,7 +97,11 @@
                 {% for client in clients %}
                 <tr class="hover">
                     <th>{{ forloop.counter }}</th>
-                    <th>{{ client.firm_name }}</th>
+                    <th>
+                        <a href="{% url 'edit_client' client.id %}" class=" font-semibold hover:text-secondary">
+                            {{ client.firm_name }}
+                        </a>
+                    </th>
                     <td>{{ client.client_name }}</td>
                     <td>{{ client.street_address }}</td>
                     <td>{{ client.city }}</td>
@@ -109,13 +113,6 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
-                        </div>
-                        <div class="tooltip" data-tip="Edit">
-                            <a href="{% url 'edit_client' client.id %}" class="btn btn-circle btn-outline btn-xs">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 3.515a1.5 1.5 0 012.121 0l3.132 3.131a1.5 1.5 0 010 2.122L8.464 21.788a2 2 0 01-.878.506l-4.785 1.263a.5.5 0 01-.62-.62l1.263-4.785a2 2 0 01.506-.878L15.232 3.515zm1.768 2.122L18.25 5.88l-3.5 3.5-1.25-1.25 3.5-3.5zm-9.5 9.5L8 17.75l-2.25-.75-.75-2.25 1.5-1.5z" />
-                                </svg>
-                            </a>
                         </div>
                     </td>
                 </tr>
@@ -232,6 +229,13 @@
 {% block extra_scripts %}
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab');
+
+        if (tab === 'clients') {
+            document.querySelectorAll('[name="my_tabs_1"]')[1].checked = true;
+        }
+
         document.getElementById('project-form').addEventListener('submit', function(event) {
             event.preventDefault();
             const form = event.target;
@@ -265,7 +269,7 @@
             })
             .then(response => {
                 if (response.ok) {
-                    location.reload();
+                    location.href = '{% url "projects" %}?tab=clients';
                 } else {
                     response.text().then(text => console.error(text)); // Log response text for error details
                     alert('Failed to add client');

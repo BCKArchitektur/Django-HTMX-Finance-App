@@ -2,11 +2,26 @@
 
 {% block content %}
 <div class="container mx-auto">
-    <h3 class="font-bold text-lg m-4">Edit Client</h3>
+
     <form id="edit-client-form" method="post" action="{% url 'edit_client' client.id %}">
         {% csrf_token %}
-        
-        <div class="form-control w-full max-w-xs">
+        <div class="flex justify-between items-center mb-4">
+            <div class="join align-middle justify-center items-center">
+                <h2 class="text-lg font-thin">Edit - </h2>
+                <h2 class="text-2xl font-semibold m-2">{{ client.firm_name  }}</h2>
+            </div>
+            <button class="btn btn-circle btn-outline btn-error" onclick="window.location.href='{% url 'projects' %}?tab=clients';">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            
+
+        </div>
+
+
+
+        <div class=" form-control w-full ">
             {{ form.client_name.label_tag }} {{ form.client_name }}
         </div>
         
@@ -26,18 +41,19 @@
             {{ form.postal_code.label_tag }} {{ form.postal_code }}
         </div>
         
+
         <div class="form-control w-full max-w-xs">
             {{ form.city.label_tag }} {{ form.city }}
         </div>
-        
+
         <div class="form-control w-full max-w-xs">
             {{ form.country.label_tag }} {{ form.country }}
         </div>
-        
+
         <div class="modal-action">
-            <button type="submit" class="btn btn-secondary btn-sm">Save</button>
-            <a href="{% url 'projects' %}" class="btn btn-sm">Cancel</a>
+            <button type="submit" class="btn btn-accent btn-sm ml-0">Save Client</button>
         </div>
+    
     </form>
 </div>
 {% endblock content %}
