@@ -122,7 +122,7 @@ class Contract(models.Model):
 class Project(models.Model):
     status_choices = (('0', 'InProgress'), ('1', 'OnHold'), ('2', 'Completed'))
     project_name = models.CharField(max_length=100)
-    project_address = models.CharField(max_length=100)
+    project_address = models.CharField(max_length=255, blank=True, null=True)
     client_name = models.ForeignKey('Client', on_delete=models.CASCADE)
     project_no = models.CharField(max_length=20)
     user = models.ManyToManyField(User)

@@ -593,7 +593,7 @@ def project_details(request, project_id):
 def add_project(request):
     if request.method == 'POST':
         project_name = request.POST.get('project_name')
-        project_address = request.POST.get('project_address')
+        project_address = request.POST.get('project_address', '')
         new_project = Project.objects.create(
             user=request.user,
             project_name=project_name,

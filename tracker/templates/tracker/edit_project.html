@@ -581,7 +581,7 @@ document.addEventListener("DOMContentLoaded", function() {
             const sectionTemplate = `
                 <div class="section-block form-control w-full m-2 p-4">
                     <div class="flex justify-between items-center">
-                        <input type="text" name="section_name" value="${data.section_name}-${projectNo}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error" hx-swap="innerHTML">
+                        <input type="text" name="section_name" value="${data.section_name}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error" hx-swap="innerHTML">
                         <button type="button" class="btn btn-sm btn-primary m-2" onclick="addItem(this)">+ Item</button>
                         <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
                     </div>
@@ -592,7 +592,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             return `
                                 <div class="item-block form-control w-full m-2 p-2">
                                     <div class="flex justify-between items-center">
-                                        <input type="text" name="item_name" value="${item.item_name}-${projectNo}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_item_name' %}" hx-trigger="blur" hx-target="#item-name-error" hx-swap="innerHTML">
+                                        <input type="text" name="item_name" value="${item.item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_item_name' %}" hx-trigger="blur" hx-target="#item-name-error" hx-swap="innerHTML">
                                         <button type="button" class="btn btn-sm btn-primary m-2" onclick="addTask(this)">+ Task</button>
                                         <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
                                     </div>
@@ -601,7 +601,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                         ${item.tasks.map(task => `
                                             <div class="task-block form-control w-full max-w-xs m-2">
                                                 <div class="flex justify-between items-center">
-                                                    <input type="text" name="task_name" value="${task.task_name}-${projectNo}" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error" hx-swap="innerHTML">
+                                                    <input type="text" name="task_name" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error" hx-swap="innerHTML">
                                                     <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">Delete Task</button>
                                                 </div>
                                                 <div id="task-name-error" class="text-red-500 text-sm mb-2"></div>
