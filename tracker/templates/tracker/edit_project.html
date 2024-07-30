@@ -107,7 +107,8 @@
     </div>
 </div>
 
-<!-- Add/Edit Contract Modal -->
+
+<!-- Contract Form -->
 <div id="contractModal" class="modal">
     <div class="modal-box max-w-5xl">
         <h3 class="font-bold text-lg m-4" id="contractModalTitle">Add a New Contract</h3>
@@ -138,9 +139,9 @@
                 {% endfor %}
             </div>
         </div>
-
     </div>
 </div>
+
 
 <!-- Add/Edit Users Modal -->
 <div id="addUsersModal" class="modal">
@@ -465,7 +466,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                             <div class="task-block form-control w-full max-w-xs m-2">
                                                 <div class="flex justify-between items-center">
                                                     <input type="text" name="task_name" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
-                                                    <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">Delete Task</button>
+                                                    <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
                                                 </div>
                                                 <div id="task-name-error-${taskId}" class="text-red-500 text-sm mb-2"></div>
                                             </div>
@@ -566,7 +567,7 @@ document.addEventListener("DOMContentLoaded", function() {
             <div class="task-block form-control w-full max-w-xs m-2">
                 <div class="flex justify-between items-center">
                     <input type="text" name="sections[${sectionId}][items][${itemId}][tasks][${taskId}][task_name]" placeholder="Task Name" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
-                    <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">Delete Task</button>
+                    <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
                 </div>
                 <div id="task-name-error-${taskId}" class="text-red-500 text-sm mb-2"></div>
             </div>`;

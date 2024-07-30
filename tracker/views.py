@@ -210,18 +210,27 @@ def handle_project_form(request, project):
 
 
 def handle_existing_contract_form(request, project):
+    print("Request received for handling existing contract form.")
+    
     contract_id = request.POST['contract_id']
+    print(f"Contract ID: {contract_id}")
+
     contract = get_object_or_404(Contract, id=contract_id)
+    print(f"Contract found: {contract}")
+
     contract_form = ContractForm(request.POST, instance=contract)
 
     if contract_form.is_valid():
+        print("Contract form is valid.")
         contract_form.save()
         contract_json = request.POST.get('contract_json')
+        print(f"Contract JSON: {contract_json}")
 
         if contract_json:
             try:
                 contract_data = json.loads(contract_json)
-                
+                print(f"Contract data: {contract_data}")
+
                 # To keep track of all users
                 all_users = set()
 
@@ -229,43 +238,55 @@ def handle_existing_contract_form(request, project):
                 for section_data in contract_data['sections']:
                     section_name = section_data['section_name']
                     section, created = Section.objects.get_or_create(section_name=section_name)
+                    print(f"Section: {section}, Created: {created}")
 
                     for item_data in section_data['items']:
                         item_name = item_data['item_name']
-                        item, created = Item.objects.get_or_create(Item_name=item_name)
+                        item, created = Item.objects.get_or_create(item_name=item_name)
+                        print(f"Item: {item}, Created: {created}")
 
                         for task_data in item_data['tasks']:
                             task_name = task_data['task_name']
                             task, created = Task.objects.get_or_create(task_name=task_name)
+                            print(f"Task: {task}, Created: {created}")
                             if created:
                                 item.tasks.add(task)
 
                         if created:
-                            section.Item.add(item)
+                            section.items.add(item)
 
                         # Add users of this item to the all_users set
                         for user in item.users.all():
+                            print(f"User added to all_users set: {user}")
                             all_users.add(user)
 
                     if created:
-                        contract.section.add(section)
+                        contract.sections.add(section)
 
                 # Set all users to the contract
-                contract.user.set(all_users)
+                contract.users.set(all_users)
+                print(f"All users set to contract: {all_users}")
                 contract.save()
 
-                project.contract.add(contract)
+                project.contracts.add(contract)
                 project.save()
+                print("Project updated with contract.")
 
                 messages.success(request, "Contract updated successfully.")
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
+                print(f"JSON decode error: {e}")
                 messages.error(request, "Error decoding the contract JSON data.")
         else:
+            print("No contract JSON data provided.")
             messages.error(request, "No contract JSON data provided.")
     else:
-        messages.error(request, "Error updating contract: {}".format(contract_form.errors))
+        print(f"Contract form errors: {contract_form.errors}")
+        messages.error(request, f"Error updating contract: {contract_form.errors}")
 
     return redirect('edit_project', project_id=project.id)
+
+
+
 def handle_new_contract_form(request, project):
     contract_name = request.POST.get('contract_name')
     
