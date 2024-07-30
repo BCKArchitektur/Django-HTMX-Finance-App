@@ -28,7 +28,7 @@
             <div class="form-control">
                 <select name="client_name" class="select select-bordered m-1" id="id_client_name">
                     {% for client in clients %}
-                        <option value="{{ client.id }}" {% if project.client_name.id == client.id %}selected{% endif %}>{{ client.client_name }}</option>
+                        <option value="{{ client.id }}" {% if project.client_name.id == client.id %}selected{% endif %}>{{ client.firm_name }}</option>
                     {% endfor %}
                 </select>
             </div>

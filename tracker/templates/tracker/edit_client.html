@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="container mx-auto">
-    <form id="edit-client-form" method="post" action="{% url 'edit_client' client.id %}">
+    <form id="edit-client-form" method="post" action="{% url 'projects' %}?tab=clients">
         {% csrf_token %}
         <div class="flex justify-between items-center mb-4">
             <div class="join align-middle justify-center items-center">
