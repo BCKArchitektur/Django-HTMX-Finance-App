@@ -228,7 +228,7 @@
 
 {% block extra_scripts %}
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function() {
         const urlParams = new URLSearchParams(window.location.search);
         const tab = urlParams.get('tab');
 
@@ -239,6 +239,26 @@
         document.getElementById('project-form').addEventListener('submit', function(event) {
             event.preventDefault();
             const form = event.target;
+
+            // Check if all fields have values
+            const projectName = form.querySelector('[name="project_name"]').value.trim();
+            let projectAddress = form.querySelector('[name="project_address"]').value.trim();
+            const clientName = form.querySelector('[name="client_name"]').value;
+            const projectNo = form.querySelector('[name="project_no"]').value.trim();
+            const status = form.querySelector('[name="status"]').value;
+            const user = form.querySelector('[name="user"]').value;
+
+            if (!projectName || !clientName || !projectNo || !status || !user) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            // Prefill the address field with "Default Address" if empty
+            if (!projectAddress) {
+                projectAddress = "Default Address";
+                form.querySelector('[name="project_address"]').value = projectAddress;
+            }
+
             fetch(form.action, {
                 method: 'POST',
                 body: new FormData(form),
@@ -260,6 +280,21 @@
         document.getElementById('client-form').addEventListener('submit', function(event) {
             event.preventDefault();
             const form = event.target;
+
+            // Check if all fields have values
+            const firmName = form.querySelector('[name="firm_name"]').value.trim();
+            const clientName = form.querySelector('[name="client_name"]').value.trim();
+            const clientMail = form.querySelector('[name="client_mail"]').value.trim();
+            const streetAddress = form.querySelector('[name="street_address"]').value.trim();
+            const postalCode = form.querySelector('[name="postal_code"]').value.trim();
+            const city = form.querySelector('[name="city"]').value.trim();
+            const country = form.querySelector('[name="country"]').value;
+
+            if (!firmName || !clientName || !clientMail || !streetAddress || !postalCode || !city || !country) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
             fetch(form.action, {
                 method: 'POST',
                 body: new FormData(form),
@@ -359,6 +394,6 @@
             })
             .catch(error => alert('Error deleting client: ' + error));
         }
-    }
+}
 </script>
 {% endblock extra_scripts %}

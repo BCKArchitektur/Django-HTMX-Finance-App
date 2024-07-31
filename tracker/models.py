@@ -138,7 +138,7 @@ class Project(models.Model):
     status_choices = (('0', 'InProgress'), ('1', 'OnHold'), ('2', 'Completed'))
     project_name = models.CharField(max_length=100)
     project_address = models.CharField(max_length=100 )
-    client_name = models.ForeignKey('Client', on_delete=models.CASCADE)
+    client_name = models.ForeignKey('Client', on_delete=models.SET_NULL, null=True, blank=True)
     project_no = models.CharField(max_length=20)
     user = models.ManyToManyField(User)
     status = models.CharField(choices=status_choices, max_length=20)

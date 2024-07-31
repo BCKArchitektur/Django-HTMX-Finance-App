@@ -604,7 +604,7 @@ def add_project(request):
             project_address=project_address,
             project_no="PN-" + str(Project.objects.count() + 1)  # Example project number
         )
-        return redirect('project_details')
+        return redirect('projects')
     return redirect('project_details')
 
 
