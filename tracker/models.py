@@ -70,9 +70,7 @@ class Item(models.Model):
             task.delete()
         super().delete(*args, **kwargs)
 
-    # def update_parent_users(self):
-    #     for section in self.section.all():
-    #         section.update_users_from_items()
+
 
 
 #Creating Section model
@@ -91,17 +89,6 @@ class Section(models.Model):
             item.delete()  # Delete all items related to this section
         super().delete(*args, **kwargs)
 
-    # def update_users_from_items(self):
-    #     users = set()
-    #     for item in self.Item.all():
-    #         users.update(item.users.all())
-    #     self.user.set(users)
-    #     self.save()
-    #     self.update_contract_users()
-
-    # def update_contract_users(self):
-    #     for contract in self.contract_set.all():
-    #         contract.update_users_from_sections()
 
 
 
@@ -119,17 +106,7 @@ class Contract(models.Model):
             section.delete()  # Delete all sections related to this contract
         super().delete(*args, **kwargs)
 
-    # def update_users_from_sections(self):
-    #     users = set()
-    #     for section in self.section.all():
-    #         users.update(section.user.all())
-    #     self.user.set(users)
-    #     self.save()
-    #     self.update_project_users()
 
-    # def update_project_users(self):
-    #     for project in self.project_set.all():
-    #         project.update_users_from_contracts()
 
 
 
@@ -152,12 +129,6 @@ class Project(models.Model):
             contract.delete()  # Delete all contracts related to this project
         super().delete(*args, **kwargs)
 
-    # def update_users_from_contracts(self):
-    #     users = set()
-    #     for contract in self.contract.all():
-    #         users.update(contract.user.all())
-    #     self.user.set(users)
-    #     self.save()
 
 
 
