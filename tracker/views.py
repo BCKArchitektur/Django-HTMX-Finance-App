@@ -25,8 +25,8 @@ from django.http import JsonResponse
 from .forms import AddUsersForm, AddBudgetForm
 from django.contrib import messages
 from django.urls import reverse
+from urllib.parse import urlencode
 
-from django.contrib import messages
 
 @login_required
 def toggle_dark_mode(request):
@@ -382,7 +382,9 @@ def edit_client(request, client_id):
         form = ClientForm(request.POST, instance=client)
         if form.is_valid():
             form.save()
-            return redirect('projects')
+            # Construct the URL with the query parameter
+            url = reverse('projects') + '?' + urlencode({'tab': 'clients'})
+            return redirect(url)
     else:
         form = ClientForm(instance=client)
     return render(request, 'tracker/edit_client.html', {'form': form, 'client': client})
