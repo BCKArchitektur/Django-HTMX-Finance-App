@@ -81,7 +81,13 @@
                             </button>
                         </form>
                     </td>
-                    <td>{{ contract.contract_name }}</td>
+                    <td>
+                        <a href="javascript:void(0);" onclick="openEditContractModal({{ contract.id }})" class="font-semibold hover:text-secondary">
+                            {{ contract.contract_name }}
+                        </a>
+                        
+
+                    </td>
                     <td>
                         {% for section in contract.section.all %}
                             <strong>{{ section.section_name }}</strong><br>
@@ -109,12 +115,7 @@
                         <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openAddBudgetModal({{ contract.id }})">
                             ✎ Budget
                         </button>
-                        <button class="btn btn-sm btn-secondary btn-outline m-1" onclick="openEditContractModal({{ contract.id }})">
-                            ✎ Contract
-                        </button>
-
                     </td>
-                    
                 </tr>
                 {% empty %}
                 <tr>
