@@ -216,6 +216,7 @@
                     // Reset task buttons and custom tasks input
                     $('#task-buttons-container').empty();
                     $('#custom-tasks').val('');
+                    $('#id_log_tasks').val(''); // Reset hidden input for tasks
                     // Update the total hours today and progress bar
                     totalHoursToday = parseFloat($(response).find('#total-hours-today').text());
                     updateProgressBar(totalHoursToday);
