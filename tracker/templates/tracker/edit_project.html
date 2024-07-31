@@ -95,6 +95,10 @@
                         <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openAddUsersModal({{ contract.id }})">✎ Users</button>
                         <button class="btn btn-sm btn-primary btn-outline  m-1" onclick="openAddBudgetModal({{ contract.id }})">✎ Budget</button>
                         <button class="btn btn-sm btn-secondary btn-outline  m-1" onclick="openEditContractModal({{ contract.id }})">✎ Contract</button>
+                        <form method="post" action="{% url 'delete_contract' contract.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-error btn-outline m-1" onclick="return confirm('Are you sure you want to delete this contract?');">🗑️</button>
+                        </form>
                     </td>
                 </tr>
                 {% empty %}

@@ -23,6 +23,8 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from .forms import AddUsersForm, AddBudgetForm
+from django.contrib import messages
+from django.urls import reverse
 
 from django.contrib import messages
 
@@ -759,3 +761,14 @@ def get_project_users(request):
         return JsonResponse({'error': 'Project not found'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+@csrf_exempt
+@login_required
+def delete_contract(request, contract_id):
+    if request.method == 'POST':
+        contract = get_object_or_404(Contract, id=contract_id)
+        project_id = contract.project_set.first().id  # Assuming a contract belongs to at least one project
+        contract.delete()
+        messages.success(request, 'Contract deleted successfully.')
+        return redirect(reverse('edit_project', args=[project_id]))
+    return JsonResponse({'error': 'Invalid request'}, status=400)
