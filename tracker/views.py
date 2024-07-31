@@ -605,7 +605,7 @@ def add_project(request):
             project_no="PN-" + str(Project.objects.count() + 1)  # Example project number
         )
         return redirect('projects')
-    return redirect('project_details')
+    return redirect('projects')
 
 
 def load_contract_data(request):

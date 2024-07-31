@@ -91,10 +91,16 @@
                             {% endfor %}
                         {% endfor %}
                     </td>
-                    <td>
-                        <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openAddUsersModal({{ contract.id }})">✎        Users</button>
-                        <button class="btn btn-sm btn-primary btn-outline  m-1" onclick="openAddBudgetModal({{ contract.id }})">✎        Budget</button>
-                        <button class="btn btn-sm btn-secondary btn-outline  m-1" onclick="openEditContractModal({{ contract.id }})">✎         Contract</button>
+                    <td style="display: flexbox; align-items: center; gap: 2px;">
+                        <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openAddUsersModal({{ contract.id }})">
+                            ✎ Users
+                        </button>
+                        <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openAddBudgetModal({{ contract.id }})">
+                            ✎ Budget
+                        </button>
+                        <button class="btn btn-sm btn-secondary btn-outline m-1" onclick="openEditContractModal({{ contract.id }})">
+                            ✎ Contract
+                        </button>
                         <form method="post" action="{% url 'delete_contract' contract.id %}" style="display:inline;">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-sm btn-error btn-outline p-1 m-1" onclick="return confirm('Are you sure you want to delete this contract?');">
@@ -103,8 +109,8 @@
                                 </svg>
                             </button>
                         </form>
-                        
                     </td>
+                    
                 </tr>
                 {% empty %}
                 <tr>
@@ -115,42 +121,6 @@
         </table>
     </div>
 </div>
-
-
-<!-- Contract Form -->
-<div id="contractModal" class="modal">
-    <div class="modal-box max-w-5xl">
-        <h3 class="font-bold text-lg m-4" id="contractModalTitle">Add a New Contract</h3>
-        <form id="contract-form" method="post" action="{% url 'edit_project' project.id %}">
-            {% csrf_token %}
-            <input type="hidden" name="contract_id" id="contract_id">
-            <div class="form-control w-full mb-4">
-                <input type="text" name="contract_name" placeholder="Contract Name" class="input input-bordered w-full m-2" id="id_contract_name" hx-get="{% url 'check_contract_name' %}" hx-trigger="blur" hx-target="#contract-name-error" hx-swap="innerHTML">
-                <div id="contract-name-error" class="text-red-500 text-sm"></div>
-            </div>
-            <div class="mb-4">
-                <button type="button" class="btn btn-sm btn-primary mb-2" onclick="addSection()">+ New Section</button>
-            </div>
-            <div id="sections-container"></div>
-            <div class="modal-action">
-                <button type="submit" class="btn btn-primary">Save</button>
-                <a href="#" class="btn" onclick="closeContractModal()">Cancel</a>
-            </div>
-        </form>
-        <!-- Section Library -->
-        <div id="sectionLibrary" class="mt-8">
-            <h3 class="text-lg font-semibold">Library</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {% for section in section_library %}
-                <div class="p-4 border rounded-lg shadow-md draggable" draggable="true" ondragstart="event.dataTransfer.setData('sectionId', '{{ section.id }}');">
-                    <h4 class="font-semibold">{{ section.name }}</h4>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-</div>
-
 
 <!-- Add/Edit Users Modal -->
 <div id="addUsersModal" class="modal">
@@ -212,56 +182,12 @@
     </div>
 </div>
 
+
+{% include 'tracker/contract_form_modal.html' %}
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    function buildContractJSON() {
-        let contract = {
-            contract_name: document.getElementById('id_contract_name').value,
-            sections: []
-        };
-
-        document.querySelectorAll('.section-block').forEach(sectionBlock => {
-            let section = {
-                section_name: sectionBlock.querySelector('.section-name').value,
-                items: []
-            };
-
-            sectionBlock.querySelectorAll('.item-block').forEach(itemBlock => {
-                let item = {
-                    item_name: itemBlock.querySelector('.item-name').value,
-                    tasks: []
-                };
-
-                itemBlock.querySelectorAll('.task-block').forEach(taskBlock => {
-                    let task = {
-                        task_name: taskBlock.querySelector('.task-name').value
-                    };
-                    item.tasks.push(task);
-                });
-
-                section.items.push(item);
-            });
-
-            contract.sections.push(section);
-        });
-
-        return contract;
-    }
-
-    function addHiddenInputToForm() {
-        let contractJSON = buildContractJSON();
-        let jsonInput = document.createElement('input');
-        jsonInput.type = 'hidden';
-        jsonInput.name = 'contract_json';
-        jsonInput.value = JSON.stringify(contractJSON);
-        document.getElementById('contract-form').appendChild(jsonInput);
-    }
-
-
-
     function fetchData(url, callback) {
         fetch(url)
             .then(response => {
@@ -320,9 +246,6 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         });
     }
-
-
-
 
     function populateBudgetTable(contractId) {
         fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
@@ -417,10 +340,6 @@ document.addEventListener("DOMContentLoaded", function() {
             });
     }
 
-
-
-
-
     window.closeAddUsersModal = function() {
         document.getElementById('addUsersModal').classList.remove('modal-open');
     }
@@ -434,210 +353,5 @@ document.addEventListener("DOMContentLoaded", function() {
     window.closeAddBudgetModal = function() {
         document.getElementById('addBudgetModal').classList.remove('modal-open');
     }
-
-    window.openContractModal = function() {
-        document.getElementById('contractModalTitle').innerText = 'Add a New Contract';
-        document.getElementById('contract_id').value = '';
-        document.getElementById('id_contract_name').value = '';
-        document.getElementById('sections-container').innerHTML = '';
-        document.getElementById('contractModal').classList.add('modal-open');
-    }
-
-    window.closeContractModal = function() {
-        document.getElementById('contractModal').classList.remove('modal-open');
-    }
-
-    window.openEditContractModal = function(contractId) {
-        document.getElementById('contractModalTitle').innerText = 'Edit Contract';
-        document.getElementById('contract_id').value = contractId;
-        fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
-            console.log('Fetched Data:', data); // Debugging line to check the fetched data
-            document.getElementById('id_contract_name').value = data.contract_name;
-            const sectionsContainer = document.getElementById('sections-container');
-            sectionsContainer.innerHTML = '';
-            if (data.sections) {
-                data.sections.forEach((section, sectionIndex) => {
-                    const sectionId = Math.random().toString(36).substr(2, 9);
-                    const sectionTemplate = `
-                        <div class="section-block form-control w-full m-2 p-4">
-                            <div class="flex justify-between items-center">
-                                <input type="text" name="section_name" value="${section.section_name}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
-                                <button type="button" class="btn btn-sm btn-primary m-2" onclick="addItem(this)">+ Item</button>
-                                <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
-                            </div>
-                            <div id="section-name-error-${sectionId}" class="text-red-500 text-sm mb-2"></div>
-                            <div class="items-container">
-                                ${section.items ? section.items.map(item => {
-                                    const itemId = Math.random().toString(36).substr(2, 9);
-                                    const tasksHTML = item.tasks ? item.tasks.map(task => {
-                                        const taskId = Math.random().toString(36).substr(2, 9);
-                                        const taskTemplate = `
-                                            <div class="task-block form-control w-full max-w-xs m-2">
-                                                <div class="flex justify-between items-center">
-                                                    <input type="text" name="task_name" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
-                                                    <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
-                                                </div>
-                                                <div id="task-name-error-${taskId}" class="text-red-500 text-sm mb-2"></div>
-                                            </div>
-                                        `;
-                                        return taskTemplate;
-                                    }).join('') : '';
-                                    const itemTemplate = `
-                                        <div class="item-block form-control w-full m-2 p-2">
-                                            <div class="flex justify-between items-center">
-                                                <input type="text" name="item_name" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
-                                                <button type="button" class="btn btn-sm btn-primary m-2" onclick="addTask(this)">+ Task</button>
-                                                <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
-                                            </div>
-                                            <div id="item-name-error-${itemId}" class="text-red-500 text-sm m-1"></div>
-                                            <div class="tasks-container">
-                                                ${tasksHTML}
-                                            </div>
-                                        </div>
-                                    `;
-                                    return itemTemplate;
-                                }).join('') : ''}
-                            </div>
-                        </div>
-                    `;
-                    sectionsContainer.insertAdjacentHTML('beforeend', sectionTemplate);
-                });
-            }
-        });
-        document.getElementById('contractModal').classList.add('modal-open');
-    }
-
-    window.closeContractModal = function() {
-        document.getElementById('contractModal').classList.remove('modal-open');
-        // Clear form data
-        document.getElementById('contract-form').reset();
-        document.getElementById('contractModalTitle').innerText = 'Add a New Contract';
-        document.getElementById('contract_id').value = '';
-        document.getElementById('sections-container').innerHTML = '';
-
-        // Optional: Remove any hidden JSON inputs if they exist
-        let jsonInput = document.querySelector('input[name="contract_json"]');
-        if (jsonInput) {
-            jsonInput.remove();
-        }
-    }
-
-    document.getElementById('contract-form').addEventListener('submit', function(event) {
-        addHiddenInputToForm();
-
-        // Collect user IDs from the checkboxes
-        let userIds = [];
-        document.querySelectorAll('.user-checkbox:checked').forEach(checkbox => {
-            userIds.push(checkbox.value);
-        });
-
-        let userInput = document.createElement('input');
-        userInput.type = 'hidden';
-        userInput.name = 'users';
-        userInput.value = userIds.join(',');
-        document.getElementById('contract-form').appendChild(userInput);
-    });
-
-
-    window.addSection = function() {
-        const sectionId = Math.random().toString(36).substr(2, 9);
-        const sectionTemplate = `
-            <div class="section-block form-control w-full m-2 p-4">
-                <div class="flex justify-between items-center">
-                    <input type="text" name="sections[${sectionId}][section_name]" placeholder="Section Name" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
-                    <button type="button" class="btn btn-sm btn-primary m-2" onclick="addItem(this, '${sectionId}')">+ Item</button>
-                    <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
-                </div>
-                <div id="section-name-error-${sectionId}" class="text-red-500 text-sm mb-2"></div>
-                <div class="items-container"></div>
-            </div>`;
-        document.querySelector('#sections-container').insertAdjacentHTML('beforeend', sectionTemplate);
-    }
-
-
-    window.addItem = function(button, sectionId) {
-        const itemId = Math.random().toString(36).substr(2, 9);
-        const itemTemplate = `
-            <div class="item-block form-control w-full m-2 p-2">
-                <div class="flex justify-between items-center">
-                    <input type="text" name="sections[${sectionId}][items][${itemId}][item_name]" placeholder="Item Name" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
-                    <button type="button" class="btn btn-sm btn-primary m-2" onclick="addTask(this, '${sectionId}', '${itemId}')">+ Task</button>
-                    <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
-                </div>
-                <div id="item-name-error-${itemId}" class="text-red-500 text-sm m-1"></div>
-                <div class="tasks-container"></div>
-            </div>`;
-        button.closest('.section-block').querySelector('.items-container').insertAdjacentHTML('beforeend', itemTemplate);
-    }
-
-    window.addTask = function(button, sectionId, itemId) {
-        const taskId = Math.random().toString(36).substr(2, 9);
-        const taskTemplate = `
-            <div class="task-block form-control w-full max-w-xs m-2">
-                <div class="flex justify-between items-center">
-                    <input type="text" name="sections[${sectionId}][items][${itemId}][tasks][${taskId}][task_name]" placeholder="Task Name" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
-                    <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
-                </div>
-                <div id="task-name-error-${taskId}" class="text-red-500 text-sm mb-2"></div>
-            </div>`;
-        button.closest('.item-block').querySelector('.tasks-container').insertAdjacentHTML('beforeend', taskTemplate);
-    }
-
-
-
-    window.addSectionFromLibrary = function(sectionId, sectionName, projectNo) {
-        fetchData(`/ajax/get-library-section/${sectionId}/`, data => {
-            const sectionTemplate = `
-                <div class="section-block form-control w-full m-2 p-4">
-                    <div class="flex justify-between items-center">
-                        <input type="text" name="section_name" value="${data.section_name}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error" hx-swap="innerHTML">
-                        <button type="button" class="btn btn-sm btn-primary m-2" onclick="addItem(this)">+ Item</button>
-                        <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
-                    </div>
-                    <div id="section-name-error" class="text-red-500 text-sm mb-2"></div>
-                    <div class="items-container">
-                        ${data.items.map(item => {
-                            const itemId = Math.random().toString(36).substr(2, 9);
-                            return `
-                                <div class="item-block form-control w-full m-2 p-2">
-                                    <div class="flex justify-between items-center">
-                                        <input type="text" name="item_name" value="${item.item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_item_name' %}" hx-trigger="blur" hx-target="#item-name-error" hx-swap="innerHTML">
-                                        <button type="button" class="btn btn-sm btn-primary m-2" onclick="addTask(this)">+ Task</button>
-                                        <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
-                                    </div>
-                                    <div id="item-name-error" class="text-red-500 text-sm m-1"></div>
-                                    <div class="tasks-container">
-                                        ${item.tasks.map(task => `
-                                            <div class="task-block form-control w-full max-w-xs m-2">
-                                                <div class="flex justify-between items-center">
-                                                    <input type="text" name="task_name" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error" hx-swap="innerHTML">
-                                                    <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">Delete Task</button>
-                                                </div>
-                                                <div id="task-name-error" class="text-red-500 text-sm mb-2"></div>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            `;
-            document.getElementById('sections-container').insertAdjacentHTML('beforeend', sectionTemplate);
-        });
-    }
-
-    document.addEventListener('dragover', function(event) {
-        event.preventDefault();
-    });
-
-    document.getElementById('sections-container').addEventListener('drop', function(event) {
-        event.preventDefault();
-        const sectionId = event.dataTransfer.getData('sectionId');
-        const projectNo = '{{ project.project_no }}';
-        addSectionFromLibrary(sectionId, sectionId, projectNo);
-    });
-
-});
 </script>
 {% endblock %}

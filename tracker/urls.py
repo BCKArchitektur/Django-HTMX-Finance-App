@@ -7,8 +7,6 @@ urlpatterns = [
     path("log_create/", views.log_create, name='log_create'),
     path("dashboard/", views.dashboard, name='dashboard'),
     path("projects/", views.projects, name='projects'),  # Correct URL for projects view
-    path("projects/?tab=clients", views.projects, name='projects#'),  # Correct URL for projects view
-
     path("delete-project/<int:project_id>/", views.delete_project, name='delete_project'),
     path("delete-client/<int:client_id>/", views.delete_client, name='delete_client'),
     path("edit-project/<int:project_id>/", views.edit_project, name='edit_project'),
