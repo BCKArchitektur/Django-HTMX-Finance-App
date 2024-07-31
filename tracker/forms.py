@@ -116,10 +116,8 @@ class ClientForm(forms.ModelForm):
 class ContractForm(forms.ModelForm):
     class Meta:
         model = Contract
-        fields = ['contract_name', 'section']
-        widgets = {
-            'section': forms.CheckboxSelectMultiple(),
-        }
+        fields = ['contract_name']
+
 
 
 

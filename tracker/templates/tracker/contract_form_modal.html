@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
             sectionBlock.querySelectorAll('.item-block').forEach(itemBlock => {
                 let item = {
-                    item_name: itemBlock.querySelector('.item-name').value,
+                    Item_name: itemBlock.querySelector('.item-name').value,
                     tasks: []
                 };
 
@@ -138,7 +138,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                     const itemTemplate = `
                                         <div class="item-block form-control w-full m-2 p-2">
                                             <div class="flex justify-between items-center">
-                                                <input type="text" name="item_name" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
+                                                <input type="text" name="Item_name" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
                                                 <button type="button" class="btn btn-sm btn-primary m-2" onclick="addTask(this)">+ Task</button>
                                                 <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
                                             </div>
@@ -160,35 +160,8 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('contractModal').classList.add('modal-open');
     }
 
-    window.closeContractModal = function() {
-        document.getElementById('contractModal').classList.remove('modal-open');
-        // Clear form data
-        document.getElementById('contract-form').reset();
-        document.getElementById('contractModalTitle').innerText = 'Add a New Contract';
-        document.getElementById('contract_id').value = '';
-        document.getElementById('sections-container').innerHTML = '';
-
-        // Optional: Remove any hidden JSON inputs if they exist
-        let jsonInput = document.querySelector('input[name="contract_json"]');
-        if (jsonInput) {
-            jsonInput.remove();
-        }
-    }
-
     document.getElementById('contract-form').addEventListener('submit', function(event) {
         addHiddenInputToForm();
-
-        // Collect user IDs from the checkboxes
-        let userIds = [];
-        document.querySelectorAll('.user-checkbox:checked').forEach(checkbox => {
-            userIds.push(checkbox.value);
-        });
-
-        let userInput = document.createElement('input');
-        userInput.type = 'hidden';
-        userInput.name = 'users';
-        userInput.value = userIds.join(',');
-        document.getElementById('contract-form').appendChild(userInput);
     });
 
     window.addSection = function() {
@@ -211,7 +184,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const itemTemplate = `
             <div class="item-block form-control w-full m-2 p-2">
                 <div class="flex justify-between items-center">
-                    <input type="text" name="sections[${sectionId}][items][${itemId}][item_name]" placeholder="Item Name" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
+                    <input type="text" name="sections[${sectionId}][items][${itemId}][Item_name]" placeholder="Item Name" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
                     <button type="button" class="btn btn-sm btn-primary m-2" onclick="addTask(this, '${sectionId}', '${itemId}')">+ Task</button>
                     <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
                 </div>
@@ -250,7 +223,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             return `
                                 <div class="item-block form-control w-full m-2 p-2">
                                     <div class="flex justify-between items-center">
-                                        <input type="text" name="item_name" value="${item.item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_item_name' %}" hx-trigger="blur" hx-target="#item-name-error" hx-swap="innerHTML">
+                                        <input type="text" name="Item_name" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error" hx-swap="innerHTML">
                                         <button type="button" class="btn btn-sm btn-primary m-2" onclick="addTask(this)">+ Task</button>
                                         <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
                                     </div>

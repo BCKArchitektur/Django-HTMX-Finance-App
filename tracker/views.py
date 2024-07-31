@@ -192,7 +192,7 @@ def get_library_section(request, section_id):
         'section_name': section.name,
         'items': [
             {
-                'item_name': item.name,
+                'Item_name': item.name,
                 'tasks': [{'task_name': task.name} for task in item.tasks.all()]
             }
             for item in items
@@ -233,44 +233,82 @@ def handle_existing_contract_form(request, project):
                 contract_data = json.loads(contract_json)
                 print(f"Contract data: {contract_data}")
 
-                # To keep track of all users
-                all_users = set()
+                # Track sections and items to delete those that are not updated
+                existing_sections = set(contract.section.all())
+                sections_to_keep = set()
 
                 # Process sections, items, and tasks
                 for section_data in contract_data['sections']:
                     section_name = section_data['section_name']
-                    section, created = Section.objects.get_or_create(section_name=section_name)
+                    section, created = Section.objects.get_or_create(
+                        section_name=section_name,
+                        defaults={'section_name': section_name}
+                    )
                     print(f"Section: {section}, Created: {created}")
 
+                    sections_to_keep.add(section)
+
+                    # Track items to delete those that are not updated
+                    existing_items = set(section.Item.all())
+                    items_to_keep = set()
+
                     for item_data in section_data['items']:
-                        item_name = item_data['item_name']
-                        item, created = Item.objects.get_or_create(item_name=item_name)
+                        Item_name = item_data['Item_name']
+                        item, created = Item.objects.get_or_create(
+                            Item_name=Item_name,
+                            defaults={'Item_name': Item_name}
+                        )
                         print(f"Item: {item}, Created: {created}")
+
+                        items_to_keep.add(item)
+
+                        # Track tasks to delete those that are not updated
+                        existing_tasks = set(item.tasks.all())
+                        tasks_to_keep = set()
 
                         for task_data in item_data['tasks']:
                             task_name = task_data['task_name']
-                            task, created = Task.objects.get_or_create(task_name=task_name)
+                            task, created = Task.objects.get_or_create(
+                                task_name=task_name,
+                                defaults={'task_name': task_name}
+                            )
                             print(f"Task: {task}, Created: {created}")
-                            if created:
-                                item.tasks.add(task)
 
-                        if created:
-                            section.items.add(item)
+                            tasks_to_keep.add(task)
+                            item.tasks.add(task)
 
-                        # Add users of this item to the all_users set
+                        # Remove old tasks
+                        for task in existing_tasks - tasks_to_keep:
+                            item.tasks.remove(task)
+                            task.delete()
+
+                        section.Item.add(item)
+
+                    # Remove old items
+                    for item in existing_items - items_to_keep:
+                        section.Item.remove(item)
+                        item.delete()
+
+                    contract.section.add(section)
+
+                # Remove old sections
+                for section in existing_sections - sections_to_keep:
+                    contract.section.remove(section)
+                    section.delete()
+
+                # To keep track of all users
+                all_users = set()
+                for section in sections_to_keep:
+                    for item in section.Item.all():
                         for user in item.users.all():
-                            print(f"User added to all_users set: {user}")
                             all_users.add(user)
 
-                    if created:
-                        contract.sections.add(section)
-
                 # Set all users to the contract
-                contract.users.set(all_users)
+                contract.user.set(all_users)
                 print(f"All users set to contract: {all_users}")
                 contract.save()
 
-                project.contracts.add(contract)
+                project.contract.add(contract)
                 project.save()
                 print("Project updated with contract.")
 
@@ -286,6 +324,7 @@ def handle_existing_contract_form(request, project):
         messages.error(request, f"Error updating contract: {contract_form.errors}")
 
     return redirect('edit_project', project_id=project.id)
+
 
 
 
@@ -318,12 +357,12 @@ def handle_new_contract_form(request, project):
                 print("Processed section:", section_name)  # Debugging line
 
                 for item_data in section_data['items']:
-                    item_name = item_data['item_name']
+                    Item_name = item_data['Item_name']
                     item, created = Item.objects.update_or_create(
-                        Item_name=item_name,
-                        defaults={'Item_name': item_name}
+                        Item_name=Item_name,
+                        defaults={'Item_name': Item_name}
                     )
-                    print("Processed item:", item_name)  # Debugging line
+                    print("Processed item:", Item_name)  # Debugging line
 
                     for task_data in item_data['tasks']:
                         task_name = task_data['task_name']
@@ -357,15 +396,15 @@ def handle_new_contract_form(request, project):
 
 def update_contract_details(request, contract):
     section_names = request.POST.getlist('section_name')
-    item_names = request.POST.getlist('item_name')
+    Item_names = request.POST.getlist('Item_name')
     task_names = request.POST.getlist('task_name')
 
     contract.section.clear()
     for section_name in section_names:
         section, _ = Section.objects.get_or_create(section_name=section_name)
         section.Item.clear()
-        for item_name in item_names:
-            item, _ = Item.objects.get_or_create(Item_name=item_name)
+        for Item_name in Item_names:
+            item, _ = Item.objects.get_or_create(Item_name=Item_name)
             item.tasks.clear()
             for task_name in task_names:
                 task, _ = Task.objects.get_or_create(task_name=task_name)
@@ -661,9 +700,9 @@ def check_section_name(request):
     }
     return JsonResponse(data)
 
-def check_item_name(request):
-    item_name = request.GET.get('item_name', None)
-    is_taken = Item.objects.filter(Item_name__iexact=item_name).exists()
+def check_Item_name(request):
+    Item_name = request.GET.get('Item_name', None)
+    is_taken = Item.objects.filter(Item_name__iexact=Item_name).exists()
     data = {
         'is_taken': is_taken,
         'message': 'Item name is already taken.' if is_taken else 'Item name is available.'
