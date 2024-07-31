@@ -97,7 +97,7 @@
                         <button class="btn btn-sm btn-secondary btn-outline  m-1" onclick="openEditContractModal({{ contract.id }})">✎ Contract</button>
                         <form method="post" action="{% url 'delete_contract' contract.id %}" style="display:inline;">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-error btn-outline m-1" onclick="return confirm('Are you sure you want to delete this contract?');">🗑️</button>
+                            <button type="submit" class="btn btn-sm btn-error btn-outline m-1" onclick="return confirm('Are you sure you want to delete this contract?');">🗑️ Delete</button>
                         </form>
                     </td>
                 </tr>

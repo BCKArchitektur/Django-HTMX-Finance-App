@@ -163,8 +163,32 @@
         $('#log-form').on('submit', function (e) {
             e.preventDefault();
 
+            const project = $("#id_log_project_name").val();
+            const contract = $("#id_log_contract").val();
+            const section = $("#id_log_section").val();
+            const item = $("#id_log_Item").val();
             const tasks = $("#id_log_tasks").val();
             const time = $("#id_log_time").val();
+
+            if (!project) {
+                displayAlert("Please select a project.", 'error');
+                return;
+            }
+
+            if (!contract) {
+                displayAlert("Please select a contract.", 'error');
+                return;
+            }
+
+            if (!section) {
+                displayAlert("Please select a section.", 'error');
+                return;
+            }
+
+            if (!item) {
+                displayAlert("Please select an item.", 'error');
+                return;
+            }
 
             if (!tasks) {
                 displayAlert("Please select at least one task.", 'error');
