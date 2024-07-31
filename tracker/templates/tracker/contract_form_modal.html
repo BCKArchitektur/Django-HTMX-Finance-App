@@ -152,10 +152,20 @@ document.addEventListener("DOMContentLoaded", function() {
                     const sectionId = Math.random().toString(36).substr(2, 9);
                     const sectionTemplate = `
                         <div class="section-block form-control w-full m-2 p-4">
-                            <div class="flex justify-between items-center">
-                                <input type="text" name="section_name" value="${section.section_name}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
-                                <button type="button" class="btn btn-sm btn-primary m-2" onclick="addItem(this)">+ Item</button>
-                                <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
+                            <div class="flex items-center space-x-2">
+                                <div class="form-control flex items-center max-w-xs m-0">
+                                    <label class="cursor-pointer label m-0 p-0">
+                                        <span class="label-text mr-1">Billable</span>
+                                        <input type="checkbox" name="sections[${sectionId}][billable]" class="checkbox checkbox-accent section-billable" ${section.section_billed_hourly ? 'checked' : ''} />
+                                    </label>
+                                </div>
+                                <div class="w-full">
+                                    <input type="text" name="section_name" value="${section.section_name}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="addItem(this)">+ Item</button>
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove()">x</button>
+                                </div>
                             </div>
                             <div id="section-name-error-${sectionId}" class="text-red-500 text-sm mb-2"></div>
                             <div class="items-container">
@@ -199,6 +209,7 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('contractModal').classList.add('modal-open');
     }
 
+
     document.getElementById('contract-form').addEventListener('submit', function(event) {
         addHiddenInputToForm();
     });
@@ -207,10 +218,20 @@ document.addEventListener("DOMContentLoaded", function() {
         const sectionId = Math.random().toString(36).substr(2, 9);
         const sectionTemplate = `
             <div class="section-block form-control w-full m-2 p-4">
-                <div class="flex justify-between items-center">
-                    <input type="text" name="sections[${sectionId}][section_name]" placeholder="Section Name" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
-                    <button type="button" class="btn btn-sm btn-primary m-2" onclick="addItem(this, '${sectionId}')">+ Item</button>
-                    <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
+                <div class="flex items-center space-x-2">
+                    <div class="form-control flex items-center max-w-xs m-0">
+                        <label class="cursor-pointer label m-0 p-0">
+                            <span class="label-text mr-1">Billable</span>
+                            <input type="checkbox" name="sections[${sectionId}][billable]" class="checkbox checkbox-accent section-billable" />
+                        </label>
+                    </div>
+                    <div class="w-full">
+                        <input type="text" name="sections[${sectionId}][section_name]" placeholder="Section Name" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
+                    </div>
+                    <div class="flex space-x-2">
+                        <button type="button" class="btn btn-sm btn-primary" onclick="addItem(this, '${sectionId}')">+ Item</button>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove()">x</button>
+                    </div>
                 </div>
                 <div id="section-name-error-${sectionId}" class="text-red-500 text-sm mb-2"></div>
                 <div class="items-container"></div>
