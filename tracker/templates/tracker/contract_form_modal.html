@@ -35,6 +35,8 @@
                 <div class="p-4 border rounded-lg shadow-md draggable" draggable="true" ondragstart="event.dataTransfer.setData('sectionId', '{{ section.id }}');">
                     <h4 class="font-semibold">{{ section.name }}</h4>
                 </div>
+                {% empty %}
+                <p>No sections available in the library.</p>
                 {% endfor %}
             </div>
         </div>
@@ -71,7 +73,23 @@ document.addEventListener("htmx:afterOnLoad", function(event) {
 });
 
 document.addEventListener("DOMContentLoaded", function() {
+    // Function to fetch data from the server
+    function fetchData(url, callback) {
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => callback(data))
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error fetching data: ' + error.message);
+            });
+    }
 
+    // Function to build the contract JSON
     function buildContractJSON() {
         let contract = {
             contract_name: document.getElementById('id_contract_name').value,
@@ -107,6 +125,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return contract;
     }
 
+    // Function to add hidden input to the form
     function addHiddenInputToForm() {
         let contractJSON = buildContractJSON();
         let jsonInput = document.createElement('input');
@@ -116,6 +135,7 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('contract-form').appendChild(jsonInput);
     }
 
+    // Function to validate the contract form
     function validateContractForm() {
         let isValid = true;
         const contractName = document.getElementById('id_contract_name').value.trim();
@@ -151,8 +171,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return isValid;
     }
 
-
-
+    // Function to open the contract modal
     window.openContractModal = function() {
         document.getElementById('contractModalTitle').innerText = 'Add a New Contract';
         document.getElementById('contract_id').value = '';
@@ -163,7 +182,7 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('contractModal').classList.add('modal-open');
     }
 
-
+    // Function to close the contract modal
     window.closeContractModal = function() {
         document.getElementById('contractModal').classList.remove('modal-open');
         // Clear form data
@@ -179,6 +198,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
+    // Function to open the edit contract modal
     window.openEditContractModal = function(contractId) {
         document.getElementById('contractModalTitle').innerText = 'Edit Contract';
         document.getElementById('contract_id').value = contractId;
@@ -249,6 +269,7 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('contractModal').classList.add('modal-open');
     }
 
+    // Event listener for form submission
     document.getElementById('contract-form').addEventListener('submit', function(event) {
         if (!validateContractForm()) {
             event.preventDefault();
@@ -257,6 +278,7 @@ document.addEventListener("DOMContentLoaded", function() {
         addHiddenInputToForm();
     });
 
+    // Function to add a new section
     window.addSection = function() {
         const sectionId = Math.random().toString(36).substr(2, 9);
         const sectionTemplate = `
@@ -282,6 +304,7 @@ document.addEventListener("DOMContentLoaded", function() {
         document.querySelector('#sections-container').insertAdjacentHTML('beforeend', sectionTemplate);
     }
 
+    // Function to add a new item
     window.addItem = function(button, sectionId) {
         const itemId = Math.random().toString(36).substr(2, 9);
         const itemTemplate = `
@@ -297,6 +320,7 @@ document.addEventListener("DOMContentLoaded", function() {
         button.closest('.section-block').querySelector('.items-container').insertAdjacentHTML('beforeend', itemTemplate);
     }
 
+    // Function to add a new task
     window.addTask = function(button, sectionId, itemId) {
         const taskId = Math.random().toString(36).substr(2, 9);
         const taskTemplate = `
@@ -310,35 +334,37 @@ document.addEventListener("DOMContentLoaded", function() {
         button.closest('.item-block').querySelector('.tasks-container').insertAdjacentHTML('beforeend', taskTemplate);
     }
 
-    window.addSectionFromLibrary = function(sectionId, sectionName, projectNo) {
+    // Function to add a section from the library
+    window.addSectionFromLibrary = function(sectionId) {
+        console.log("Fetching section from library with ID:", sectionId); // Debugging line
         fetchData(`/ajax/get-library-section/${sectionId}/`, data => {
-            const sectionId = Math.random().toString(36).substr(2, 9);
+            const newSectionId = Math.random().toString(36).substr(2, 9);
             const sectionTemplate = `
                 <div class="section-block form-control w-full m-2 p-4">
                     <div class="flex justify-between items-center">
                         <div class="form-control flex items-center max-w-xs m-0">
                             <label class="cursor-pointer label m-0 p-0">
                                 <span class="label-text mr-1 font-bold">€</span>
-                                <input type="checkbox" name="sections[${sectionId}][billable]" class="checkbox checkbox-accent section-billable" ${data.section_billed_hourly ? 'checked' : ''} />
+                                <input type="checkbox" name="sections[${newSectionId}][billable]" class="checkbox checkbox-accent section-billable" ${data.section_billed_hourly ? 'checked' : ''} />
                             </label>
                         </div>
                         <div class="w-full">
-                            <input type="text" name="sections[${sectionId}][section_name]" value="${data.section_name}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
+                            <input type="text" name="sections[${newSectionId}][section_name]" value="${data.section_name}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${newSectionId}" hx-swap="innerHTML">
                         </div>
                         <div class="flex space-x-2">
-                            <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this, '${sectionId}')">+ Item</button>
+                            <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this, '${newSectionId}')">+ Item</button>
                             <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove()">x</button>
                         </div>
                     </div>
-                    <div id="section-name-error-${sectionId}" class="text-red-500 text-sm mb-2"></div>
+                    <div id="section-name-error-${newSectionId}" class="text-red-500 text-sm mb-2"></div>
                     <div class="items-container">
                         ${data.items.map(item => {
                             const itemId = Math.random().toString(36).substr(2, 9);
                             return `
                                 <div class="item-block form-control w-full m-2 p-2">
                                     <div class="flex justify-between items-center">
-                                        <input type="text" name="sections[${sectionId}][items][${itemId}][Item_name]" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
-                                        <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this, '${sectionId}', '${itemId}')">+ Task</button>
+                                        <input type="text" name="sections[${newSectionId}][items][${itemId}][Item_name]" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
+                                        <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this, '${newSectionId}', '${itemId}')">+ Task</button>
                                         <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
                                     </div>
                                     <div id="item-name-error-${itemId}" class="text-red-500 text-sm m-1"></div>
@@ -348,7 +374,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                             return `
                                                 <div class="task-block form-control w-full max-w-xs m-2">
                                                     <div class="flex justify-between items-center">
-                                                        <input type="text" name="sections[${sectionId}][items][${itemId}][tasks][${taskId}][task_name]" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
+                                                        <input type="text" name="sections[${newSectionId}][items][${itemId}][tasks][${taskId}][task_name]" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
                                                         <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
                                                     </div>
                                                     <div id="task-name-error-${taskId}" class="text-red-500 text-sm mb-2"></div>
@@ -366,7 +392,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-
+    // Drag and drop event listeners
     document.addEventListener('dragover', function(event) {
         event.preventDefault();
     });
@@ -374,8 +400,7 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById('sections-container').addEventListener('drop', function(event) {
         event.preventDefault();
         const sectionId = event.dataTransfer.getData('sectionId');
-        const projectNo = '{{ project.project_no }}';
-        addSectionFromLibrary(sectionId, sectionId, projectNo);
+        addSectionFromLibrary(sectionId);
     });
 
 });

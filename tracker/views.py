@@ -185,6 +185,7 @@ def delete_client(request, client_id):
 
 
 
+
 @login_required
 def edit_project(request, project_id):
     project = get_object_or_404(Project, id=project_id)
@@ -192,7 +193,7 @@ def edit_project(request, project_id):
     clients = Client.objects.all()
     users = User.objects.all()
     contract_form = ContractForm()
-    section_library = SectionLibrary.objects.all()
+    section_library = SectionLibrary.objects.all()  # Add this line to fetch all sections from the library
 
     if request.method == 'POST':
         if 'project_name' in request.POST:
@@ -201,6 +202,9 @@ def edit_project(request, project_id):
             return handle_new_contract_form(request, project)
         elif request.POST.get('contract_id'):
             return handle_existing_contract_form(request, project)
+        elif 'user' in request.POST:
+            updated_users = request.POST.getlist('user')
+            handle_user_updates(project, updated_users)
     else:
         form = ProjectForm(instance=project)
 
@@ -211,9 +215,40 @@ def edit_project(request, project_id):
         'contract_form': contract_form,
         'clients': clients,
         'users': users,
-        'section_library': section_library,
+        'section_library': section_library,  # Pass section library to the template
     }
     return render(request, 'tracker/edit_project.html', context)
+
+
+def handle_user_updates(project, updated_users):
+    current_users = set(project.user.all())
+    updated_users_set = set(User.objects.filter(id__in=updated_users))
+
+    # Users to be added and removed
+    users_to_add = updated_users_set - current_users
+    users_to_remove = current_users - updated_users_set
+
+    # Add users to project
+    for user in users_to_add:
+        project.user.add(user)
+        for contract in project.contract.all():
+            contract.user.add(user)
+            for section in contract.section.all():
+                section.user.add(user)
+                for item in section.Item.all():
+                    item.users.add(user)
+
+    # Remove users from project
+    for user in users_to_remove:
+        project.user.remove(user)
+        for contract in project.contract.all():
+            contract.user.remove(user)
+            for section in contract.section.all():
+                section.user.remove(user)
+                for item in section.Item.all():
+                    item.users.remove(user)
+    
+    project.save()
 
 
 def get_library_section(request, section_id):
@@ -241,124 +276,6 @@ def handle_project_form(request, project):
         messages.error(request, "Error updating project: {}".format(form.errors))
     return redirect('edit_project', project_id=project.id)
 
-
-# def handle_existing_contract_form(request, project):
-#     print("Request received for handling existing contract form.")
-    
-#     contract_id = request.POST['contract_id']
-#     print(f"Contract ID: {contract_id}")
-
-#     contract = get_object_or_404(Contract, id=contract_id)
-#     print(f"Contract found: {contract}")
-
-#     contract_form = ContractForm(request.POST, instance=contract)
-
-#     if contract_form.is_valid():
-#         print("Contract form is valid.")
-#         contract_form.save()
-#         contract_json = request.POST.get('contract_json')
-#         print(f"Contract JSON: {contract_json}")
-
-#         if contract_json:
-#             try:
-#                 contract_data = json.loads(contract_json)
-#                 print(f"Contract data: {contract_data}")
-
-#                 # Track sections and items to delete those that are not updated
-#                 existing_sections = set(contract.section.all())
-#                 sections_to_keep = set()
-
-#                 # Process sections, items, and tasks
-#                 for section_data in contract_data['sections']:
-#                     section_name = section_data['section_name']
-#                     section_billed_hourly = section_data.get('section_billed_hourly', False)
-#                     section, created = Section.objects.get_or_create(
-#                         section_name=section_name,
-#                         defaults={'section_name': section_name, 'section_billed_hourly': section_billed_hourly}
-#                     )
-#                     if not created:
-#                         section.section_billed_hourly = section_billed_hourly
-#                         section.save()
-#                     print(f"Section: {section}, Created: {created}")
-
-#                     sections_to_keep.add(section)
-
-#                     # Track items to delete those that are not updated
-#                     existing_items = set(section.Item.all())
-#                     items_to_keep = set()
-
-#                     for item_data in section_data['items']:
-#                         Item_name = item_data['Item_name']
-#                         item, created = Item.objects.get_or_create(
-#                             Item_name=Item_name,
-#                             defaults={'Item_name': Item_name}
-#                         )
-#                         print(f"Item: {item}, Created: {created}")
-
-#                         items_to_keep.add(item)
-
-#                         # Track tasks to delete those that are not updated
-#                         existing_tasks = set(item.tasks.all())
-#                         tasks_to_keep = set()
-
-#                         for task_data in item_data['tasks']:
-#                             task_name = task_data['task_name']
-#                             task, created = Task.objects.get_or_create(
-#                                 task_name=task_name,
-#                                 defaults={'task_name': task_name}
-#                             )
-#                             print(f"Task: {task}, Created: {created}")
-
-#                             tasks_to_keep.add(task)
-#                             item.tasks.add(task)
-
-#                         # Remove old tasks
-#                         for task in existing_tasks - tasks_to_keep:
-#                             item.tasks.remove(task)
-#                             task.delete()
-
-#                         section.Item.add(item)
-
-#                     # Remove old items
-#                     for item in existing_items - items_to_keep:
-#                         section.Item.remove(item)
-#                         item.delete()
-
-#                     contract.section.add(section)
-
-#                 # Remove old sections
-#                 for section in existing_sections - sections_to_keep:
-#                     contract.section.remove(section)
-#                     section.delete()
-
-#                 # To keep track of all users
-#                 all_users = set()
-#                 for section in sections_to_keep:
-#                     for item in section.Item.all():
-#                         for user in item.users.all():
-#                             all_users.add(user)
-
-#                 # Set all users to the contract
-#                 contract.user.set(all_users)
-#                 print(f"All users set to contract: {all_users}")
-#                 contract.save()
-
-#                 project.contract.add(contract)
-#                 project.save()
-#                 print("Project updated with contract.")
-
-#                 messages.success(request, "Contract updated successfully.")
-#             except json.JSONDecodeError as e:
-#                 print(f"JSON decode error: {e}")
-#                 messages.error(request, "Error decoding the contract JSON data.")
-#         else:
-#             print("No contract JSON data provided.")
-#             messages.error(request, "No contract JSON data provided.")
-#     else:
-#         print(f"Contract form errors: {contract_form.errors}")
-#         messages.error(request, f"Error updating contract: {contract_form.errors}")
-
-#     return redirect('edit_project', project_id=project.id)
 
 def handle_existing_contract_form(request, project):
     print("Request received for handling existing contract form.")
@@ -489,67 +406,6 @@ def handle_existing_contract_form(request, project):
 
 
 
-# def handle_new_contract_form(request, project):
-#     contract_name = request.POST.get('contract_name')
-    
-#     # Retrieve all users associated with the project
-#     user_ids = project.user.values_list('id', flat=True)
-    
-#     # Debugging print statement
-#     print("POST data:", request.POST)
-
-#     contract = Contract.objects.create(contract_name=contract_name)
-#     contract.user.set(user_ids)
-
-#     contract_json = request.POST.get('contract_json')
-    
-#     print("Received contract JSON:", contract_json)  # Debugging line
-
-#     if contract_json:
-#         try:
-#             contract_data = json.loads(contract_json)
-            
-#             for section_data in contract_data['sections']:
-#                 section_name = section_data['section_name']
-#                 section_billed_hourly = section_data.get('section_billed_hourly', False)
-#                 section, created = Section.objects.update_or_create(
-#                     section_name=section_name,
-#                     defaults={'section_name': section_name, 'section_billed_hourly': section_billed_hourly}
-#                 )
-#                 print("Processed section:", section_name)  # Debugging line
-
-#                 for item_data in section_data['items']:
-#                     Item_name = item_data['Item_name']
-#                     item, created = Item.objects.update_or_create(
-#                         Item_name=Item_name,
-#                         defaults={'Item_name': Item_name}
-#                     )
-#                     print("Processed item:", Item_name)  # Debugging line
-
-#                     for task_data in item_data['tasks']:
-#                         task_name = task_data['task_name']
-#                         task, created = Task.objects.update_or_create(
-#                             task_name=task_name,
-#                             defaults={'task_name': task_name}
-#                         )
-#                         print("Processed task:", task_name)  # Debugging line
-#                         item.tasks.add(task)
-
-#                     section.Item.add(item)
-
-#                 contract.section.add(section)
-
-#             contract.save()
-#             project.contract.add(contract)
-#             project.save()
-
-#             messages.success(request, "New contract added successfully.")
-#         except json.JSONDecodeError:
-#             messages.error(request, "Error decoding the contract JSON data.")
-#     else:
-#         messages.error(request, "No contract JSON data provided.")
-
-#     return redirect('edit_project', project_id=project.id)
 
 def handle_new_contract_form(request, project):
     contract_name = request.POST.get('contract_name')
