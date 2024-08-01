@@ -240,10 +240,14 @@ def handle_existing_contract_form(request, project):
                 # Process sections, items, and tasks
                 for section_data in contract_data['sections']:
                     section_name = section_data['section_name']
+                    section_billed_hourly = section_data.get('section_billed_hourly', False)
                     section, created = Section.objects.get_or_create(
                         section_name=section_name,
-                        defaults={'section_name': section_name}
+                        defaults={'section_name': section_name, 'section_billed_hourly': section_billed_hourly}
                     )
+                    if not created:
+                        section.section_billed_hourly = section_billed_hourly
+                        section.save()
                     print(f"Section: {section}, Created: {created}")
 
                     sections_to_keep.add(section)
@@ -350,9 +354,10 @@ def handle_new_contract_form(request, project):
             
             for section_data in contract_data['sections']:
                 section_name = section_data['section_name']
+                section_billed_hourly = section_data.get('section_billed_hourly', False)
                 section, created = Section.objects.update_or_create(
                     section_name=section_name,
-                    defaults={'section_name': section_name}
+                    defaults={'section_name': section_name, 'section_billed_hourly': section_billed_hourly}
                 )
                 print("Processed section:", section_name)  # Debugging line
 
@@ -388,6 +393,7 @@ def handle_new_contract_form(request, project):
         messages.error(request, "No contract JSON data provided.")
 
     return redirect('edit_project', project_id=project.id)
+
 
 
 
@@ -666,6 +672,7 @@ def load_contract_data(request):
         } for item in items]
         section_data.append({
             'section_name': section.section_name,
+            'section_billed_hourly': section.section_billed_hourly,  # Include section_billed_hourly
             'items': item_data
         })
 
@@ -676,7 +683,6 @@ def load_contract_data(request):
     }
 
     return JsonResponse(contract_data)
-
 
 
 

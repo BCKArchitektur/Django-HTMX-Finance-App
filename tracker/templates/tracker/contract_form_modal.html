@@ -42,7 +42,6 @@
 </div>
 
 <script>
-
 document.addEventListener("htmx:afterOnLoad", function(event) {
     if (event.detail.target.id === 'contract-name-error') {
         try {
@@ -72,7 +71,7 @@ document.addEventListener("htmx:afterOnLoad", function(event) {
 });
 
 document.addEventListener("DOMContentLoaded", function() {
-    
+
     function buildContractJSON() {
         let contract = {
             contract_name: document.getElementById('id_contract_name').value,
@@ -82,6 +81,7 @@ document.addEventListener("DOMContentLoaded", function() {
         document.querySelectorAll('.section-block').forEach(sectionBlock => {
             let section = {
                 section_name: sectionBlock.querySelector('.section-name').value,
+                section_billed_hourly: sectionBlock.querySelector('.section-billable').checked,
                 items: []
             };
 
@@ -208,7 +208,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
         document.getElementById('contractModal').classList.add('modal-open');
     }
-
 
     document.getElementById('contract-form').addEventListener('submit', function(event) {
         addHiddenInputToForm();
