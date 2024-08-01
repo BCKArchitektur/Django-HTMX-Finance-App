@@ -42,29 +42,60 @@ def login_page(request):
 def logout_page(request):
     return render(request,'projects/logout_page.html')
 
+# def load_contracts(request):
+#     project_id = request.GET.get('project_id')
+#     if not project_id or not project_id.isdigit():
+#         return HttpResponseBadRequest("Invalid project ID")
+#     contracts = Contract.objects.filter(project__id=int(project_id)).order_by('contract_name')
+#     contract_list = [{'id': contract.id, 'contract_name': contract.contract_name} for contract in contracts]
+#     return JsonResponse({'contracts': contract_list})
+
+@login_required
 def load_contracts(request):
     project_id = request.GET.get('project_id')
     if not project_id or not project_id.isdigit():
-        return HttpResponseBadRequest("Invalid project ID")
-    contracts = Contract.objects.filter(project__id=int(project_id)).order_by('contract_name')
+        return JsonResponse({'contracts': []})
+    
+    contracts = Contract.objects.filter(project__id=int(project_id), user=request.user).order_by('contract_name')
     contract_list = [{'id': contract.id, 'contract_name': contract.contract_name} for contract in contracts]
     return JsonResponse({'contracts': contract_list})
 
+# def load_sections(request):
+#     contract_id = request.GET.get('contract_id')
+#     if not contract_id or not contract_id.isdigit():
+#         return HttpResponseBadRequest("Invalid contract ID")
+#     sections = Section.objects.filter(contract__id=int(contract_id)).order_by('section_name')
+#     section_list = [{'id': section.id, 'section_name': section.section_name} for section in sections]
+#     return JsonResponse({'sections': section_list})
+@login_required
 def load_sections(request):
     contract_id = request.GET.get('contract_id')
     if not contract_id or not contract_id.isdigit():
-        return HttpResponseBadRequest("Invalid contract ID")
-    sections = Section.objects.filter(contract__id=int(contract_id)).order_by('section_name')
+        return JsonResponse({'sections': []})
+    
+    sections = Section.objects.filter(contract__id=int(contract_id), user=request.user).order_by('section_name')
     section_list = [{'id': section.id, 'section_name': section.section_name} for section in sections]
     return JsonResponse({'sections': section_list})
 
+
+# def load_Items(request):
+#     section_id = request.GET.get('section_id')
+#     if not section_id or not section_id.isdigit():
+#         return HttpResponseBadRequest("Invalid section ID")
+#     Items = Item.objects.filter(section__id=int(section_id))
+#     Item_list = [{'id': Item.id, 'Item_name': Item.Item_name} for Item in Items]
+#     return JsonResponse({'Items': Item_list})
+
+
+@login_required
 def load_Items(request):
     section_id = request.GET.get('section_id')
     if not section_id or not section_id.isdigit():
-        return HttpResponseBadRequest("Invalid section ID")
-    Items = Item.objects.filter(section__id=int(section_id))
-    Item_list = [{'id': Item.id, 'Item_name': Item.Item_name} for Item in Items]
-    return JsonResponse({'Items': Item_list})
+        return JsonResponse({'Items': []})
+    
+    items = Item.objects.filter(section__id=int(section_id), users=request.user)
+    item_list = [{'id': item.id, 'Item_name': item.Item_name} for item in items]
+    return JsonResponse({'Items': item_list})
 
 def load_tasks(request):
     item_id = request.GET.get('Item_id')
@@ -715,6 +746,92 @@ def log_create_compact(request):
     return render(request, 'tracker/log_create_compact.html', context)
 
 #Main view to create log
+# def log_create(request):
+#     projects = Project.objects.filter(user=request.user)
+#     logs = Logs.objects.filter(user=request.user).order_by('-log_timestamps')
+#     today = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).strftime('%Y-%m-%d')
+#     logs_today = Logs.objects.filter(user=request.user, log_timestamps__startswith=today)
+#     total_hours_today = logs_today.annotate(
+#         numeric_time=Cast('log_time', FloatField())
+#     ).aggregate(total_time=Sum('numeric_time'))['total_time'] or 0
+
+#     # Get the employee's assigned hours
+#     employee = get_object_or_404(Employee, user=request.user)
+    
+#     # Determine today's day of the week
+#     day_of_week = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).weekday()
+
+#     # Mapping of day of the week to the corresponding hours assigned variable
+#     hours_assigned_mapping = {
+#         0: employee.hours_assigned_monday,
+#         1: employee.hours_assigned_tuesday,
+#         2: employee.hours_assigned_wednesday,
+#         3: employee.hours_assigned_thursday,
+#         4: employee.hours_assigned_friday,
+#     }
+
+#     hours_assigned_today = hours_assigned_mapping.get(day_of_week, 0)
+
+#     # Calculate the progress percentage
+#     progress_percentage = (total_hours_today / hours_assigned_today) * 100 if hours_assigned_today > 0 else 0
+
+#     form = LogForm(request.POST or None, user=request.user)
+#     if request.method == 'POST' and form.is_valid():
+#         log_project_name = form.cleaned_data['log_project_name'].project_name
+#         log_contract = form.cleaned_data['log_contract']
+#         log_tasks = form.cleaned_data['log_tasks']
+#         log_section = form.cleaned_data['log_section']
+#         log_Item = form.cleaned_data['log_Item']
+#         log_time = form.cleaned_data['log_time']
+#         log_timestamps = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).strftime('%Y-%m-%d %H:%M:%S')
+
+#         # Create the log entry
+#         log_entry = Logs.objects.create(
+#             log_project_name=log_project_name,
+#             log_contract=log_contract,
+#             log_section=log_section,
+#             log_Item=log_Item,
+#             log_time=log_time,
+#             log_timestamps=log_timestamps,
+#             log_tasks=log_tasks,
+#             user=request.user
+#         )
+#         log_entry.save()
+
+#         project = form.cleaned_data['log_project_name']
+#         default_contract = form.cleaned_data['log_contract']
+#         default_section = form.cleaned_data['log_section']
+#         default_Item = form.cleaned_data['log_Item']
+
+#         user_presets = ProjectPreset.objects.filter(user=request.user)
+#         if user_presets.count() >= 4:
+#             # Delete the oldest preset specific to the user
+#             oldest_preset = user_presets.order_by('id').first()
+#             oldest_preset.delete()
+
+#         ProjectPreset.objects.create(
+#             user=request.user,
+#             project=project,
+#             default_contract=default_contract,
+#             default_section=default_section,
+#             default_Item=default_Item,
+#         )
+
+#         return redirect('log_create')
+#     else:
+#         form = LogForm(user=request.user)
+
+#     context = {
+#         'form': form,
+#         'logs': logs,
+#         'total_hours_today': total_hours_today,
+#         'hours_assigned_today': hours_assigned_today,
+#         'progress_percentage': progress_percentage,
+#         'projects': projects,
+#     }
+#     return render(request, 'tracker/log_create.html', context)
+
+@login_required
 def log_create(request):
     projects = Project.objects.filter(user=request.user)
     logs = Logs.objects.filter(user=request.user).order_by('-log_timestamps')
@@ -799,6 +916,9 @@ def log_create(request):
         'projects': projects,
     }
     return render(request, 'tracker/log_create.html', context)
+
+
+
 
 @login_required
 def project_details(request, project_id):
