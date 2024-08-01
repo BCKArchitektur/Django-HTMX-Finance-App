@@ -252,6 +252,30 @@
         });
     }
 
+    function populateBudgetTable(contractId) {
+        fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
+            const budgetTable = document.getElementById('budget-table');
+            const thead = budgetTable.querySelector('thead tr');
+            const tbody = budgetTable.querySelector('tbody');
+
+            thead.innerHTML = '<th>NO.</th><th>SECTION</th><th>ITEM</th><th>BUDGET</th>';
+            tbody.innerHTML = '';
+
+            data.sections.forEach((section, sectionIndex) => {
+                section.items.forEach((item, itemIndex) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${sectionIndex + 1},${itemIndex + 1}</td>
+                        <td>${section.section_name}</td>
+                        <td>${item.Item_name}</td>
+                        <td><input type="text" name="budget_${item.id}" value="${item.budget || ''}" class="input input-bordered w-full" /></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        });
+    }
+    
     function populateUsersTable(contractId, projectUsers) {
         fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
             const usersTable = document.getElementById('users-table');
