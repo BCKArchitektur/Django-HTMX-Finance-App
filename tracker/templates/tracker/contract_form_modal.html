@@ -151,11 +151,11 @@ document.addEventListener("DOMContentLoaded", function() {
                 data.sections.forEach((section, sectionIndex) => {
                     const sectionId = Math.random().toString(36).substr(2, 9);
                     const sectionTemplate = `
-                        <div class="section-block form-control w-full m-2 p-4">
+                        <div class="section-block form-control w-full m-1 p-2">
                             <div class="flex items-center space-x-2">
                                 <div class="form-control flex items-center max-w-xs m-0">
                                     <label class="cursor-pointer label m-0 p-0">
-                                        <span class="label-text mr-1">Billable</span>
+                                        <span class="label-text mr-1 font-bold">€</span>
                                         <input type="checkbox" name="sections[${sectionId}][billable]" class="checkbox checkbox-accent section-billable" ${section.section_billed_hourly ? 'checked' : ''} />
                                     </label>
                                 </div>
@@ -174,10 +174,10 @@ document.addEventListener("DOMContentLoaded", function() {
                                     const tasksHTML = item.tasks ? item.tasks.map(task => {
                                         const taskId = Math.random().toString(36).substr(2, 9);
                                         const taskTemplate = `
-                                            <div class="task-block form-control w-full max-w-xs m-2">
+                                            <div class="task-block form-control w-full max-w-xs m-1">
                                                 <div class="flex justify-between items-center">
                                                     <input type="text" name="task_name" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
-                                                    <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
+                                                    <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
                                                 </div>
                                                 <div id="task-name-error-${taskId}" class="text-red-500 text-sm mb-2"></div>
                                             </div>
@@ -188,8 +188,8 @@ document.addEventListener("DOMContentLoaded", function() {
                                         <div class="item-block form-control w-full m-2 p-2">
                                             <div class="flex justify-between items-center">
                                                 <input type="text" name="Item_name" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
-                                                <button type="button" class="btn btn-sm btn-primary m-2" onclick="addTask(this)">+ Task</button>
-                                                <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
+                                                <button type="button" class="btn btn-sm btn-primary m-1" onclick="addTask(this)">+ Task</button>
+                                                <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
                                             </div>
                                             <div id="item-name-error-${itemId}" class="text-red-500 text-sm m-1"></div>
                                             <div class="tasks-container">
@@ -217,11 +217,11 @@ document.addEventListener("DOMContentLoaded", function() {
     window.addSection = function() {
         const sectionId = Math.random().toString(36).substr(2, 9);
         const sectionTemplate = `
-            <div class="section-block form-control w-full m-2 p-4">
+            <div class="section-block form-control w-full m-1 p-2">
                 <div class="flex items-center space-x-2">
                     <div class="form-control flex items-center max-w-xs m-0">
                         <label class="cursor-pointer label m-0 p-0">
-                            <span class="label-text mr-1">Billable</span>
+                            <span class="label-text mr-1 font-bold">€</span>
                             <input type="checkbox" name="sections[${sectionId}][billable]" class="checkbox checkbox-accent section-billable" />
                         </label>
                     </div>
@@ -245,8 +245,8 @@ document.addEventListener("DOMContentLoaded", function() {
             <div class="item-block form-control w-full m-2 p-2">
                 <div class="flex justify-between items-center">
                     <input type="text" name="sections[${sectionId}][items][${itemId}][Item_name]" placeholder="Item Name" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
-                    <button type="button" class="btn btn-sm btn-primary m-2" onclick="addTask(this, '${sectionId}', '${itemId}')">+ Task</button>
-                    <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
+                    <button type="button" class="btn btn-sm btn-primary m-1" onclick="addTask(this, '${sectionId}', '${itemId}')">+ Task</button>
+                    <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
                 </div>
                 <div id="item-name-error-${itemId}" class="text-red-500 text-sm m-1"></div>
                 <div class="tasks-container"></div>
@@ -260,7 +260,7 @@ document.addEventListener("DOMContentLoaded", function() {
             <div class="task-block form-control w-full max-w-xs m-2">
                 <div class="flex justify-between items-center">
                     <input type="text" name="sections[${sectionId}][items][${itemId}][tasks][${taskId}][task_name]" placeholder="Task Name" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
-                    <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
+                    <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
                 </div>
                 <div id="task-name-error-${taskId}" class="text-red-500 text-sm mb-2"></div>
             </div>`;
