@@ -366,6 +366,9 @@ def handle_existing_contract_form(request, project):
     contract_id = request.POST['contract_id']
     print(f"Contract ID: {contract_id}")
 
+    # Retrieve all users associated with the project
+    user_ids = project.user.values_list('id', flat=True)
+    
     contract = get_object_or_404(Contract, id=contract_id)
     print(f"Contract found: {contract}")
 
