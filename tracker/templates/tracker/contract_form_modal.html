@@ -19,7 +19,7 @@
             </label>
 
             <div class="mb-4">
-                <button type="button" class="btn btn-sm btn-primary mb-2" onclick="addSection()">+ New Section</button>
+                <button type="button" class="btn btn-sm btn-secondary mb-2" onclick="addSection()">+ New Section</button>
             </div>
             <div id="sections-container"></div>
             <div class="modal-action">
@@ -163,7 +163,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                     <input type="text" name="section_name" value="${section.section_name}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
                                 </div>
                                 <div class="flex space-x-2">
-                                    <button type="button" class="btn btn-sm btn-primary" onclick="addItem(this)">+ Item</button>
+                                    <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this)">+ Item</button>
                                     <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove()">x</button>
                                 </div>
                             </div>
@@ -188,7 +188,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                         <div class="item-block form-control w-full m-2 p-2">
                                             <div class="flex justify-between items-center">
                                                 <input type="text" name="Item_name" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
-                                                <button type="button" class="btn btn-sm btn-primary m-1" onclick="addTask(this)">+ Task</button>
+                                                <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this)">+ Task</button>
                                                 <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
                                             </div>
                                             <div id="item-name-error-${itemId}" class="text-red-500 text-sm m-1"></div>
@@ -228,7 +228,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         <input type="text" name="sections[${sectionId}][section_name]" placeholder="Section Name" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
                     </div>
                     <div class="flex space-x-2">
-                        <button type="button" class="btn btn-sm btn-primary" onclick="addItem(this, '${sectionId}')">+ Item</button>
+                        <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this, '${sectionId}')">+ Item</button>
                         <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove()">x</button>
                     </div>
                 </div>
@@ -244,7 +244,7 @@ document.addEventListener("DOMContentLoaded", function() {
             <div class="item-block form-control w-full m-2 p-2">
                 <div class="flex justify-between items-center">
                     <input type="text" name="sections[${sectionId}][items][${itemId}][Item_name]" placeholder="Item Name" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
-                    <button type="button" class="btn btn-sm btn-primary m-1" onclick="addTask(this, '${sectionId}', '${itemId}')">+ Task</button>
+                    <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this, '${sectionId}', '${itemId}')">+ Task</button>
                     <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
                 </div>
                 <div id="item-name-error-${itemId}" class="text-red-500 text-sm m-1"></div>
