@@ -268,35 +268,49 @@ document.addEventListener("DOMContentLoaded", function() {
 
     window.addSectionFromLibrary = function(sectionId, sectionName, projectNo) {
         fetchData(`/ajax/get-library-section/${sectionId}/`, data => {
+            const sectionId = Math.random().toString(36).substr(2, 9);
             const sectionTemplate = `
                 <div class="section-block form-control w-full m-2 p-4">
                     <div class="flex justify-between items-center">
-                        <input type="text" name="section_name" value="${data.section_name}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error" hx-swap="innerHTML">
-                        <button type="button" class="btn btn-sm btn-primary m-2" onclick="addItem(this)">+ Item</button>
-                        <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
+                        <div class="form-control flex items-center max-w-xs m-0">
+                            <label class="cursor-pointer label m-0 p-0">
+                                <span class="label-text mr-1 font-bold">€</span>
+                                <input type="checkbox" name="sections[${sectionId}][billable]" class="checkbox checkbox-accent section-billable" ${data.section_billed_hourly ? 'checked' : ''} />
+                            </label>
+                        </div>
+                        <div class="w-full">
+                            <input type="text" name="sections[${sectionId}][section_name]" value="${data.section_name}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
+                        </div>
+                        <div class="flex space-x-2">
+                            <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this, '${sectionId}')">+ Item</button>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove()">x</button>
+                        </div>
                     </div>
-                    <div id="section-name-error" class="text-red-500 text-sm mb-2"></div>
+                    <div id="section-name-error-${sectionId}" class="text-red-500 text-sm mb-2"></div>
                     <div class="items-container">
                         ${data.items.map(item => {
                             const itemId = Math.random().toString(36).substr(2, 9);
                             return `
                                 <div class="item-block form-control w-full m-2 p-2">
                                     <div class="flex justify-between items-center">
-                                        <input type="text" name="Item_name" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error" hx-swap="innerHTML">
-                                        <button type="button" class="btn btn-sm btn-primary m-2" onclick="addTask(this)">+ Task</button>
-                                        <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">x</button>
+                                        <input type="text" name="sections[${sectionId}][items][${itemId}][Item_name]" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
+                                        <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this, '${sectionId}', '${itemId}')">+ Task</button>
+                                        <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
                                     </div>
-                                    <div id="item-name-error" class="text-red-500 text-sm m-1"></div>
+                                    <div id="item-name-error-${itemId}" class="text-red-500 text-sm m-1"></div>
                                     <div class="tasks-container">
-                                        ${item.tasks.map(task => `
-                                            <div class="task-block form-control w-full max-w-xs m-2">
-                                                <div class="flex justify-between items-center">
-                                                    <input type="text" name="task_name" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error" hx-swap="innerHTML">
-                                                    <button type="button" class="btn btn-sm btn-danger m-2" onclick="this.parentNode.parentNode.remove()">Delete Task</button>
+                                        ${item.tasks.map(task => {
+                                            const taskId = Math.random().toString(36).substr(2, 9);
+                                            return `
+                                                <div class="task-block form-control w-full max-w-xs m-2">
+                                                    <div class="flex justify-between items-center">
+                                                        <input type="text" name="sections[${sectionId}][items][${itemId}][tasks][${taskId}][task_name]" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
+                                                        <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
+                                                    </div>
+                                                    <div id="task-name-error-${taskId}" class="text-red-500 text-sm mb-2"></div>
                                                 </div>
-                                                <div id="task-name-error" class="text-red-500 text-sm mb-2"></div>
-                                            </div>
-                                        `).join('')}
+                                            `;
+                                        }).join('')}
                                     </div>
                                 </div>
                             `;
@@ -307,6 +321,7 @@ document.addEventListener("DOMContentLoaded", function() {
             document.getElementById('sections-container').insertAdjacentHTML('beforeend', sectionTemplate);
         });
     }
+
 
     document.addEventListener('dragover', function(event) {
         event.preventDefault();
