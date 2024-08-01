@@ -252,14 +252,23 @@
         });
     }
 
-    function populateBudgetTable(contractId) {
+    function populateUsersTable(contractId, projectUsers) {
         fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
-            const budgetTable = document.getElementById('budget-table');
-            const thead = budgetTable.querySelector('thead tr');
-            const tbody = budgetTable.querySelector('tbody');
+            const usersTable = document.getElementById('users-table');
+            const thead = usersTable.querySelector('thead tr');
+            const tbody = usersTable.querySelector('tbody');
 
-            thead.innerHTML = '<th>NO.</th><th>SECTION</th><th>ITEM</th><th>BUDGET</th>';
+            thead.innerHTML = '<th>NO.</th><th>SECTION</th><th>ITEM</th>';
             tbody.innerHTML = '';
+
+            projectUsers.forEach(user => {
+                const th = document.createElement('th');
+                th.innerHTML = `
+                    ${user.username}<br>
+                    <input type="checkbox" onclick="toggleUserCheckboxes(${user.id}, this)">
+                `;
+                thead.appendChild(th);
+            });
 
             data.sections.forEach((section, sectionIndex) => {
                 section.items.forEach((item, itemIndex) => {
@@ -268,13 +277,25 @@
                         <td>${sectionIndex + 1},${itemIndex + 1}</td>
                         <td>${section.section_name}</td>
                         <td>${item.Item_name}</td>
-                        <td><input type="text" name="budget_${item.id}" value="${item.budget || ''}" class="input input-bordered w-full" /></td>
                     `;
+
+                    projectUsers.forEach(user => {
+                        const td = document.createElement('td');
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.name = `user_item_${user.id}_${item.id}`;
+                        checkbox.checked = item.users.includes(user.id);
+                        checkbox.classList.add(`user-checkbox-${user.id}`);
+                        td.appendChild(checkbox);
+                        tr.appendChild(td);
+                    });
+
                     tbody.appendChild(tr);
                 });
             });
         });
     }
+
 
     function toggleUserCheckboxes(userId, masterCheckbox) {
         const checkboxes = document.querySelectorAll(`.user-checkbox-${userId}`);

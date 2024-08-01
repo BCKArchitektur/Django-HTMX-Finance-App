@@ -94,10 +94,6 @@ class ProjectForm(forms.ModelForm):
         fields = ['project_name', 'project_address', 'client_name', 'project_no', 'status', 'user']
 
 
-class ClientForm(forms.ModelForm):
-    class Meta:
-        model = Client
-        fields = ['client_name', 'client_mail', 'firm_name', 'street_address', 'postal_code', 'city', 'country']
 
 class ClientForm(forms.ModelForm):
     class Meta:
