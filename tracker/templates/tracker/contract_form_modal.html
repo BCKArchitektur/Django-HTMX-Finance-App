@@ -116,13 +116,53 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('contract-form').appendChild(jsonInput);
     }
 
+    function validateContractForm() {
+        let isValid = true;
+        const contractName = document.getElementById('id_contract_name').value.trim();
+        if (!contractName) {
+            alert("Contract name cannot be empty.");
+            isValid = false;
+        }
+
+        document.querySelectorAll('.section-block').forEach(sectionBlock => {
+            const sectionName = sectionBlock.querySelector('.section-name').value.trim();
+            if (!sectionName) {
+                alert("Section name cannot be empty.");
+                isValid = false;
+            }
+
+            sectionBlock.querySelectorAll('.item-block').forEach(itemBlock => {
+                const itemName = itemBlock.querySelector('.item-name').value.trim();
+                if (!itemName) {
+                    alert("Item name cannot be empty.");
+                    isValid = false;
+                }
+
+                itemBlock.querySelectorAll('.task-block').forEach(taskBlock => {
+                    const taskName = taskBlock.querySelector('.task-name').value.trim();
+                    if (!taskName) {
+                        alert("Task name cannot be empty.");
+                        isValid = false;
+                    }
+                });
+            });
+        });
+
+        return isValid;
+    }
+
+
+
     window.openContractModal = function() {
         document.getElementById('contractModalTitle').innerText = 'Add a New Contract';
         document.getElementById('contract_id').value = '';
         document.getElementById('id_contract_name').value = '';
-        document.getElementById('sections-container').innerHTML = '';
+        const sectionsContainer = document.getElementById('sections-container');
+        sectionsContainer.innerHTML = ''; // Clear previous sections if any
+        addSection(); // Add default section
         document.getElementById('contractModal').classList.add('modal-open');
     }
+
 
     window.closeContractModal = function() {
         document.getElementById('contractModal').classList.remove('modal-open');
@@ -210,6 +250,10 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     document.getElementById('contract-form').addEventListener('submit', function(event) {
+        if (!validateContractForm()) {
+            event.preventDefault();
+            return false;
+        }
         addHiddenInputToForm();
     });
 
