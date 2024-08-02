@@ -61,7 +61,7 @@ class Item(models.Model):
     tasks = models.ManyToManyField(Task)
     users = models.ManyToManyField(User, blank=True)
     quantity = models.FloatField(default=0.0)
-    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default='hours')
+    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default='Std.')
     rate = models.FloatField(default=0.0)
     total = models.FloatField(default=0.0, editable=False)
 

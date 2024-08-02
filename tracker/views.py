@@ -30,6 +30,7 @@ import docx
 from docxtpl import DocxTemplate
 import os
 from django.conf import settings
+from datetime import date
 
 @login_required
 def toggle_dark_mode(request):
@@ -1092,6 +1093,66 @@ def delete_contract(request, contract_id):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
+# def generate_word_document(request, contract_id):
+#     contract = get_object_or_404(Contract, id=contract_id)
+#     project = contract.project_set.first()  # Assuming a contract belongs to at least one project
+#     client = project.client_name  # Assuming client_name is a related model, not just a field
+
+#     # Load template
+#     template_path = os.path.join(settings.BASE_DIR, 'tracker', 'templates', 'tracker', 'invoice_templates', 'template.docx')
+#     if not os.path.exists(template_path):
+#         raise FileNotFoundError(f"Template not found at {template_path}")
+
+#     doc = DocxTemplate(template_path)
+
+#     # Ensure client details are accessed correctly
+#     client_name = getattr(client, 'client_name', 'Unknown')
+#     firm_name = getattr(client, 'firm_name', 'Unknown')
+#     street_address = getattr(client, 'street_address', 'Unknown')
+#     city = getattr(client, 'city', 'Unknown')
+#     postal_code = getattr(client, 'postal_code', 'Unknown')
+#     country = getattr(client.country, 'name', 'Unknown') if hasattr(client, 'country') else 'Unknown'
+
+#     # Context for template
+#     context = {
+#         'project_name': project.project_name,
+#         'project_no': project.project_no,
+#         'client_name': client_name,
+#         'client_firm': firm_name,
+#         'client_address' : f"{street_address},\n{city}, {postal_code},\n{country}",
+
+#         'contract_sections': [
+#             {
+#                 'section_name': section.section_name,
+#                 'Item': [
+#                     {
+#                         'Item_name': item.Item_name,
+#                         'quantity': item.quantity,
+#                         'unit': item.unit,
+#                         'rate': item.rate,
+#                         'total': item.total
+#                     }
+#                     for item in section.Item.all()
+#                 ]
+#             }
+#             for section in contract.section.all()
+#         ]
+#     }
+
+#     # Print the context for debugging
+#     import pprint
+#     pprint.pprint(context)
+
+#     # Render the document with context
+#     doc.render(context)
+
+#     # Create HTTP response
+#     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+#     response['Content-Disposition'] = f'attachment; filename=project_estimate_{project.project_no}.docx'
+#     doc.save(response)
+
+#     return response
+
 def generate_word_document(request, contract_id):
     contract = get_object_or_404(Contract, id=contract_id)
     project = contract.project_set.first()  # Assuming a contract belongs to at least one project
@@ -1112,30 +1173,48 @@ def generate_word_document(request, contract_id):
     postal_code = getattr(client, 'postal_code', 'Unknown')
     country = getattr(client.country, 'name', 'Unknown') if hasattr(client, 'country') else 'Unknown'
 
+    # Calculate contract details
+    contract_sections = []
+    net_contract = 0
+
+    for section in contract.section.all():
+        section_total = 0
+        items = []
+        for item in section.Item.all():
+            item_total = item.quantity * item.rate
+            items.append({
+                'Item_name': item.Item_name,
+                'quantity': item.quantity,
+                'unit': item.unit,
+                'rate': item.rate,
+                'total': item_total
+            })
+            section_total += item_total
+        
+        contract_sections.append({
+            'section_name': section.section_name,
+            'net_section': section_total,
+            'Item': items
+        })
+        net_contract += section_total
+
+    tax_rate = 0.19  # 19% tax
+    tax = net_contract * tax_rate
+    gross_contract = net_contract + tax
+
     # Context for template
     context = {
+        'contract_name': contract.contract_name,
         'project_name': project.project_name,
         'project_no': project.project_no,
         'client_name': client_name,
         'client_firm': firm_name,
-        'client_address' : f"{street_address},\n{city}, {postal_code},\n{country}",
-
-        'contract_sections': [
-            {
-                'section_name': section.section_name,
-                'Item': [
-                    {
-                        'Item_name': item.Item_name,
-                        'quantity': item.quantity,
-                        'unit': item.unit,
-                        'rate': item.rate,
-                        'total': item.total
-                    }
-                    for item in section.Item.all()
-                ]
-            }
-            for section in contract.section.all()
-        ]
+        'client_address': f"{street_address},\n{city}, {postal_code},\n{country}",
+        'contract_sections': contract_sections,
+        'net_contract': net_contract,
+        'tax': tax,
+        'gross_contract': gross_contract,
+        'today_date': date.today().strftime('%Y-%m-%d')
     }
 
     # Print the context for debugging
