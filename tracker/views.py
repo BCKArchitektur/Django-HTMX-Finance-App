@@ -64,13 +64,7 @@ def load_contracts(request):
     contract_list = [{'id': contract.id, 'contract_name': contract.contract_name} for contract in contracts]
     return JsonResponse({'contracts': contract_list})
 
-# def load_sections(request):
-#     contract_id = request.GET.get('contract_id')
-#     if not contract_id or not contract_id.isdigit():
-#         return HttpResponseBadRequest("Invalid contract ID")
-#     sections = Section.objects.filter(contract__id=int(contract_id)).order_by('section_name')
-#     section_list = [{'id': section.id, 'section_name': section.section_name} for section in sections]
-#     return JsonResponse({'sections': section_list})
+
 @login_required
 def load_sections(request):
     contract_id = request.GET.get('contract_id')
@@ -80,15 +74,6 @@ def load_sections(request):
     sections = Section.objects.filter(contract__id=int(contract_id), user=request.user).order_by('section_name')
     section_list = [{'id': section.id, 'section_name': section.section_name} for section in sections]
     return JsonResponse({'sections': section_list})
-
-
-# def load_Items(request):
-#     section_id = request.GET.get('section_id')
-#     if not section_id or not section_id.isdigit():
-#         return HttpResponseBadRequest("Invalid section ID")
-#     Items = Item.objects.filter(section__id=int(section_id))
-#     Item_list = [{'id': Item.id, 'Item_name': Item.Item_name} for Item in Items]
-#     return JsonResponse({'Items': Item_list})
 
 
 @login_required
@@ -608,91 +593,6 @@ def log_create_compact(request):
     }
     return render(request, 'tracker/log_create_compact.html', context)
 
-#Main view to create log
-# def log_create(request):
-#     projects = Project.objects.filter(user=request.user)
-#     logs = Logs.objects.filter(user=request.user).order_by('-log_timestamps')
-#     today = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).strftime('%Y-%m-%d')
-#     logs_today = Logs.objects.filter(user=request.user, log_timestamps__startswith=today)
-#     total_hours_today = logs_today.annotate(
-#         numeric_time=Cast('log_time', FloatField())
-#     ).aggregate(total_time=Sum('numeric_time'))['total_time'] or 0
-
-#     # Get the employee's assigned hours
-#     employee = get_object_or_404(Employee, user=request.user)
-    
-#     # Determine today's day of the week
-#     day_of_week = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).weekday()
-
-#     # Mapping of day of the week to the corresponding hours assigned variable
-#     hours_assigned_mapping = {
-#         0: employee.hours_assigned_monday,
-#         1: employee.hours_assigned_tuesday,
-#         2: employee.hours_assigned_wednesday,
-#         3: employee.hours_assigned_thursday,
-#         4: employee.hours_assigned_friday,
-#     }
-
-#     hours_assigned_today = hours_assigned_mapping.get(day_of_week, 0)
-
-#     # Calculate the progress percentage
-#     progress_percentage = (total_hours_today / hours_assigned_today) * 100 if hours_assigned_today > 0 else 0
-
-#     form = LogForm(request.POST or None, user=request.user)
-#     if request.method == 'POST' and form.is_valid():
-#         log_project_name = form.cleaned_data['log_project_name'].project_name
-#         log_contract = form.cleaned_data['log_contract']
-#         log_tasks = form.cleaned_data['log_tasks']
-#         log_section = form.cleaned_data['log_section']
-#         log_Item = form.cleaned_data['log_Item']
-#         log_time = form.cleaned_data['log_time']
-#         log_timestamps = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).strftime('%Y-%m-%d %H:%M:%S')
-
-#         # Create the log entry
-#         log_entry = Logs.objects.create(
-#             log_project_name=log_project_name,
-#             log_contract=log_contract,
-#             log_section=log_section,
-#             log_Item=log_Item,
-#             log_time=log_time,
-#             log_timestamps=log_timestamps,
-#             log_tasks=log_tasks,
-#             user=request.user
-#         )
-#         log_entry.save()
-
-#         project = form.cleaned_data['log_project_name']
-#         default_contract = form.cleaned_data['log_contract']
-#         default_section = form.cleaned_data['log_section']
-#         default_Item = form.cleaned_data['log_Item']
-
-#         user_presets = ProjectPreset.objects.filter(user=request.user)
-#         if user_presets.count() >= 4:
-#             # Delete the oldest preset specific to the user
-#             oldest_preset = user_presets.order_by('id').first()
-#             oldest_preset.delete()
-
-#         ProjectPreset.objects.create(
-#             user=request.user,
-#             project=project,
-#             default_contract=default_contract,
-#             default_section=default_section,
-#             default_Item=default_Item,
-#         )
-
-#         return redirect('log_create')
-#     else:
-#         form = LogForm(user=request.user)
-
-#     context = {
-#         'form': form,
-#         'logs': logs,
-#         'total_hours_today': total_hours_today,
-#         'hours_assigned_today': hours_assigned_today,
-#         'progress_percentage': progress_percentage,
-#         'projects': projects,
-#     }
-#     return render(request, 'tracker/log_create.html', context)
 
 @login_required
 def log_create(request):
@@ -827,36 +727,6 @@ def add_project(request):
     return redirect('projects')
 
 
-# def load_contract_data(request):
-#     contract_id = request.GET.get('contract_id')
-#     contract = get_object_or_404(Contract, id=contract_id)
-
-#     users = list(User.objects.all().values('id', 'username'))
-#     sections = contract.section.all()
-#     section_data = []
-
-#     for section in sections:
-#         items = section.Item.all()
-#         item_data = [{
-#             'id': item.id, 
-#             'Item_name': item.Item_name,
-#             'budget': item.budget,  # Ensure budget is included here
-#             'users': list(item.users.values_list('id', flat=True)),  # Get user IDs for the item
-#             'tasks': list(item.tasks.values('id', 'task_name'))  # Include tasks for each item
-#         } for item in items]
-#         section_data.append({
-#             'section_name': section.section_name,
-#             'section_billed_hourly': section.section_billed_hourly,  # Include section_billed_hourly
-#             'items': item_data
-#         })
-
-#     contract_data = {
-#         'contract_name': contract.contract_name,
-#         'users': users,
-#         'sections': section_data
-#     }
-
-#     return JsonResponse(contract_data)
 
 
 def load_contract_data(request):
@@ -892,10 +762,6 @@ def load_contract_data(request):
     }
 
     return JsonResponse(contract_data)
-
-
-
-
 
 
 
@@ -935,25 +801,7 @@ def check_contract_name(request):
     }
     return JsonResponse(data)
 
-# @csrf_exempt
-# @login_required
-# def add_users(request):
-#     if request.method == 'POST':
-#         contract_id = request.POST.get('contract_id')
-#         contract = get_object_or_404(Contract, id=contract_id)
-        
-#         for section in contract.section.all():
-#             for item in section.Item.all():
-#                 for user in User.objects.all():
-#                     user_checkbox = f'user_item_{user.id}_{item.id}'
-#                     if user_checkbox in request.POST:
-#                         item.users.add(user)
-#                     else:
-#                         item.users.remove(user)
 
-#         return JsonResponse({'status': 'success'})
-    
-#     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 @csrf_exempt
 @login_required
@@ -984,31 +832,6 @@ def add_users(request):
 
 
 
-# @csrf_exempt
-# @login_required
-# def add_budget(request):
-#     if request.method == 'POST':
-#         print(request.POST)  # Debugging line
-#         contract_id = request.POST.get('contract_id')
-#         if not contract_id:
-#             return JsonResponse({'error': 'Missing contract ID'}, status=400)
-
-#         contract = get_object_or_404(Contract, id=contract_id)
-
-#         for section in contract.section.all():
-#             for item in section.Item.all():
-#                 budget_key = f'budget_{item.id}'
-#                 if budget_key in request.POST:
-#                     try:
-#                         print(f"Updating item {item.id} with budget {request.POST[budget_key]}")  # Debugging line
-#                         item.budget = request.POST[budget_key]
-#                         item.save()
-#                     except Item.DoesNotExist:
-#                         continue
-
-#         return JsonResponse({'status': 'success'})
-
-#     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 @csrf_exempt
 @login_required
@@ -1093,65 +916,6 @@ def delete_contract(request, contract_id):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
-# def generate_word_document(request, contract_id):
-#     contract = get_object_or_404(Contract, id=contract_id)
-#     project = contract.project_set.first()  # Assuming a contract belongs to at least one project
-#     client = project.client_name  # Assuming client_name is a related model, not just a field
-
-#     # Load template
-#     template_path = os.path.join(settings.BASE_DIR, 'tracker', 'templates', 'tracker', 'invoice_templates', 'template.docx')
-#     if not os.path.exists(template_path):
-#         raise FileNotFoundError(f"Template not found at {template_path}")
-
-#     doc = DocxTemplate(template_path)
-
-#     # Ensure client details are accessed correctly
-#     client_name = getattr(client, 'client_name', 'Unknown')
-#     firm_name = getattr(client, 'firm_name', 'Unknown')
-#     street_address = getattr(client, 'street_address', 'Unknown')
-#     city = getattr(client, 'city', 'Unknown')
-#     postal_code = getattr(client, 'postal_code', 'Unknown')
-#     country = getattr(client.country, 'name', 'Unknown') if hasattr(client, 'country') else 'Unknown'
-
-#     # Context for template
-#     context = {
-#         'project_name': project.project_name,
-#         'project_no': project.project_no,
-#         'client_name': client_name,
-#         'client_firm': firm_name,
-#         'client_address' : f"{street_address},\n{city}, {postal_code},\n{country}",
-
-#         'contract_sections': [
-#             {
-#                 'section_name': section.section_name,
-#                 'Item': [
-#                     {
-#                         'Item_name': item.Item_name,
-#                         'quantity': item.quantity,
-#                         'unit': item.unit,
-#                         'rate': item.rate,
-#                         'total': item.total
-#                     }
-#                     for item in section.Item.all()
-#                 ]
-#             }
-#             for section in contract.section.all()
-#         ]
-#     }
-
-#     # Print the context for debugging
-#     import pprint
-#     pprint.pprint(context)
-
-#     # Render the document with context
-#     doc.render(context)
-
-#     # Create HTTP response
-#     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-#     response['Content-Disposition'] = f'attachment; filename=project_estimate_{project.project_no}.docx'
-#     doc.save(response)
-
-#     return response
 
 def generate_word_document(request, contract_id):
     contract = get_object_or_404(Contract, id=contract_id)
