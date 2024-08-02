@@ -58,6 +58,7 @@ class Item(models.Model):
     ]
 
     Item_name = models.CharField(max_length=255, unique=False)
+    description = models.TextField(blank=True, null=True)
     tasks = models.ManyToManyField(Task)
     users = models.ManyToManyField(User, blank=True)
     quantity = models.FloatField(default=0.0)

@@ -10,11 +10,14 @@
                 <div class="label mb-0">
                     <span class="label-text">Contract Name</span>
                 </div>
+
                 <input type="text" name="contract_name" placeholder="Contract Name" class="input input-bordered w-full m-0" id="id_contract_name" hx-get="{% url 'check_contract_name' %}" hx-trigger="change from:input, blur:changed" hx-target="#contract-name-error" hx-swap="innerHTML">
+
                 <div class="label mt-0">
                     <span id="contract-name-error" class="label-text-alt"></span>
                 </div>
             </label>
+
             <div class="mb-4">
                 <button type="button" class="btn btn-sm btn-secondary mb-2" onclick="addSection()">+ New Section</button>
             </div>
@@ -39,7 +42,6 @@
         </div>
     </div>
 </div>
-
 
 <script>
 document.addEventListener("htmx:afterOnLoad", function(event) {
@@ -104,7 +106,6 @@ document.addEventListener("DOMContentLoaded", function() {
             sectionBlock.querySelectorAll('.item-block').forEach(itemBlock => {
                 let item = {
                     Item_name: itemBlock.querySelector('.item-name').value,
-                    description: itemBlock.querySelector('.item-description').value,  // Include description field
                     tasks: []
                 };
 
@@ -197,11 +198,12 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
+    // Function to open the edit contract modal
     window.openEditContractModal = function(contractId) {
         document.getElementById('contractModalTitle').innerText = 'Edit Contract';
         document.getElementById('contract_id').value = contractId;
         fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
-            console.log('Fetched Data:', data);
+            console.log('Fetched Data:', data); // Debugging line to check the fetched data
             document.getElementById('id_contract_name').value = data.contract_name;
             const sectionsContainer = document.getElementById('sections-container');
             sectionsContainer.innerHTML = '';
@@ -246,7 +248,6 @@ document.addEventListener("DOMContentLoaded", function() {
                                         <div class="item-block form-control w-full m-2 p-2">
                                             <div class="flex justify-between items-center">
                                                 <input type="text" name="Item_name" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
-                                                <textarea name="description" placeholder="Description" class="textarea textarea-bordered w-full m-2 item-description">${item.description}</textarea>
                                                 <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this)">+ Task</button>
                                                 <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
                                             </div>
@@ -310,7 +311,6 @@ document.addEventListener("DOMContentLoaded", function() {
             <div class="item-block form-control w-full m-2 p-2">
                 <div class="flex justify-between items-center">
                     <input type="text" name="sections[${sectionId}][items][${itemId}][Item_name]" placeholder="Item Name" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
-                    <textarea name="sections[${sectionId}][items][${itemId}][description]" placeholder="Description" class="textarea textarea-bordered w-full m-2 item-description"></textarea>
                     <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this, '${sectionId}', '${itemId}')">+ Task</button>
                     <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
                 </div>
