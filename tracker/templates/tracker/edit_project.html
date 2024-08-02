@@ -289,15 +289,17 @@
     }
 
     function updateTotal(itemId) {
-        const quantity = document.querySelector(`input[name="quantity_${itemId}"]`).value;
-        const rate = document.querySelector(`input[name="rate_${itemId}"]`).value;
-        const total = document.getElementById(`total_${itemId}`);
+        const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
+        const rateInput = document.querySelector(`input[name="rate_${itemId}"]`);
+        const totalField = document.getElementById(`total_${itemId}`);
 
-        const quantityValue = parseFloat(quantity) || 0;
-        const rateValue = parseFloat(rate) || 0;
+        const quantityValue = parseFloat(quantityInput.value) || 0;
+        const rateValue = parseFloat(rateInput.value) || 0;
         const totalValue = quantityValue * rateValue;
 
-        total.textContent = totalValue.toFixed(2);
+        console.log(`Updating total for item ${itemId}: ${quantityValue} * ${rateValue} = ${totalValue}`);
+        
+        totalField.textContent = totalValue.toFixed(2);
     }
     
     function populateUsersTable(contractId, projectUsers) {
