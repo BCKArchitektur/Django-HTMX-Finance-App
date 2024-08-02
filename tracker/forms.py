@@ -179,5 +179,8 @@ class AddUsersForm(forms.Form):
     users = forms.ModelMultipleChoiceField(queryset=User.objects.all(), widget=forms.CheckboxSelectMultiple, label="Select Users")
 
 class AddBudgetForm(forms.Form):
-    budget_items = forms.ModelChoiceField(queryset=Item.objects.all(), label="Select Item")
-    budget = forms.DecimalField(max_digits=10, decimal_places=2, label="Budget")
+    items = forms.ModelChoiceField(queryset=Item.objects.all(), label="Select Item")
+    quantity = forms.FloatField(label="Quantity")
+    unit = forms.ChoiceField(choices=Item.UNIT_CHOICES, label="Unit")
+    rate = forms.FloatField(label="Rate")
+    total = forms.FloatField(label="Total", required=False)  # This field will be automatically calculated

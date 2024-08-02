@@ -51,24 +51,32 @@ class Task(models.Model):
         return self.task_name
 
 
-# Creating Item model
 class Item(models.Model):
+    UNIT_CHOICES = [
+        ('hours', 'Hours'),
+        ('item', 'Item'),
+    ]
+
     Item_name = models.CharField(max_length=255, unique=False)
     tasks = models.ManyToManyField(Task)
     users = models.ManyToManyField(User, blank=True)
-    budget = models.FloatField(default=0.0)
+    quantity = models.FloatField(default=0.0)
+    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default='hours')
+    rate = models.FloatField(default=0.0)
+    total = models.FloatField(default=0.0, editable=False)
 
     def __str__(self):
         return self.Item_name
 
     def save(self, *args, **kwargs):
+        self.total = self.quantity * self.rate
         super().save(*args, **kwargs)
-        # self.update_parent_users()
 
     def delete(self, *args, **kwargs):
         for task in self.tasks.all():
             task.delete()
         super().delete(*args, **kwargs)
+
 
 
 

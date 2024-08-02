@@ -823,6 +823,38 @@ def add_project(request):
     return redirect('projects')
 
 
+# def load_contract_data(request):
+#     contract_id = request.GET.get('contract_id')
+#     contract = get_object_or_404(Contract, id=contract_id)
+
+#     users = list(User.objects.all().values('id', 'username'))
+#     sections = contract.section.all()
+#     section_data = []
+
+#     for section in sections:
+#         items = section.Item.all()
+#         item_data = [{
+#             'id': item.id, 
+#             'Item_name': item.Item_name,
+#             'budget': item.budget,  # Ensure budget is included here
+#             'users': list(item.users.values_list('id', flat=True)),  # Get user IDs for the item
+#             'tasks': list(item.tasks.values('id', 'task_name'))  # Include tasks for each item
+#         } for item in items]
+#         section_data.append({
+#             'section_name': section.section_name,
+#             'section_billed_hourly': section.section_billed_hourly,  # Include section_billed_hourly
+#             'items': item_data
+#         })
+
+#     contract_data = {
+#         'contract_name': contract.contract_name,
+#         'users': users,
+#         'sections': section_data
+#     }
+
+#     return JsonResponse(contract_data)
+
+
 def load_contract_data(request):
     contract_id = request.GET.get('contract_id')
     contract = get_object_or_404(Contract, id=contract_id)
@@ -836,7 +868,10 @@ def load_contract_data(request):
         item_data = [{
             'id': item.id, 
             'Item_name': item.Item_name,
-            'budget': item.budget,  # Ensure budget is included here
+            'quantity': item.quantity,  # Include quantity
+            'unit': item.unit,  # Include unit
+            'rate': item.rate,  # Include rate
+            'total': item.total,  # Include total
             'users': list(item.users.values_list('id', flat=True)),  # Get user IDs for the item
             'tasks': list(item.tasks.values('id', 'task_name'))  # Include tasks for each item
         } for item in items]
@@ -853,6 +888,8 @@ def load_contract_data(request):
     }
 
     return JsonResponse(contract_data)
+
+
 
 
 
@@ -943,11 +980,36 @@ def add_users(request):
 
 
 
+# @csrf_exempt
+# @login_required
+# def add_budget(request):
+#     if request.method == 'POST':
+#         print(request.POST)  # Debugging line
+#         contract_id = request.POST.get('contract_id')
+#         if not contract_id:
+#             return JsonResponse({'error': 'Missing contract ID'}, status=400)
+
+#         contract = get_object_or_404(Contract, id=contract_id)
+
+#         for section in contract.section.all():
+#             for item in section.Item.all():
+#                 budget_key = f'budget_{item.id}'
+#                 if budget_key in request.POST:
+#                     try:
+#                         print(f"Updating item {item.id} with budget {request.POST[budget_key]}")  # Debugging line
+#                         item.budget = request.POST[budget_key]
+#                         item.save()
+#                     except Item.DoesNotExist:
+#                         continue
+
+#         return JsonResponse({'status': 'success'})
+
+#     return JsonResponse({'error': 'Invalid request'}, status=400)
+
 @csrf_exempt
 @login_required
 def add_budget(request):
     if request.method == 'POST':
-        print(request.POST)  # Debugging line
         contract_id = request.POST.get('contract_id')
         if not contract_id:
             return JsonResponse({'error': 'Missing contract ID'}, status=400)
@@ -956,18 +1018,26 @@ def add_budget(request):
 
         for section in contract.section.all():
             for item in section.Item.all():
-                budget_key = f'budget_{item.id}'
-                if budget_key in request.POST:
+                quantity_key = f'quantity_{item.id}'
+                unit_key = f'unit_{item.id}'
+                rate_key = f'rate_{item.id}'
+                if quantity_key in request.POST and rate_key in request.POST:
                     try:
-                        print(f"Updating item {item.id} with budget {request.POST[budget_key]}")  # Debugging line
-                        item.budget = request.POST[budget_key]
+                        quantity = float(request.POST[quantity_key])
+                        unit = request.POST[unit_key]
+                        rate = float(request.POST[rate_key])
+                        item.quantity = quantity
+                        item.unit = unit
+                        item.rate = rate
+                        item.total = quantity * rate
                         item.save()
-                    except Item.DoesNotExist:
+                    except (ValueError, Item.DoesNotExist):
                         continue
 
         return JsonResponse({'status': 'success'})
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
 
 def load_item_users(request):
     item_id = request.GET.get('item_id')

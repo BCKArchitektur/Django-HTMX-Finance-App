@@ -171,7 +171,10 @@
                             <th>NO.</th>
                             <th>SECTION</th>
                             <th>ITEM</th>
-                            <th>BUDGET</th>
+                            <th>QUANTITY</th>
+                            <th>UNIT</th>
+                            <th>RATE</th>
+                            <th>TOTAL</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -186,6 +189,7 @@
         </form>
     </div>
 </div>
+
 
 
 {% include 'tracker/contract_form_modal.html' %}
@@ -258,7 +262,7 @@
             const thead = budgetTable.querySelector('thead tr');
             const tbody = budgetTable.querySelector('tbody');
 
-            thead.innerHTML = '<th>NO.</th><th>SECTION</th><th>ITEM</th><th>BUDGET</th>';
+            thead.innerHTML = '<th>NO.</th><th>SECTION</th><th>ITEM</th><th>QUANTITY</th><th>UNIT</th><th>RATE</th><th>TOTAL</th>';
             tbody.innerHTML = '';
 
             data.sections.forEach((section, sectionIndex) => {
@@ -268,12 +272,32 @@
                         <td>${sectionIndex + 1},${itemIndex + 1}</td>
                         <td>${section.section_name}</td>
                         <td>${item.Item_name}</td>
-                        <td><input type="text" name="budget_${item.id}" value="${item.budget || ''}" class="input input-bordered w-full" /></td>
+                        <td><input type="text" name="quantity_${item.id}" value="${item.quantity || ''}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" /></td>
+                        <td>
+                            <select name="unit_${item.id}" class="select select-bordered w-full">
+                                <option value="hours" ${item.unit === 'hours' ? 'selected' : ''}>Hours</option>
+                                <option value="item" ${item.unit === 'item' ? 'selected' : ''}>Item</option>
+                            </select>
+                        </td>
+                        <td><input type="text" name="rate_${item.id}" value="${item.rate || ''}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" /></td>
+                        <td id="total_${item.id}">${item.total || 0}</td>
                     `;
                     tbody.appendChild(tr);
                 });
             });
         });
+    }
+
+    function updateTotal(itemId) {
+        const quantity = document.querySelector(`input[name="quantity_${itemId}"]`).value;
+        const rate = document.querySelector(`input[name="rate_${itemId}"]`).value;
+        const total = document.getElementById(`total_${itemId}`);
+
+        const quantityValue = parseFloat(quantity) || 0;
+        const rateValue = parseFloat(rate) || 0;
+        const totalValue = quantityValue * rateValue;
+
+        total.textContent = totalValue.toFixed(2);
     }
     
     function populateUsersTable(contractId, projectUsers) {
