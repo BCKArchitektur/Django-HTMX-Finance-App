@@ -17,7 +17,7 @@
         data-task-id="1">
         <div class="card-body">
             <div class="tooltip" data-tip="Fills up the rest.">
-                <h2 class="card-title font-bold">Büro</h2>
+                <h2 class="card-title font-bold">Büro ⓘ </h2>
             </div>
             <div class="task-container flex flex-wrap gap-2 mb-2 overflow-y-auto max-h-24"></div>
             <input class="input input-bordered input-xs w-full text-xs mb-2" type="text" name="custom_tasks" id="custom-tasks-fixed" placeholder="Custom tasks">
@@ -39,7 +39,7 @@
     {% for preset in project_presets %}
     <div class="indicator w-96 h-56 mb-4">
         {% if preset.default_section.section_billed_hourly %}
-        <div class="tooltip tooltip-info" data-tip="Billed Hourly">
+        <div class="tooltip" data-tip="Billed Hourly">
             <span class="indicator-item badge badge-secondary badge-outline flex items-center justify-center p-1 pt-0">⧗</span>
         </div>
         {% endif %}
