@@ -53,8 +53,8 @@ class Task(models.Model):
 
 class Item(models.Model):
     UNIT_CHOICES = [
-        ('hours', 'Hours'),
-        ('item', 'Item'),
+        ('Std.', 'Std.'),
+        ('Psch', 'Psch'),
     ]
 
     Item_name = models.CharField(max_length=255, unique=False)

@@ -115,7 +115,11 @@
                         <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openAddBudgetModal({{ contract.id }})">
                             ✎ Budget
                         </button>
+                        <a href="{% url 'generate_word_document' contract.id %}" class="btn btn-sm btn-primary btn-outline m-1">
+                            🖪 Estimate
+                        </a>
                     </td>
+
                 </tr>
                 {% empty %}
                 <tr>
@@ -275,8 +279,8 @@
                         <td><input type="text" name="quantity_${item.id}" value="${item.quantity || ''}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" /></td>
                         <td>
                             <select name="unit_${item.id}" class="select select-bordered w-full">
-                                <option value="hours" ${item.unit === 'hours' ? 'selected' : ''}>Hours</option>
-                                <option value="item" ${item.unit === 'item' ? 'selected' : ''}>Item</option>
+                                <option value="hours" ${item.unit === 'Std.' ? 'selected' : ''}>Std.</option>
+                                <option value="item" ${item.unit === 'Psch.' ? 'selected' : ''}>Psch</option>
                             </select>
                         </td>
                         <td><input type="text" name="rate_${item.id}" value="${item.rate || ''}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" /></td>

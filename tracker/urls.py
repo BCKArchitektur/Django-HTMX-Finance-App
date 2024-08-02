@@ -32,4 +32,5 @@ urlpatterns = [
     path('ajax/get-library-section/<int:section_id>/', views.get_library_section, name='get_library_section'),
     path('ajax/get-project-users/', views.get_project_users, name='get_project_users'),
     path('delete-contract/<int:contract_id>/', views.delete_contract, name='delete_contract'),
+    path('generate-word-document/<int:contract_id>/', views.generate_word_document, name='generate_word_document'),
 ]
