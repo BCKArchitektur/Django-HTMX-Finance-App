@@ -259,17 +259,12 @@ def handle_project_form(request, project):
     return redirect('edit_project', project_id=project.id)
 
 
-
-
 def handle_existing_contract_form(request, project):
     print("Request received for handling existing contract form.")
     
     contract_id = request.POST['contract_id']
     print(f"Contract ID: {contract_id}")
 
-    # Retrieve all users associated with the project
-    user_ids = project.user.values_list('id', flat=True)
-    
     contract = get_object_or_404(Contract, id=contract_id)
     print(f"Contract found: {contract}")
 
@@ -338,42 +333,6 @@ def handle_existing_contract_form(request, project):
                             tasks_to_keep.add(task)
                             item.tasks.add(task)
 
-                        # Set project users to item
-                        current_item_user_ids = set(item.users.values_list('id', flat=True))
-                        new_item_user_ids = set(user_ids)
-                        item.users.set(user_ids)
-
-                        # Determine users to add and remove
-                        users_added = new_item_user_ids - current_item_user_ids
-                        users_removed = current_item_user_ids - new_item_user_ids
-
-                        print(f"Current item users: {current_item_user_ids}")
-                        print(f"New item users: {new_item_user_ids}")
-                        print(f"Users added to item: {users_added}")
-                        print(f"Users removed from item: {users_removed}")
-
-                        # Propagate added users to section and contract
-                        if users_added:
-                            section.user.add(*users_added)
-                            contract.user.add(*users_added)
-                            print(f"Users added to section: {users_added}")
-                            print(f"Users added to contract: {users_added}")
-
-                        # Propagate removed users from section and contract
-                        if users_removed:
-                            # Remove users only if they are not associated with any other items in the section
-                            for user_id in users_removed:
-                                user_in_other_items = section.Item.filter(users__id=user_id).exclude(id=item.id).exists()
-                                if not user_in_other_items:
-                                    section.user.remove(user_id)
-                                    print(f"User {user_id} removed from section")
-
-                                # Remove users from contract only if they are not associated with any other sections
-                                user_in_other_sections = contract.section.filter(user__id=user_id).exclude(id=section.id).exists()
-                                if not user_in_other_sections:
-                                    contract.user.remove(user_id)
-                                    print(f"User {user_id} removed from contract")
-
                         # Remove old tasks
                         for task in existing_tasks - tasks_to_keep:
                             item.tasks.remove(task)
@@ -397,7 +356,6 @@ def handle_existing_contract_form(request, project):
                     print(f"Section {section.id} removed")
 
                 # Save the contract
-                print(f"All users set to contract: {contract.user.all()}")
                 contract.save()
 
                 project.contract.add(contract)
@@ -416,9 +374,6 @@ def handle_existing_contract_form(request, project):
         messages.error(request, f"Error updating contract: {contract_form.errors}")
 
     return redirect('edit_project', project_id=project.id)
-
-
-
 
 
 
