@@ -4406,11 +4406,6 @@ details.collapse summary::-webkit-details-marker {
   bottom: var(--tooltip-tail-offset);
 }
 
-.tooltip-info {
-  --tooltip-color: var(--fallback-in,oklch(var(--in)/1));
-  --tooltip-text-color: var(--fallback-inc,oklch(var(--inc)/1));
-}
-
 .sr-only {
   position: absolute;
   width: 1px;
