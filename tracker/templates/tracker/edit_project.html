@@ -115,9 +115,9 @@
                         <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openAddBudgetModal({{ contract.id }})">
                             ✎ Budget
                         </button>
-                        <a href="{% url 'generate_word_document' contract.id %}" class="btn btn-sm btn-primary btn-outline m-1">
+                        <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openTemplateModal({{ contract.id }})">
                             🖪 Estimate
-                        </a>
+                        </button>
                     </td>
 
                 </tr>
@@ -194,13 +194,70 @@
     </div>
 </div>
 
-
+<!-- Modal to select the template -->
+<div id="selectTemplateModal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg">Select Template and Valid Until Date</h3>
+        <form id="template-form" method="get" action="{% url 'generate_word_document' 0 %}">
+            <input type="hidden" name="contract_id" id="template_contract_id">
+            <div class="form-control m-2">
+                <label for="template_name" class="label">Template</label>
+                <select name="template_name" id="template_name" class="select select-bordered w-full">
+                    <option value="Kost_De.docx">Kost_De</option>
+                    <option value="Kost_En.docx">Kost_En</option>
+                    <option value="BCK_De.docx">BCK_De</option>
+                    <option value="BCK_En.docx">BCK_En</option>
+                </select>
+            </div>
+            <div class="form-control m-2">
+                <label for="valid_until" class="label">Valid Until</label>
+                <input type="date" name="valid_until" id="valid_until" class="input input-bordered w-full">
+            </div>
+            <div class="modal-action">
+                <button type="submit" class="btn btn-primary">Download</button>
+                <a href="#" class="btn" onclick="closeTemplateModal()">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
 
 {% include 'tracker/contract_form_modal.html' %}
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
+    // Function to open the template modal
+    function openTemplateModal(contractId) {
+        document.getElementById('template_contract_id').value = contractId;
+        document.getElementById('selectTemplateModal').classList.add('modal-open');
+    }
+
+    // Function to close the template modal
+    function closeTemplateModal() {
+        document.getElementById('selectTemplateModal').classList.remove('modal-open');
+    }
+
+    document.getElementById('template-form').addEventListener('submit', function(event) {
+        const contractId = document.getElementById('template_contract_id').value;
+        const templateName = document.getElementById('template_name').value;
+        const validUntil = document.getElementById('valid_until').value;
+
+        // Check if the validUntil value is provided
+        if (!validUntil) {
+            alert('Please provide a valid until date.');
+            event.preventDefault();  // Prevent form submission
+            return;
+        }
+        
+        // Set the form action URL
+        this.action = `{% url 'generate_word_document' 0 %}`.replace('0', contractId) + `?template_name=${templateName}&valid_until=${validUntil}`;
+
+        // Close the modal
+        closeTemplateModal();
+
+        // Allow form submission to proceed
+    });
+
     function fetchData(url, callback) {
         fetch(url)
             .then(response => {
