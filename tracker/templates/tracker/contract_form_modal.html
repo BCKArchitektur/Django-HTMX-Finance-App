@@ -10,7 +10,7 @@
                 <div class="label mb-0">
                     <span class="label-text">Contract Name</span>
                 </div>
-                <input type="text" name="contract_name" placeholder="Contract Name" class="input input-bordered w-full m-0" id="id_contract_name" hx-get="{% url 'check_contract_name' %}" hx-trigger="change from:input, blur:changed" hx-target="#contract-name-error" hx-swap="innerHTML">
+                <input type="text" name="contract_name" placeholder="Contract Name" class="input input-bordered w-full m-0" id="id_contract_name">
                 <div class="label mt-0">
                     <span id="contract-name-error" class="label-text-alt"></span>
                 </div>
@@ -42,33 +42,7 @@
 
 
 <script>
-document.addEventListener("htmx:afterOnLoad", function(event) {
-    if (event.detail.target.id === 'contract-name-error') {
-        try {
-            const responseText = event.detail.target.innerHTML.trim();
-            const responseJSON = JSON.parse(responseText);
 
-            const errorElement = document.getElementById('contract-name-error');
-            const inputElement = document.getElementById('id_contract_name');
-
-            if (responseJSON.is_taken) {
-                errorElement.innerHTML = responseJSON.message;
-                errorElement.classList.add('text-error');
-                errorElement.classList.remove('text-success');
-                inputElement.classList.add('input-error');
-                inputElement.classList.remove('input-success');
-            } else {
-                errorElement.innerHTML = responseJSON.message;
-                errorElement.classList.remove('text-error');
-                errorElement.classList.add('text-success');
-                inputElement.classList.add('input-success');
-                inputElement.classList.remove('input-error');
-            }
-        } catch (e) {
-            console.error("Error parsing JSON response:", e);
-        }
-    }
-});
 
 document.addEventListener("DOMContentLoaded", function() {
     // Function to fetch data from the server
