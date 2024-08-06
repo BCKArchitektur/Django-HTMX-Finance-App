@@ -1034,9 +1034,16 @@ def add_users(request):
                 section_users.update(item.users.all())
             section.user.set(section_users)
 
+        # Update the users of the contract based on the users of its sections
+        contract_users = set()
+        for section in contract.section.all():
+            contract_users.update(section.user.all())
+        contract.user.set(contract_users)
+
         return JsonResponse({'status': 'success'})
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
 
 
 
