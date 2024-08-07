@@ -62,85 +62,110 @@
 
     <div class="divider lg:divider-neutral"></div>
 
-
-
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-semibold">Manage Contracts</h2>
-        <button class="btn btn-sm btn-accent" onclick="openContractModal()">+ New Contract</button>
-    </div>
-    <div class="overflow-x-auto h-80">
-        <table class="table" id="contract-table">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>Contract Name</th>
-                    <th>Users</th>
-                    <th>Budget</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for contract in contracts %}
-                <tr class="hover">
-                    <td>    
-                        <form method="post" action="{% url 'delete_contract' contract.id %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-error btn-outline p-1 m-1" onclick="return confirm('Are you sure you want to delete this contract?');">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            </button>
-                        </form>
-                    </td>
-                    <td>
-                        <a href="javascript:void(0);" onclick="openEditContractModal({{ contract.id }})" class="font-semibold hover:text-secondary">
-                            {{ contract.contract_name }}
-                        </a>
-                        
-
-                    </td>
-                    <td>
-                        {% for section in contract.section.all %}
-                            <strong>{{ section.section_name }}</strong><br>
-                            {% for item in section.Item.all %}
-                                {{ item.Item_name }}: 
-                                {% for user in item.users.all %}
-                                    {{ user.username }}{% if not forloop.last %}, {% endif %}
-                                {% endfor %}
-                                <br>
-                            {% endfor %}
-                        {% endfor %}
-                    </td>
-                    <td>
-                        {% for section in contract.section.all %}
-                            <strong>{{ section.section_name }}</strong><br>
-                            {% for item in section.Item.all %}
-                                {{ item.Item_name }}: {{ item.budget }}<br>
-                            {% endfor %}
-                        {% endfor %}
-                    </td>
-                    <td style="display: flexbox; align-items: center; gap: 2px;">
-                        <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openAddUsersModal({{ contract.id }})">
-                            ✎ Users
-                        </button>
-                        <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openAddBudgetModal({{ contract.id }})">
-                            ✎ Budget
-                        </button>
-                        <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openTemplateModal({{ contract.id }})">
-                            🖪 Estimate
-                        </button>
-                    </td>
-
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" class="text-center">No contracts have been added yet.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+    <div role="tablist" class="tabs tabs-bordered">
+        <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Contracts" id="contracts-tab" checked="checked" />
+        <div role="tabpanel" class="tab-content p-10" id="contracts-content">
+          <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold">Manage Contracts</h2>
+              <button class="btn btn-sm btn-accent" onclick="openContractModal()">+ New Contract</button>
+          </div>
+          <div class="overflow-x-auto h-80">
+              <table class="table" id="contract-table">
+                  <thead>
+                      <tr>
+                          <th></th>
+                          <th>Contract Name</th>
+                          <th>Users</th>
+                          <th>Budget</th>
+                          <th>Actions</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {% for contract in contracts %}
+                      <tr class="hover">
+                          <td>
+                              <form method="post" action="{% url 'delete_contract' contract.id %}" style="display:inline;">
+                                  {% csrf_token %}
+                                  <button type="submit" class="btn btn-sm btn-error btn-outline p-1 m-1" onclick="return confirm('Are you sure you want to delete this contract?');">
+                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                  </button>
+                              </form>
+                          </td>
+                          <td>
+                              <a href="javascript:void(0);" onclick="openEditContractModal({{ contract.id }})" class="font-semibold hover:text-secondary">
+                                  {{ contract.contract_name }}
+                              </a>
+                          </td>
+                          <td>
+                              {% for section in contract.section.all %}
+                                  <strong>{{ section.section_name }}</strong><br>
+                                  {% for item in section.Item.all %}
+                                      {{ item.Item_name }}:
+                                      {% for user in item.users.all %}
+                                          {{ user.username }}{% if not forloop.last %}, {% endif %}
+                                      {% endfor %}
+                                      <br>
+                                  {% endfor %}
+                              {% endfor %}
+                          </td>
+                          <td>
+                              {% for section in contract.section.all %}
+                                  <strong>{{ section.section_name }}</strong><br>
+                                  {% for item in section.Item.all %}
+                                      {{ item.Item_name }}: {{ item.budget }}<br>
+                                  {% endfor %}
+                              {% endfor %}
+                          </td>
+                          <td style="display: flexbox; align-items: center; gap: 2px;">
+                              <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openAddUsersModal({{ contract.id }})">
+                                  ✎ Users
+                              </button>
+                              <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openAddBudgetModal({{ contract.id }})">
+                                  ✎ Budget
+                              </button>
+                              <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openTemplateModal({{ contract.id }})">
+                                  🖪 Estimate
+                              </button>
+                          </td>
+                      </tr>
+                      {% empty %}
+                      <tr>
+                          <td colspan="4" class="text-center">No contracts have been added yet.</td>
+                      </tr>
+                      {% endfor %}
+                  </tbody>
+              </table>
+          </div>
+        </div>
+      
+        <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Invoices" id="invoices-tab" />
+        <div role="tabpanel" class="tab-content p-10" id="invoices-content">
+          <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold">Manage Invoices</h2>
+              <button class="btn btn-sm btn-accent">+ New Invoice</button>
+          </div>
+          <div class="overflow-x-auto h-80">
+              <table class="table" id="invoice-table">
+                  <thead>
+                      <tr>
+                          <th>Invoice Number</th>
+                          <th>Contract</th>
+                          <th>Date Issued</th>
+                          <th>Amount</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      <!-- Invoice data will go here -->
+                  </tbody>
+              </table>
+          </div>
+        </div>
+      </div>
+      
 
 <!-- Add/Edit Users Modal -->
 <div id="addUsersModal" class="modal">
@@ -238,6 +263,19 @@
 {% block extra_scripts %}
 <script src="//unpkg.com/alpinejs" defer></script>
 <script>
+    function showContracts() {
+        document.getElementById('contracts-content').style.display = 'block';
+        document.getElementById('invoices-content').style.display = 'none';
+        document.getElementById('contracts-tab').classList.add('tab-active');
+        document.getElementById('invoices-tab').classList.remove('tab-active');
+    }
+
+    function showInvoices() {
+        document.getElementById('contracts-content').style.display = 'none';
+        document.getElementById('invoices-content').style.display = 'block';
+        document.getElementById('contracts-tab').classList.remove('tab-active');
+        document.getElementById('invoices-tab').classList.add('tab-active');
+    }
     // Function to open the template modal
     function openTemplateModal(contractId) {
         document.getElementById('template_contract_id').value = contractId;
