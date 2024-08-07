@@ -4,7 +4,7 @@
         <h3 class="font-bold text-lg m-4" id="contractModalTitle">Add a New Contract</h3>
         <!-- Add this button to trigger file upload -->
         <input type="file" id="uploadExcel" accept=".xlsx" style="display:none" onchange="handleFileUpload(event)">
-        <button type="button" class="btn btn-sm btn-outline" onclick="document.getElementById('uploadExcel').click()">Import from Excel</button>
+        <button type="button" class="btn btn-xs btn-outline" onclick="document.getElementById('uploadExcel').click()">Import from Excel</button>
 
         <form id="contract-form" method="post" action="{% url 'edit_project' project.id %}">
             {% csrf_token %}
@@ -40,6 +40,18 @@
                 <p>No sections available in the library.</p>
                 {% endfor %}
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sheet Selection Modal -->
+<div id="sheetSelectionModal" class="modal">
+    <div class="modal-box max-w-sm">
+        <h3 class="font-bold text-lg m-4">Select Sheet</h3>
+        <div id="sheetList"></div>
+        <div class="modal-action">
+            <button type="button" class="btn btn-primary" onclick="selectSheet()">Select</button>
+            <a href="#" class="btn" onclick="closeSheetSelectionModal()">Cancel</a>
         </div>
     </div>
 </div>
@@ -99,6 +111,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
         return contract;
     }
+
+
 
     // Function to add hidden input to the form
     function addHiddenInputToForm() {
@@ -253,15 +267,53 @@ document.addEventListener("DOMContentLoaded", function() {
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
-            const sheetName = workbook.SheetNames[0]; // Assuming the first sheet
-            const sheet = workbook.Sheets[sheetName];
-            const json = XLSX.utils.sheet_to_json(sheet, {header: 1});
-            const parsedData = parseExcelData(json);
-            console.log('Parsed Data:', parsedData); // Debugging line
-            populateContractForm(parsedData);
+            const sheetNames = workbook.SheetNames;
+
+            if (sheetNames.length > 1) {
+                openSheetSelectionModal(sheetNames);
+            } else {
+                handleFileParsing(0);
+            }
+
+            window.handleFileParsing = function(sheetIndex) {
+                const sheetName = workbook.SheetNames[sheetIndex];
+                const sheet = workbook.Sheets[sheetName];
+                const json = XLSX.utils.sheet_to_json(sheet, {header: 1});
+                const parsedData = parseExcelData(json);
+                console.log('Parsed Data:', parsedData); // Debugging line
+                populateContractForm(parsedData);
+            };
         };
         reader.readAsArrayBuffer(file);
     };
+
+    // Function to open the sheet selection modal and handle sheet selection
+    window.openSheetSelectionModal = function(sheetNames) {
+        const sheetListContainer = document.getElementById('sheetList');
+        sheetListContainer.innerHTML = '';
+        sheetNames.forEach((sheetName, index) => {
+            const sheetOption = `
+                <label class="flex items-center space-x-2">
+                    <input type="radio" name="sheetOption" value="${index}" ${index === 0 ? 'checked' : ''} />
+                    <span>${sheetName}</span>
+                </label>
+            `;
+            sheetListContainer.insertAdjacentHTML('beforeend', sheetOption);
+        });
+        document.getElementById('sheetSelectionModal').classList.add('modal-open');
+
+        // Function to handle sheet selection
+        window.selectSheet = function() {
+            const selectedSheetIndex = document.querySelector('input[name="sheetOption"]:checked').value;
+            closeSheetSelectionModal();
+            handleFileParsing(selectedSheetIndex);
+        };
+    };
+
+    // Function to close the sheet selection modal
+    function closeSheetSelectionModal() {
+        document.getElementById('sheetSelectionModal').classList.remove('modal-open');
+    }
 
     // Function to parse Excel data into JSON format
     function parseExcelData(data) {
@@ -548,6 +600,15 @@ document.addEventListener("DOMContentLoaded", function() {
             document.getElementById('sections-container').insertAdjacentHTML('beforeend', sectionTemplate);
         });
     }
+
+    // Event listener for form submission
+    document.getElementById('contract-form').addEventListener('submit', function(event) {
+        if (!validateContractForm()) {
+            event.preventDefault();
+            return false;
+        }
+        addHiddenInputToForm();
+    });
 
     // Drag and drop event listeners
     document.addEventListener('dragover', function(event) {
