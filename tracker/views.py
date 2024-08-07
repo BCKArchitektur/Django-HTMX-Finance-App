@@ -378,6 +378,80 @@ def handle_existing_contract_form(request, project):
 
 
 
+# def handle_new_contract_form(request, project):
+#     contract_name = request.POST.get('contract_name')
+    
+#     # Retrieve all users associated with the project
+#     user_ids = project.user.values_list('id', flat=True)
+    
+#     # Debugging print statement
+#     print("POST data:", request.POST)
+
+#     contract = Contract.objects.create(contract_name=contract_name)
+#     contract.user.set(user_ids)
+
+#     contract_json = request.POST.get('contract_json')
+    
+#     print("Received contract JSON:", contract_json)  # Debugging line
+
+#     if contract_json:
+#         try:
+#             contract_data = json.loads(contract_json)
+            
+#             for section_data in contract_data['sections']:
+#                 section_name = section_data['section_name']
+#                 section_billed_hourly = section_data.get('section_billed_hourly', False)
+#                 section, created = Section.objects.update_or_create(
+#                     section_name=section_name,
+#                     defaults={'section_name': section_name, 'section_billed_hourly': section_billed_hourly}
+#                 )
+#                 print("Processed section:", section_name)  # Debugging line
+
+#                 # Set project users to section
+#                 section.user.set(user_ids)
+                
+#                 for item_data in section_data['items']:
+#                     Item_name = item_data['Item_name']
+#                     description = item_data.get('description', '')  # Handle description
+#                     item, created = Item.objects.update_or_create(
+#                         Item_name=Item_name,
+#                         defaults={'Item_name': Item_name, 'description': description}
+#                     )
+#                     if not created:
+#                         item.description = description  # Update description if item already exists
+#                         item.save()
+#                     print("Processed item:", Item_name)  # Debugging line
+
+#                     # Set project users to item only if it was newly created
+#                     if created:
+#                         item.users.set(user_ids)
+                    
+#                     for task_data in item_data['tasks']:
+#                         task_name = task_data['task_name']
+#                         task, created = Task.objects.update_or_create(
+#                             task_name=task_name,
+#                             defaults={'task_name': task_name}
+#                         )
+#                         print("Processed task:", task_name)  # Debugging line
+#                         item.tasks.add(task)
+
+#                     section.Item.add(item)
+
+#                 contract.section.add(section)
+
+#             contract.save()
+#             project.contract.add(contract)
+#             project.save()
+
+#             messages.success(request, "New contract added successfully.")
+#         except json.JSONDecodeError:
+#             messages.error(request, "Error decoding the contract JSON data.")
+#     else:
+#         messages.error(request, "No contract JSON data provided.")
+
+#     return redirect('edit_project', project_id=project.id)
+
+
 def handle_new_contract_form(request, project):
     contract_name = request.POST.get('contract_name')
     
@@ -392,13 +466,17 @@ def handle_new_contract_form(request, project):
 
     contract_json = request.POST.get('contract_json')
     
-    print("Received contract JSON:", contract_json)  # Debugging line
+    # Debugging print statement to check if contract_json is None
+    print("Received contract JSON:", contract_json)
 
     if contract_json:
         try:
             contract_data = json.loads(contract_json)
             
-            for section_data in contract_data['sections']:
+            # Debugging print statement to check the parsed JSON
+            print("Parsed contract data:", contract_data)
+            
+            for section_data in contract_data.get('sections', []):
                 section_name = section_data['section_name']
                 section_billed_hourly = section_data.get('section_billed_hourly', False)
                 section, created = Section.objects.update_or_create(
@@ -410,7 +488,7 @@ def handle_new_contract_form(request, project):
                 # Set project users to section
                 section.user.set(user_ids)
                 
-                for item_data in section_data['items']:
+                for item_data in section_data.get('items', []):
                     Item_name = item_data['Item_name']
                     description = item_data.get('description', '')  # Handle description
                     item, created = Item.objects.update_or_create(
@@ -426,7 +504,7 @@ def handle_new_contract_form(request, project):
                     if created:
                         item.users.set(user_ids)
                     
-                    for task_data in item_data['tasks']:
+                    for task_data in item_data.get('tasks', []):
                         task_name = task_data['task_name']
                         task, created = Task.objects.update_or_create(
                             task_name=task_name,
@@ -444,15 +522,13 @@ def handle_new_contract_form(request, project):
             project.save()
 
             messages.success(request, "New contract added successfully.")
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            print(f"JSON decode error: {e}")  # Debugging line for JSON decode error
             messages.error(request, "Error decoding the contract JSON data.")
     else:
         messages.error(request, "No contract JSON data provided.")
 
     return redirect('edit_project', project_id=project.id)
-
-
-
 
 
 def update_contract_details(request, contract):

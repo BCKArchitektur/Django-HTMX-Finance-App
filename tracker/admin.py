@@ -69,7 +69,7 @@ admin.site.register(Employee, EmployeeAdmin)
 admin.site.register(User, UserAdmin)
 
 # Client Admin
-@admin.register(Client)
+# @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
     list_display = ('client_name', 'client_mail', 'firm_name', 'street_address', 'postal_code', 'city', 'country')
     search_fields = ('client_name', 'client_mail', 'firm_name', 'city', 'country')
@@ -109,7 +109,7 @@ class LogsAdmin(admin.ModelAdmin):
         return obj.get_log_task()
     get_log_task.short_description = 'Tasks'
 
-admin.site.register(Logs, LogsAdmin)
+# admin.site.register(Logs, LogsAdmin)
 
 # Project Admin
 class ProjectAdminForm(forms.ModelForm):
@@ -132,7 +132,7 @@ class ProjectAdmin(admin.ModelAdmin):
         return ", ".join([user.username for user in obj.user.all()])
     display_users.short_description = 'Users'
 
-admin.site.register(Project, ProjectAdmin)
+# admin.site.register(Project, ProjectAdmin)
 
 # Item Admin
 class ItemAdminForm(forms.ModelForm):
@@ -149,7 +149,6 @@ class ItemAdminForm(forms.ModelForm):
 class ItemAdmin(admin.ModelAdmin):
     form = ItemAdminForm
 
-admin.site.register(Item, ItemAdmin)
 
 # Section Admin
 class SectionAdminForm(forms.ModelForm):
@@ -168,7 +167,7 @@ class SectionAdmin(admin.ModelAdmin):
     list_display = ('section_name', 'section_billed_hourly')
     search_fields = ('section_name', 'section_billed_hourly')
 
-admin.site.register(Section, SectionAdmin)
+# admin.site.register(Section, SectionAdmin)
 
 # Contract Admin
 class ContractAdminForm(forms.ModelForm):
@@ -185,11 +184,11 @@ class ContractAdminForm(forms.ModelForm):
 class ContractAdmin(admin.ModelAdmin):
     form = ContractAdminForm
 
-admin.site.register(Contract, ContractAdmin)
+# admin.site.register(Contract, ContractAdmin)
 
 
 # Task Admin
-@admin.register(Task)
+# @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
     list_display = ('task_name', )
     search_fields = ('task_name',)  
@@ -256,3 +255,8 @@ class ItemLibraryAdmin(admin.ModelAdmin):
 class TaskLibraryAdmin(admin.ModelAdmin):
     list_display = ('name', 'item')
     list_filter = ('item',)
+
+
+
+
+# admin.site.register(Item, ItemAdmin)
