@@ -2,6 +2,10 @@
 <div id="contractModal" class="modal">
     <div class="modal-box max-w-5xl">
         <h3 class="font-bold text-lg m-4" id="contractModalTitle">Add a New Contract</h3>
+        <!-- Add this button to trigger file upload -->
+        <input type="file" id="uploadExcel" accept=".xlsx" style="display:none" onchange="handleFileUpload(event)">
+        <button type="button" class="btn btn-sm btn-outline" onclick="document.getElementById('uploadExcel').click()">Import from Excel</button>
+
         <form id="contract-form" method="post" action="{% url 'edit_project' project.id %}">
             {% csrf_token %}
             <input type="hidden" name="contract_id" id="contract_id">
@@ -40,12 +44,10 @@
     </div>
 </div>
 
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.2/xlsx.full.min.js"></script>
 <script>
-
-
 document.addEventListener("DOMContentLoaded", function() {
-    // Function to fetch data from the server
+
     function fetchData(url, callback) {
         fetch(url)
             .then(response => {
@@ -240,6 +242,175 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
         document.getElementById('contractModal').classList.add('modal-open');
+    }
+
+    // Function to handle file upload
+    window.handleFileUpload = function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const sheetName = workbook.SheetNames[0]; // Assuming the first sheet
+            const sheet = workbook.Sheets[sheetName];
+            const json = XLSX.utils.sheet_to_json(sheet, {header: 1});
+            const parsedData = parseExcelData(json);
+            console.log('Parsed Data:', parsedData); // Debugging line
+            populateContractForm(parsedData);
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
+    // Function to parse Excel data into JSON format
+    function parseExcelData(data) {
+        const contracts = [];
+        let currentContract = null;
+        let currentSection = null;
+        let currentItem = null;
+
+        for (let i = 1; i < data.length; i++) { // Start from 1 to skip header
+            const row = data[i];
+            const project = row[0];
+            const contract = row[1];
+            const section = row[2];
+            const item = row[3];
+            const task = row[4];
+
+            if (contract) {
+                if (currentContract) {
+                    contracts.push(currentContract);
+                }
+                currentContract = {
+                    contract_name: contract,
+                    sections: []
+                };
+                currentSection = null;
+                currentItem = null;
+            }
+
+            if (section) {
+                if (currentSection) {
+                    if (currentItem) {
+                        currentSection.items.push(currentItem);
+                        currentItem = null;
+                    }
+                    currentContract.sections.push(currentSection);
+                }
+                currentSection = {
+                    section_name: section,
+                    section_billed_hourly: false, // Default value
+                    items: []
+                };
+                currentItem = null;
+            }
+
+            if (item) {
+                if (currentItem) {
+                    currentSection.items.push(currentItem);
+                }
+                currentItem = {
+                    Item_name: item,
+                    description: '', // Default value
+                    tasks: []
+                };
+            }
+
+            if (task) {
+                if (currentItem) {
+                    currentItem.tasks.push({ task_name: task });
+                }
+            }
+        }
+
+        // Add the last contract, section, and item
+        if (currentItem) {
+            currentSection.items.push(currentItem);
+        }
+        if (currentSection) {
+            currentContract.sections.push(currentSection);
+        }
+        if (currentContract) {
+            contracts.push(currentContract);
+        }
+
+        return contracts;
+    }
+
+    // Function to populate contract form with parsed data
+    function populateContractForm(data) {
+        if (data.length === 0) {
+            alert("No data to populate");
+            return;
+        }
+
+        const contract = data[0]; // Assuming only one contract is imported at a time
+        console.log('Populating Contract:', contract); // Debugging line
+
+        if (!contract.contract_name) {
+            alert("Contract name is missing in the imported data");
+            return;
+        }
+
+        document.getElementById('id_contract_name').value = contract.contract_name;
+        const sectionsContainer = document.getElementById('sections-container');
+        sectionsContainer.innerHTML = '';
+
+        contract.sections.forEach(section => {
+            const sectionId = Math.random().toString(36).substr(2, 9);
+            const sectionTemplate = `
+                <div class="section-block form-control w-full m-1 p-2">
+                    <div class="flex items-center space-x-2">
+                        <div class="form-control flex items-center max-w-xs m-0">
+                            <label class="cursor-pointer label m-0 p-0">
+                                <span class="label-text mr-1 font-bold">€</span>
+                                <input type="checkbox" name="sections[${sectionId}][billable]" class="checkbox checkbox-accent section-billable" ${section.section_billed_hourly ? 'checked' : ''} />
+                            </label>
+                        </div>
+                        <div class="w-full">
+                            <input type="text" name="sections[${sectionId}][section_name]" value="${section.section_name}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
+                        </div>
+                        <div class="flex space-x-2">
+                            <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this, '${sectionId}')">+ Item</button>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove()">x</button>
+                        </div>
+                    </div>
+                    <div id="section-name-error-${sectionId}" class="text-red-500 text-sm mb-2"></div>
+                    <div class="items-container">
+                        ${section.items.map(item => {
+                            const itemId = Math.random().toString(36).substr(2, 9);
+                            return `
+                                <div class="item-block form-control w-full m-2 p-2">
+                                    <div class="flex justify-between items-center">
+                                        <input type="text" name="sections[${sectionId}][items][${itemId}][Item_name]" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
+                                        <textarea name="sections[${sectionId}][items][${itemId}][description]" placeholder="Description" class="textarea textarea-bordered w-full m-2 item-description">${item.description}</textarea>
+                                        <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this, '${sectionId}', '${itemId}')">+ Task</button>
+                                        <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
+                                    </div>
+                                    <div id="item-name-error-${itemId}" class="text-red-500 text-sm m-1"></div>
+                                    <div class="tasks-container">
+                                        ${item.tasks.map(task => {
+                                            const taskId = Math.random().toString(36).substr(2, 9);
+                                            return `
+                                                <div class="task-block form-control w-full max-w-xs m-2">
+                                                    <div class="flex justify-between items-center">
+                                                        <input type="text" name="sections[${sectionId}][items][${itemId}][tasks][${taskId}][task_name]" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
+                                                        <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
+                                                    </div>
+                                                    <div id="task-name-error-${taskId}" class="text-red-500 text-sm mb-2"></div>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+            sectionsContainer.insertAdjacentHTML('beforeend', sectionTemplate);
+        });
     }
 
     // Event listener for form submission
