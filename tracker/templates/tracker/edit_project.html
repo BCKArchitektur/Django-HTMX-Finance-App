@@ -3,53 +3,62 @@
 {% block title %}Edit Project{% endblock %}
 
 {% block content %}
-<div class="container mx-auto p-4">
+<div class="container mx-auto p-4" x-data="{ showForm: false }">
     <div class="flex justify-between items-center mb-4">
         <div class="join align-middle justify-center items-center">
             <h2 class="text-lg font-thin">Edit - </h2>
             <h2 class="text-2xl font-semibold m-2">{{ project.project_name }}</h2>
         </div>
-        <button class="btn btn-circle btn-outline btn-error" onclick="window.location.href='{% url 'projects' %}';">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-        </button>
+        <div class="flex items-center gap-2">
+            <button class="btn btn-circle btn-outline" @click="showForm = !showForm">
+                <svg xmlns="http://www.w3.org/2000/svg" :class="{ 'rotate-180': showForm }" class="h-5 w-5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <button class="btn btn-circle btn-outline btn-error" onclick="window.location.href='{% url 'projects' %}';">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
     </div>
 
-    <form method="post" action="{% url 'edit_project' project.id %}">
-        {% csrf_token %}
-        <div class="grid grid-cols-3 gap-4">
-            <div class="form-control">
-                <input type="text" name="project_name" value="{{ project.project_name }}" placeholder="Project Name" class="input input-bordered m-1" id="id_project_name">
+    <div x-show="showForm" class="transition-all duration-300 ease-in-out">
+        <form method="post" action="{% url 'edit_project' project.id %}">
+            {% csrf_token %}
+            <div class="grid grid-cols-3 gap-4">
+                <div class="form-control">
+                    <input type="text" name="project_name" value="{{ project.project_name }}" placeholder="Project Name" class="input input-bordered m-1" id="id_project_name">
+                </div>
+                <div class="form-control">
+                    <input type="text" name="project_address" value="{{ project.project_address }}" placeholder="Project Address" class="input input-bordered m-1" id="id_project_address">
+                </div>
+                <div class="form-control">
+                    <select name="client_name" class="select select-bordered m-1" id="id_client_name">
+                        {% for client in clients %}
+                            <option value="{{ client.id }}" {% if project.client_name.id == client.id %}selected{% endif %}>{{ client.firm_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-control">
+                    <input type="text" name="project_no" value="{{ project.project_no }}" placeholder="Project Number" class="input input-bordered m-1" id="id_project_no">
+                </div>
+                <div class="form-control">
+                    <select name="status" class="select select-bordered m-1" id="id_status">
+                        {% for choice in form.status.field.choices %}
+                            <option value="{{ choice.0 }}" {% if form.status.value == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-control m-1">
+                    {{ form.user }}
+                </div>
             </div>
-            <div class="form-control">
-                <input type="text" name="project_address" value="{{ project.project_address }}" placeholder="Project Address" class="input input-bordered m-1" id="id_project_address">
+            <div class="modal-action">
+                <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
             </div>
-            <div class="form-control">
-                <select name="client_name" class="select select-bordered m-1" id="id_client_name">
-                    {% for client in clients %}
-                        <option value="{{ client.id }}" {% if project.client_name.id == client.id %}selected{% endif %}>{{ client.firm_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-control">
-                <input type="text" name="project_no" value="{{ project.project_no }}" placeholder="Project Number" class="input input-bordered m-1" id="id_project_no">
-            </div>
-            <div class="form-control">
-                <select name="status" class="select select-bordered m-1" id="id_status">
-                    {% for choice in form.status.field.choices %}
-                        <option value="{{ choice.0 }}" {% if form.status.value == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-control m-1">
-                {{ form.user }}
-            </div>
-        </div>
-        <div class="modal-action">
-            <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
-        </div>
-    </form>
+        </form>
+    </div>
 
     <div class="divider lg:divider-neutral"></div>
 
@@ -225,6 +234,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="//unpkg.com/alpinejs" defer></script>
 <script>
     // Function to open the template modal
     function openTemplateModal(contractId) {

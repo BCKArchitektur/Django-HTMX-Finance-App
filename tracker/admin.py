@@ -109,7 +109,7 @@ class LogsAdmin(admin.ModelAdmin):
         return obj.get_log_task()
     get_log_task.short_description = 'Tasks'
 
-# admin.site.register(Logs, LogsAdmin)
+admin.site.register(Logs, LogsAdmin)
 
 # Project Admin
 class ProjectAdminForm(forms.ModelForm):
