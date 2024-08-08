@@ -4724,6 +4724,10 @@ details.collapse summary::-webkit-details-marker {
   width: 25%;
 }
 
+.w-1\/6 {
+  width: 16.666667%;
+}
+
 .max-w-5xl {
   max-width: 64rem;
 }
@@ -4968,6 +4972,10 @@ details.collapse summary::-webkit-details-marker {
 
 .stroke-current {
   stroke: currentColor;
+}
+
+.stroke-slate-950 {
+  stroke: #020617;
 }
 
 .p-0 {
