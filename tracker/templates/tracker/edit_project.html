@@ -197,6 +197,7 @@
     </div>
 </div>
 
+
 <!-- Add/Edit Budget Modal -->
 <div id="addBudgetModal" class="modal">
     <div class="modal-box max-w-5xl">
@@ -222,6 +223,36 @@
                     </tbody>
                 </table>
             </div>
+            <div class="overflow-x-auto mt-4">
+                <table class="table w-full">
+                    <tbody>
+                        <tr>
+                            <td class="text-right font-thin">Sum of Items €</td>
+                            <td><input type="text" id="sum_of_items" class="input input-bordered input-sm w-full" readonly></td>
+                        </tr>
+                        <tr>
+                            <td class="text-right font-thin">Additional Fee %</td>
+                            <td><input type="text" name="additional_fee_percentage" id="additional_fee_percentage" class="input input-bordered input-sm w-full"></td>
+                        </tr>
+                        <tr>
+                            <td class="text-right font-thin">Additional Fee €</td>
+                            <td><input type="text" id="additional_fee" class="input input-bordered input-sm w-full" readonly></td>
+                        </tr>
+                        <tr>
+                            <td class="text-right font-bold">Net Contract €</td>
+                            <td><input type="text" id="net_contract" class="input input-bordered input-sm w-full" readonly></td>
+                        </tr>
+                        <tr>
+                            <td class="text-right font-thin">VAT (19%) €</td>
+                            <td><input type="text" id="vat" class="input input-bordered input-sm w-full" readonly></td>
+                        </tr>
+                        <tr>
+                            <td class="text-right font-bold">Gross Contract €</td>
+                            <td><input type="text" id="gross_contract" class="input input-bordered input-sm w-full" readonly></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
             <div class="modal-action">
                 <button type="submit" class="btn btn-primary">Save</button>
                 <a href="#" class="btn" onclick="closeAddBudgetModal()">Cancel</a>
@@ -229,6 +260,8 @@
         </form>
     </div>
 </div>
+
+
 
 <!-- Modal to select the template -->
 <div id="selectTemplateModal" class="modal">
@@ -367,6 +400,45 @@
         });
     }
 
+    function updateTotal(itemId) {
+        const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
+        const rateInput = document.querySelector(`input[name="rate_${itemId}"]`);
+        const totalField = document.getElementById(`total_${itemId}`);
+
+        const quantityValue = parseFloat(quantityInput.value) || 0;
+        const rateValue = parseFloat(rateInput.value) || 0;
+        const totalValue = quantityValue * rateValue;
+
+        totalField.textContent = totalValue.toFixed(2);
+
+        // Update summary fields
+        updateSummaryFields();
+    }
+
+    function updateSummaryFields() {
+        const itemTotals = document.querySelectorAll('[id^="total_"]');
+        let sumOfItems = 0;
+        itemTotals.forEach(totalField => {
+            sumOfItems += parseFloat(totalField.textContent) || 0;
+        });
+
+        const additionalFeePercentageInput = document.getElementById('additional_fee_percentage');
+        const additionalFeePercentage = parseFloat(additionalFeePercentageInput.value) || 0;
+        const additionalFee = (sumOfItems * additionalFeePercentage) / 100;
+
+        const netContract = sumOfItems + additionalFee;
+        const vat = netContract * 0.19;
+        const grossContract = netContract + vat;
+
+        document.getElementById('sum_of_items').value = sumOfItems.toFixed(2);
+        document.getElementById('additional_fee').value = additionalFee.toFixed(2);
+        document.getElementById('net_contract').value = netContract.toFixed(2);
+        document.getElementById('vat').value = vat.toFixed(2);
+        document.getElementById('gross_contract').value = grossContract.toFixed(2);
+    }
+
+    document.getElementById('additional_fee_percentage').addEventListener('input', updateSummaryFields);
+
     function populateBudgetTable(contractId) {
         fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
             const budgetTable = document.getElementById('budget-table');
@@ -396,22 +468,17 @@
                     tbody.appendChild(tr);
                 });
             });
+
+            // Populate additional fee percentage
+            const additionalFeePercentageInput = document.getElementById('additional_fee_percentage');
+            additionalFeePercentageInput.value = data.additional_fee_percentage || 0;
+
+            // Initialize the summary fields
+            updateSummaryFields();
         });
     }
 
-    function updateTotal(itemId) {
-        const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
-        const rateInput = document.querySelector(`input[name="rate_${itemId}"]`);
-        const totalField = document.getElementById(`total_${itemId}`);
 
-        const quantityValue = parseFloat(quantityInput.value) || 0;
-        const rateValue = parseFloat(rateInput.value) || 0;
-        const totalValue = quantityValue * rateValue;
-
-        console.log(`Updating total for item ${itemId}: ${quantityValue} * ${rateValue} = ${totalValue}`);
-        
-        totalField.textContent = totalValue.toFixed(2);
-    }
     
     function populateUsersTable(contractId, projectUsers) {
         fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
@@ -500,6 +567,7 @@
     document.getElementById('add-budget-form').addEventListener('submit', function(event) {
         handleFormSubmission(event, this, this.action);
     });
+
 
     window.openAddUsersModal = function(contractId) {
         document.getElementById('add_users_contract_id').value = contractId;

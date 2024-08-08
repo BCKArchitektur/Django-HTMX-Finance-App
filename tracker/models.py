@@ -106,6 +106,7 @@ class Contract(models.Model):
     contract_name = models.CharField(max_length=255, unique=False)
     user = models.ManyToManyField(User)
     section = models.ManyToManyField(Section)
+    additional_fee_percentage = models.FloatField(default=6.5) 
 
     def __str__(self):
         return self.contract_name

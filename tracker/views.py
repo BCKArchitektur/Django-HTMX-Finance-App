@@ -880,6 +880,41 @@ def add_project(request):
 
 
 
+# def load_contract_data(request):
+#     contract_id = request.GET.get('contract_id')
+#     contract = get_object_or_404(Contract, id=contract_id)
+
+#     users = list(User.objects.all().values('id', 'username'))
+#     sections = contract.section.all()
+#     section_data = []
+
+#     for section in sections:
+#         items = section.Item.all()
+#         item_data = [{
+#             'id': item.id,
+#             'Item_name': item.Item_name,
+#             'description': item.description,  # Include description field
+#             'quantity': item.quantity,  # Include quantity
+#             'unit': item.unit,  # Include unit
+#             'rate': item.rate,  # Include rate
+#             'total': item.total,  # Include total
+#             'users': list(item.users.values_list('id', flat=True)),  # Get user IDs for the item
+#             'tasks': list(item.tasks.values('id', 'task_name'))  # Include tasks for each item
+#         } for item in items]
+#         section_data.append({
+#             'section_name': section.section_name,
+#             'section_billed_hourly': section.section_billed_hourly,  # Include section_billed_hourly
+#             'items': item_data
+#         })
+
+#     contract_data = {
+#         'contract_name': contract.contract_name,
+#         'users': users,
+#         'sections': section_data
+#     }
+
+#     return JsonResponse(contract_data)
+
 def load_contract_data(request):
     contract_id = request.GET.get('contract_id')
     contract = get_object_or_404(Contract, id=contract_id)
@@ -893,24 +928,25 @@ def load_contract_data(request):
         item_data = [{
             'id': item.id,
             'Item_name': item.Item_name,
-            'description': item.description,  # Include description field
-            'quantity': item.quantity,  # Include quantity
-            'unit': item.unit,  # Include unit
-            'rate': item.rate,  # Include rate
-            'total': item.total,  # Include total
-            'users': list(item.users.values_list('id', flat=True)),  # Get user IDs for the item
-            'tasks': list(item.tasks.values('id', 'task_name'))  # Include tasks for each item
+            'description': item.description,
+            'quantity': item.quantity,
+            'unit': item.unit,
+            'rate': item.rate,
+            'total': item.total,
+            'users': list(item.users.values_list('id', flat=True)),
+            'tasks': list(item.tasks.values('id', 'task_name'))
         } for item in items]
         section_data.append({
             'section_name': section.section_name,
-            'section_billed_hourly': section.section_billed_hourly,  # Include section_billed_hourly
+            'section_billed_hourly': section.section_billed_hourly,
             'items': item_data
         })
 
     contract_data = {
         'contract_name': contract.contract_name,
         'users': users,
-        'sections': section_data
+        'sections': section_data,
+        'additional_fee_percentage': contract.additional_fee_percentage  # Include additional_fee_percentage
     }
 
     return JsonResponse(contract_data)
@@ -1023,6 +1059,40 @@ def add_users(request):
 
 
 
+# @csrf_exempt
+# @login_required
+# def add_budget(request):
+#     if request.method == 'POST':
+#         contract_id = request.POST.get('contract_id')
+#         if not contract_id:
+#             return JsonResponse({'error': 'Missing contract ID'}, status=400)
+
+#         contract = get_object_or_404(Contract, id=contract_id)
+
+#         for section in contract.section.all():
+#             for item in section.Item.all():
+#                 quantity_key = f'quantity_{item.id}'
+#                 unit_key = f'unit_{item.id}'
+#                 rate_key = f'rate_{item.id}'
+#                 if quantity_key in request.POST and rate_key in request.POST:
+#                     try:
+#                         quantity = float(request.POST[quantity_key])
+#                         unit = request.POST[unit_key]
+#                         rate = float(request.POST[rate_key])
+#                         item.quantity = quantity
+#                         item.unit = unit
+#                         item.rate = rate
+#                         item.total = quantity * rate
+#                         item.save()
+#                     except (ValueError, Item.DoesNotExist):
+#                         continue
+
+#         return JsonResponse({'status': 'success'})
+
+#     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+
 @csrf_exempt
 @login_required
 def add_budget(request):
@@ -1032,6 +1102,12 @@ def add_budget(request):
             return JsonResponse({'error': 'Missing contract ID'}, status=400)
 
         contract = get_object_or_404(Contract, id=contract_id)
+
+        additional_fee_percentage = request.POST.get('additional_fee_percentage')
+        try:
+            contract.additional_fee_percentage = float(additional_fee_percentage)
+        except (ValueError, TypeError):
+            contract.additional_fee_percentage = 0.0
 
         for section in contract.section.all():
             for item in section.Item.all():
@@ -1051,9 +1127,12 @@ def add_budget(request):
                     except (ValueError, Item.DoesNotExist):
                         continue
 
+        contract.save()
         return JsonResponse({'status': 'success'})
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
 
 
 def load_item_users(request):
