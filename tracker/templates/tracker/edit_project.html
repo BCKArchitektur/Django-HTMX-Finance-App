@@ -142,30 +142,52 @@
       
         <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Invoices" id="invoices-tab" />
         <div role="tabpanel" class="tab-content p-10" id="invoices-content">
-          <div class="flex justify-between items-center mb-4">
-              <h2 class="text-xl font-semibold">Manage Invoices</h2>
-              <button class="btn btn-sm btn-accent">+ New Invoice</button>
-          </div>
-          <div class="overflow-x-auto h-80">
-              <table class="table" id="invoice-table">
-                  <thead>
-                      <tr>
-                          <th>Invoice Number</th>
-                          <th>Contract</th>
-                          <th>Date Issued</th>
-                          <th>Amount</th>
-                          <th>Status</th>
-                          <th>Actions</th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                      <!-- Invoice data will go here -->
-                  </tbody>
-              </table>
-          </div>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Manage Invoices</h2>
+                <button class="btn btn-sm btn-accent" onclick="openInvoiceModal()">+ New Invoice</button>
+            </div>
+            <div class="overflow-x-auto h-80">
+                <table class="table" id="invoice-table">
+                    <thead>
+                        <tr>
+                            <th>Invoice Number</th>
+                            <th>Contract</th>
+                            <th>Date Issued</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for invoice in invoices %}
+                        <tr>
+                            <td>{{ invoice.title }}</td>
+                            <td>{{ invoice.contract.contract_name }}</td>
+                            <td>{{ invoice.created_at|date:"d M Y" }}</td>
+                            <td>{{ invoice.invoice_net }}</td>
+                            <td>{{ invoice.get_status_display }}</td>
+                            <td>
+                                <button class="btn btn-xs btn-primary" onclick="viewInvoice({{ invoice.id }})">View</button>
+                                <form method="post" action="{% url 'delete_invoice' invoice.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+                                </form>
+                                <a href="{% url 'download_invoice' invoice.id %}" class="btn btn-xs btn-secondary">Download Invoice</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No invoices have been added yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-      </div>
-      
+        
+    </div>
+
+
 
 <!-- Add/Edit Users Modal -->
 <div id="addUsersModal" class="modal">
@@ -290,6 +312,16 @@
     </div>
 </div>
 
+<!-- Invoice Details Modal -->
+<div id="invoiceDetailModal" class="modal">
+    <div id="invoice-details-content">
+        <!-- Invoice details will be populated here -->
+    </div>
+</div>
+
+{% include 'tracker/view_invoice_modal.html' %}
+
+{% include 'tracker/create_invoice.html' %}
 {% include 'tracker/contract_form_modal.html' %}
 {% endblock %}
 
@@ -458,8 +490,9 @@
                         <td><input type="text" name="quantity_${item.id}" value="${item.quantity || ''}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" /></td>
                         <td>
                             <select name="unit_${item.id}" class="select select-bordered w-full">
-                                <option value="Std." ${item.unit === 'Std.' ? 'selected' : ''}>Std.</option>
-                                <option value="Psch." ${item.unit === 'Psch.' ? 'selected' : ''}>Psch</option>
+                                <option value="Std." ${item.unit === 'Std' ? 'selected' : ''}>Std</option>
+                                <option value="Psch" ${item.unit === 'Psch' ? 'selected' : ''}>Psch</option>
+                                <option value="Stk" ${item.unit === 'Stk' ? 'selected' : ''}>Stk</option>
                             </select>
                         </td>
                         <td><input type="text" name="rate_${item.id}" value="${item.rate || ''}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" /></td>

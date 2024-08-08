@@ -1,5 +1,5 @@
 from django import forms
-from .models import Project, Contract, Section, Item, Logs , Task , Client , User
+from .models import Project, Contract, Section, Item, Logs , Task , Client , User , Invoice
 
 
 
@@ -118,9 +118,6 @@ class ContractForm(forms.ModelForm):
         model = Contract
         fields = ['contract_name']
 
-
-
-
 class AddUsersForm(forms.Form):
     items = forms.ModelChoiceField(queryset=Item.objects.all(), label="Select Item")
     users = forms.ModelMultipleChoiceField(queryset=User.objects.all(), widget=forms.CheckboxSelectMultiple, label="Select Users")
@@ -131,3 +128,14 @@ class AddBudgetForm(forms.Form):
     unit = forms.ChoiceField(choices=Item.UNIT_CHOICES, label="Unit")
     rate = forms.FloatField(label="Rate")
     total = forms.FloatField(label="Total", required=False)  # This field will be automatically calculated
+
+class InvoiceForm(forms.ModelForm):
+    class Meta:
+        model = Invoice
+        fields = ['contract', 'provided_quantities', 'invoice_net', 'amount_received']
+
+    def __init__(self, *args, **kwargs):
+        project = kwargs.pop('project', None)
+        super().__init__(*args, **kwargs)
+        if project:
+            self.fields['contract'].queryset = Contract.objects.filter(project=project)

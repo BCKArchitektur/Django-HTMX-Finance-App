@@ -1,0 +1,74 @@
+<div id="viewInvoiceModal" class="modal">
+    <div class="modal-box max-w-5xl">
+        <h3 class="font-bold text-lg m-4">View Invoice</h3>
+        <div class="form-control">
+            <label class="label">Project</label>
+            <input type="text" id="view_project_name" class="input input-bordered w-full" disabled>
+        </div>
+        <div class="form-control">
+            <label class="label">Contract</label>
+            <input type="text" id="view_contract_name" class="input input-bordered w-full" disabled>
+        </div>
+        <div class="form-control">
+            <div id="view_provided_quantities_table"></div>
+        </div>
+        <div class="form-control">
+            <label class="label">Invoice Net</label>
+            <input type="text" id="view_invoice_net" class="input input-bordered w-full" disabled>
+        </div>
+        <div class="form-control">
+            <label class="label">Amount Received</label>
+            <input type="text" id="view_amount_received" class="input input-bordered w-full" disabled>
+        </div>
+        <div class="modal-action">
+            <a href="#" class="btn" onclick="closeViewInvoiceModal()">Close</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openViewInvoiceModal() {
+        document.getElementById('viewInvoiceModal').classList.add('modal-open');
+    }
+    
+    function closeViewInvoiceModal() {
+        document.getElementById('viewInvoiceModal').classList.remove('modal-open');
+    }
+    
+    function viewInvoice(invoiceId) {
+        fetch(`/ajax/view-invoice/${invoiceId}/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('view_project_name').value = data.project_name;
+                document.getElementById('view_contract_name').value = data.contract_name;
+                document.getElementById('view_invoice_net').value = data.invoice_net;
+                document.getElementById('view_amount_received').value = data.amount_received;
+    
+                let html = '<table class="table w-full">';
+                html += '<thead><tr><th>Section and Item</th><th>Unit</th><th>Rate/Unit</th><th>Quantity (Provided)</th></tr></thead>';
+                html += '<tbody>';
+                data.provided_quantities.forEach(item => {
+                    html += `<tr>
+                                <td>${item.name}</td>
+                                <td>${item.unit}</td>
+                                <td>${item.rate}</td>
+                                <td>${item.quantity}</td>
+                             </tr>`;
+                });
+                html += '</tbody></table>';
+                document.getElementById('view_provided_quantities_table').innerHTML = html;
+    
+                openViewInvoiceModal();
+            })
+            .catch(error => {
+                console.error('Error fetching invoice:', error);
+                alert('Error fetching invoice: ' + error.message);
+            });
+    }
+    </script>
+    

@@ -33,4 +33,8 @@ urlpatterns = [
     path('ajax/get-project-users/', views.get_project_users, name='get_project_users'),
     path('delete-contract/<int:contract_id>/', views.delete_contract, name='delete_contract'),
     path('generate-word-document/<int:contract_id>/', views.generate_word_document, name='generate_word_document'),
-]
+    path("create-invoice/<int:project_id>/", views.create_invoice, name='create_invoice'),
+    path("delete-invoice/<int:invoice_id>/", views.delete_invoice, name="delete_invoice"),
+    path("ajax/view-invoice/<int:invoice_id>/", views.view_invoice, name="view_invoice"),
+     path('download-invoice/<int:invoice_id>/', views.download_invoice, name='download_invoice'),
+    ]

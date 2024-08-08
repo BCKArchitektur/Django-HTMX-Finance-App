@@ -1,0 +1,121 @@
+<!-- tracker/create_invoice.html -->
+<div id="invoiceModal" class="modal">
+    <div class="modal-box max-w-5xl">
+        <h3 class="font-bold text-lg m-4">Create a New Invoice</h3>
+        <form id="invoice-form" method="post" action="{% url 'create_invoice' project.id %}">
+            {% csrf_token %}
+            <div class="form-control">
+                <label class="label">Project</label>
+                <input type="text" class="input input-bordered w-full" value="{{ project.project_name }}" disabled>
+            </div>
+            <div class="form-control">
+                <label class="label">Contract</label>
+                <select id="id_contract" name="contract" class="select select-bordered w-full">
+                    <option value="">Select Contract</option>
+                    {% for contract in contracts %}
+                        <option value="{{ contract.id }}">{{ contract.contract_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-control">
+                <label class="label">Provided Quantities</label>
+                <textarea name="provided_quantities" class="textarea textarea-bordered w-full" hidden></textarea>
+                <div id="provided-quantities-table"></div>
+            </div>
+            <div class="form-control">
+                <label class="label">Invoice Net</label>
+                <input type="text" name="invoice_net" id="id_invoice_net" class="input input-bordered w-full" readonly>
+            </div>
+            <div class="form-control">
+                <label class="label">Amount Received</label>
+                <input type="text" name="amount_received" id="id_amount_received" class="input input-bordered w-full">
+            </div>
+            <div class="modal-action">
+                <button type="submit" class="btn btn-primary">Create Invoice</button>
+                <a href="#" class="btn" onclick="closeInvoiceModal()">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openInvoiceModal() {
+        document.getElementById('invoiceModal').classList.add('modal-open');
+    }
+
+    function closeInvoiceModal() {
+        document.getElementById('invoiceModal').classList.remove('modal-open');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const contractField = document.querySelector('#id_contract');
+        const providedQuantitiesField = document.querySelector('textarea[name="provided_quantities"]');
+
+        if (contractField) {
+            contractField.addEventListener('change', function() {
+                const contractId = this.value;
+                fetch(`/ajax/load-contract-data/?contract_id=${contractId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        let html = '<table class="table w-full">';
+                        html += '<thead><tr><th>Select</th><th>Section and Item</th><th>Unit</th><th>Rate/Unit</th><th>Quantity (Quoted)</th><th>Quantity (Available)</th><th>Quantity (Provided)</th></tr></thead>';
+                        html += '<tbody>';
+                        data.sections.forEach(section => {
+                            html += `<tr><td colspan="7" class="font-bold">${section.section_name}</td></tr>`;
+                            section.items.forEach(item => {
+                                const quotedQuantity = item.quantity;
+                                const availableQuantity = item.available_quantity;
+                                html += `<tr>
+                                            <td><input type="checkbox" name="select_${item.id}" /></td>
+                                            <td class="pl-8">${item.Item_name}</td>
+                                            <td>${item.unit}</td>
+                                            <td>${item.rate}</td>
+                                            <td>${quotedQuantity}</td>
+                                            <td>${availableQuantity}</td>
+                                            <td><input type="number" name="quantity_${item.id}" class="input input-bordered" data-item-id="${item.id}" data-item-rate="${item.rate}" /></td>
+                                         </tr>`;
+                            });
+                        });
+                        html += '</tbody></table>';
+                        document.getElementById('provided-quantities-table').innerHTML = html;
+
+                        // Calculate the net invoice amount
+                        document.querySelectorAll('input[name^="quantity_"]').forEach(input => {
+                            input.addEventListener('input', calculateInvoiceNet);
+                        });
+                    });
+            });
+        }
+
+        function calculateInvoiceNet() {
+            let net = 0;
+            document.querySelectorAll('input[name^="quantity_"]').forEach(input => {
+                if (input.closest('tr').querySelector('input[name^="select_"]').checked) {
+                    const quantity = parseFloat(input.value) || 0;
+                    const rate = parseFloat(input.dataset.itemRate) || 0;
+                    net += quantity * rate;
+                }
+            });
+            const invoiceNetField = document.querySelector('#id_invoice_net');
+            if (invoiceNetField) {
+                invoiceNetField.value = net.toFixed(2);
+            }
+        }
+
+        const invoiceForm = document.querySelector('#invoice-form');
+        if (invoiceForm) {
+            invoiceForm.addEventListener('submit', function(event) {
+                const quantities = {};
+                document.querySelectorAll('input[name^="quantity_"]').forEach(input => {
+                    if (input.closest('tr').querySelector('input[name^="select_"]').checked) {
+                        quantities[input.dataset.itemId] = {
+                            quantity: parseFloat(input.value) || 0,
+                            rate: parseFloat(input.dataset.itemRate) || 0
+                        };
+                    }
+                });
+                providedQuantitiesField.value = JSON.stringify(quantities);
+            });
+        }
+    });
+</script>

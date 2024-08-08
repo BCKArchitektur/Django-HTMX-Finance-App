@@ -4,6 +4,7 @@ from django.conf import settings
 from django_countries.fields import CountryField
 from django.db.models import UniqueConstraint
 from datetime import date
+from django.utils import timezone
 
 #Creating custom user model
 class User(AbstractUser):
@@ -53,8 +54,9 @@ class Task(models.Model):
 
 class Item(models.Model):
     UNIT_CHOICES = [
-        ('Std.', 'Std.'),
+        ('Std', 'Std'),
         ('Psch', 'Psch'),
+        ('Stk', 'Stk'),
     ]
 
     Item_name = models.CharField(max_length=255, unique=False)
@@ -62,7 +64,7 @@ class Item(models.Model):
     tasks = models.ManyToManyField(Task)
     users = models.ManyToManyField(User, blank=True)
     quantity = models.FloatField(default=0.0)
-    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default='Std.')
+    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default='Std')
     rate = models.FloatField(default=0.0)
     total = models.FloatField(default=0.0, editable=False)
 
@@ -202,3 +204,24 @@ class TaskLibrary(models.Model):
 
     def __str__(self):
         return self.name
+    
+
+class Invoice(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    contract = models.ForeignKey(Contract, on_delete=models.CASCADE)
+    provided_quantities = models.JSONField(default=dict)
+    invoice_net = models.FloatField()
+    amount_received = models.FloatField(null=True, blank=True)
+    title = models.CharField(max_length=200)
+    created_at = models.DateTimeField(default=timezone.now) 
+
+    def save(self, *args, **kwargs):
+        if not self.title:
+            year = timezone.now().year
+            month = timezone.now().month
+            count = Invoice.objects.filter(title__contains=f"{year}-{month}").count() + 700
+            self.title = f"{year}-{count}-{month}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.title

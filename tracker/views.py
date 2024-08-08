@@ -1,9 +1,9 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from .models import Project , Logs , Contract , Section , Item , Task , ProjectPreset , UserPreset , Employee ,User , Client , SectionLibrary
+from .models import Project , Logs , Contract , Section , Item , Task , ProjectPreset , UserPreset , Employee ,User , Client , SectionLibrary , Invoice
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
-from .forms import LogForm  , Hiddenform ,ProjectForm, ClientForm , ContractForm
+from .forms import LogForm  , Hiddenform ,ProjectForm, ClientForm , ContractForm , InvoiceForm
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, FloatField, Value
@@ -31,6 +31,9 @@ from docxtpl import DocxTemplate
 import os
 from django.conf import settings
 from datetime import date
+from django.urls import reverse
+from django.http import HttpResponseRedirect
+
 
 @login_required
 def toggle_dark_mode(request):
@@ -176,6 +179,7 @@ def edit_project(request, project_id):
     users = User.objects.all()
     contract_form = ContractForm()
     section_library = SectionLibrary.objects.all()  # Add this line to fetch all sections from the library
+    invoices = Invoice.objects.filter(project=project)
 
     if request.method == 'POST':
         if 'project_name' in request.POST:
@@ -197,7 +201,8 @@ def edit_project(request, project_id):
         'contract_form': contract_form,
         'clients': clients,
         'users': users,
-        'section_library': section_library,  # Pass section library to the template
+        'section_library': section_library, 
+        'invoices': invoices
     }
     return render(request, 'tracker/edit_project.html', context)
 
@@ -258,122 +263,6 @@ def handle_project_form(request, project):
         messages.error(request, "Error updating project: {}".format(form.errors))
     return redirect('edit_project', project_id=project.id)
 
-
-# def handle_existing_contract_form(request, project):
-#     print("Request received for handling existing contract form.")
-    
-#     contract_id = request.POST['contract_id']
-#     print(f"Contract ID: {contract_id}")
-
-#     contract = get_object_or_404(Contract, id=contract_id)
-#     print(f"Contract found: {contract}")
-
-#     contract_form = ContractForm(request.POST, instance=contract)
-
-#     if contract_form.is_valid():
-#         print("Contract form is valid.")
-#         contract_form.save()
-#         contract_json = request.POST.get('contract_json')
-#         print(f"Contract JSON: {contract_json}")
-
-#         if contract_json:
-#             try:
-#                 contract_data = json.loads(contract_json)
-#                 print(f"Contract data: {contract_data}")
-
-#                 # Track sections and items to delete those that are not updated
-#                 existing_sections = set(contract.section.all())
-#                 sections_to_keep = set()
-
-#                 # Process sections, items, and tasks
-#                 for section_data in contract_data['sections']:
-#                     section_name = section_data['section_name']
-#                     section_billed_hourly = section_data.get('section_billed_hourly', False)
-#                     section, created = Section.objects.get_or_create(
-#                         section_name=section_name,
-#                         defaults={'section_name': section_name, 'section_billed_hourly': section_billed_hourly}
-#                     )
-#                     if not created:
-#                         section.section_billed_hourly = section_billed_hourly
-#                         section.save()
-#                     print(f"Section: {section}, Created: {created}")
-
-#                     sections_to_keep.add(section)
-
-#                     # Track items to delete those that are not updated
-#                     existing_items = set(section.Item.all())
-#                     items_to_keep = set()
-
-#                     for item_data in section_data['items']:
-#                         Item_name = item_data['Item_name']
-#                         description = item_data.get('description', '')  # Handle description
-#                         item, created = Item.objects.get_or_create(
-#                             Item_name=Item_name,
-#                             defaults={'Item_name': Item_name, 'description': description}
-#                         )
-#                         if not created:
-#                             item.description = description  # Update description if item already exists
-#                             item.save()
-#                         print(f"Item: {item}, Created: {created}")
-
-#                         items_to_keep.add(item)
-
-#                         # Track tasks to delete those that are not updated
-#                         existing_tasks = set(item.tasks.all())
-#                         tasks_to_keep = set()
-
-#                         for task_data in item_data['tasks']:
-#                             task_name = task_data['task_name']
-#                             task, created = Task.objects.get_or_create(
-#                                 task_name=task_name,
-#                                 defaults={'task_name': task_name}
-#                             )
-#                             print(f"Task: {task}, Created: {created}")
-
-#                             tasks_to_keep.add(task)
-#                             item.tasks.add(task)
-
-#                         # Remove old tasks
-#                         for task in existing_tasks - tasks_to_keep:
-#                             item.tasks.remove(task)
-#                             task.delete()
-#                             print(f"Task {task.id} removed")
-
-#                         section.Item.add(item)
-
-#                     # Remove old items
-#                     for item in existing_items - items_to_keep:
-#                         section.Item.remove(item)
-#                         item.delete()
-#                         print(f"Item {item.id} removed")
-
-#                     contract.section.add(section)
-
-#                 # Remove old sections
-#                 for section in existing_sections - sections_to_keep:
-#                     contract.section.remove(section)
-#                     section.delete()
-#                     print(f"Section {section.id} removed")
-
-#                 # Save the contract
-#                 contract.save()
-
-#                 project.contract.add(contract)
-#                 project.save()
-#                 print("Project updated with contract.")
-
-#                 messages.success(request, "Contract updated successfully.")
-#             except json.JSONDecodeError as e:
-#                 print(f"JSON decode error: {e}")
-#                 messages.error(request, "Error decoding the contract JSON data.")
-#         else:
-#             print("No contract JSON data provided.")
-#             messages.error(request, "No contract JSON data provided.")
-#     else:
-#         print(f"Contract form errors: {contract_form.errors}")
-#         messages.error(request, f"Error updating contract: {contract_form.errors}")
-
-#     return redirect('edit_project', project_id=project.id)
 
 def handle_existing_contract_form(request, project):
     print("Request received for handling existing contract form.")
@@ -466,84 +355,6 @@ def handle_existing_contract_form(request, project):
     return redirect('edit_project', project_id=project.id)
 
 
-
-# def handle_new_contract_form(request, project):
-#     contract_name = request.POST.get('contract_name')
-    
-#     # Retrieve all users associated with the project
-#     user_ids = project.user.values_list('id', flat=True)
-    
-#     # Debugging print statement
-#     print("POST data:", request.POST)
-
-#     contract = Contract.objects.create(contract_name=contract_name)
-#     contract.user.set(user_ids)
-
-#     contract_json = request.POST.get('contract_json')
-    
-#     # Debugging print statement to check if contract_json is None
-#     print("Received contract JSON:", contract_json)
-
-#     if contract_json:
-#         try:
-#             contract_data = json.loads(contract_json)
-            
-#             # Debugging print statement to check the parsed JSON
-#             print("Parsed contract data:", contract_data)
-            
-#             for section_data in contract_data.get('sections', []):
-#                 section_name = section_data['section_name']
-#                 section_billed_hourly = section_data.get('section_billed_hourly', False)
-#                 section, created = Section.objects.update_or_create(
-#                     section_name=section_name,
-#                     defaults={'section_name': section_name, 'section_billed_hourly': section_billed_hourly}
-#                 )
-#                 print("Processed section:", section_name)  # Debugging line
-
-#                 # Set project users to section
-#                 section.user.set(user_ids)
-                
-#                 for item_data in section_data.get('items', []):
-#                     Item_name = item_data['Item_name']
-#                     description = item_data.get('description', '')  # Handle description
-#                     item, created = Item.objects.update_or_create(
-#                         Item_name=Item_name,
-#                         defaults={'Item_name': Item_name, 'description': description}
-#                     )
-#                     if not created:
-#                         item.description = description  # Update description if item already exists
-#                         item.save()
-#                     print("Processed item:", Item_name)  # Debugging line
-
-#                     # Set project users to item only if it was newly created
-#                     if created:
-#                         item.users.set(user_ids)
-                    
-#                     for task_data in item_data.get('tasks', []):
-#                         task_name = task_data['task_name']
-#                         task, created = Task.objects.update_or_create(
-#                             task_name=task_name,
-#                             defaults={'task_name': task_name}
-#                         )
-#                         print("Processed task:", task_name)  # Debugging line
-#                         item.tasks.add(task)
-
-#                     section.Item.add(item)
-
-#                 contract.section.add(section)
-
-#             contract.save()
-#             project.contract.add(contract)
-#             project.save()
-
-#             messages.success(request, "New contract added successfully.")
-#         except json.JSONDecodeError as e:
-#             print(f"JSON decode error: {e}")  # Debugging line for JSON decode error
-#             messages.error(request, "Error decoding the contract JSON data.")
-#     else:
-#         messages.error(request, "No contract JSON data provided.")
-
-#     return redirect('edit_project', project_id=project.id)
 
 def handle_new_contract_form(request, project):
     contract_name = request.POST.get('contract_name')
@@ -879,7 +690,6 @@ def add_project(request):
 
 
 
-
 # def load_contract_data(request):
 #     contract_id = request.GET.get('contract_id')
 #     contract = get_object_or_404(Contract, id=contract_id)
@@ -893,24 +703,25 @@ def add_project(request):
 #         item_data = [{
 #             'id': item.id,
 #             'Item_name': item.Item_name,
-#             'description': item.description,  # Include description field
-#             'quantity': item.quantity,  # Include quantity
-#             'unit': item.unit,  # Include unit
-#             'rate': item.rate,  # Include rate
-#             'total': item.total,  # Include total
-#             'users': list(item.users.values_list('id', flat=True)),  # Get user IDs for the item
-#             'tasks': list(item.tasks.values('id', 'task_name'))  # Include tasks for each item
+#             'description': item.description,
+#             'quantity': item.quantity,
+#             'unit': item.unit,
+#             'rate': item.rate,
+#             'total': item.total,
+#             'users': list(item.users.values_list('id', flat=True)),
+#             'tasks': list(item.tasks.values('id', 'task_name'))
 #         } for item in items]
 #         section_data.append({
 #             'section_name': section.section_name,
-#             'section_billed_hourly': section.section_billed_hourly,  # Include section_billed_hourly
+#             'section_billed_hourly': section.section_billed_hourly,
 #             'items': item_data
 #         })
 
 #     contract_data = {
 #         'contract_name': contract.contract_name,
 #         'users': users,
-#         'sections': section_data
+#         'sections': section_data,
+#         'additional_fee_percentage': contract.additional_fee_percentage  # Include additional_fee_percentage
 #     }
 
 #     return JsonResponse(contract_data)
@@ -918,6 +729,10 @@ def add_project(request):
 def load_contract_data(request):
     contract_id = request.GET.get('contract_id')
     contract = get_object_or_404(Contract, id=contract_id)
+    project_id = contract.project_set.first().id  # Assuming a contract belongs to at least one project
+
+    # Fetch all previous invoices for this project
+    previous_invoices = Invoice.objects.filter(project_id=project_id)
 
     users = list(User.objects.all().values('id', 'username'))
     sections = contract.section.all()
@@ -925,17 +740,28 @@ def load_contract_data(request):
 
     for section in sections:
         items = section.Item.all()
-        item_data = [{
-            'id': item.id,
-            'Item_name': item.Item_name,
-            'description': item.description,
-            'quantity': item.quantity,
-            'unit': item.unit,
-            'rate': item.rate,
-            'total': item.total,
-            'users': list(item.users.values_list('id', flat=True)),
-            'tasks': list(item.tasks.values('id', 'task_name'))
-        } for item in items]
+        item_data = []
+
+        for item in items:
+            # Calculate the total provided quantity from previous invoices
+            total_provided_quantity = sum(
+                invoice.provided_quantities.get(str(item.id), {}).get('quantity', 0)
+                for invoice in previous_invoices
+            )
+            available_quantity = item.quantity - total_provided_quantity
+            item_data.append({
+                'id': item.id,
+                'Item_name': item.Item_name,
+                'description': item.description,
+                'quantity': item.quantity,
+                'available_quantity': available_quantity,
+                'unit': item.unit,
+                'rate': item.rate,
+                'total': item.total,
+                'users': list(item.users.values_list('id', flat=True)),
+                'tasks': list(item.tasks.values('id', 'task_name'))
+            })
+        
         section_data.append({
             'section_name': section.section_name,
             'section_billed_hourly': section.section_billed_hourly,
@@ -946,12 +772,10 @@ def load_contract_data(request):
         'contract_name': contract.contract_name,
         'users': users,
         'sections': section_data,
-        'additional_fee_percentage': contract.additional_fee_percentage  # Include additional_fee_percentage
+        'additional_fee_percentage': contract.additional_fee_percentage
     }
 
     return JsonResponse(contract_data)
-
-
 
 def check_task_name(request):
     task_name = request.GET.get('task_name', None)
@@ -991,38 +815,7 @@ def check_contract_name(request):
 
 
 
-# @csrf_exempt
-# @login_required
-# def add_users(request):
-#     if request.method == 'POST':
-#         contract_id = request.POST.get('contract_id')
-#         contract = get_object_or_404(Contract, id=contract_id)
-        
-#         for section in contract.section.all():
-#             for item in section.Item.all():
-#                 for user in User.objects.all():
-#                     user_checkbox = f'user_item_{user.id}_{item.id}'
-#                     if user_checkbox in request.POST:
-#                         item.users.add(user)
-#                     else:
-#                         item.users.remove(user)
 
-#         # Now update the users of the sections based on the users of their items
-#         for section in contract.section.all():
-#             section_users = set()
-#             for item in section.Item.all():
-#                 section_users.update(item.users.all())
-#             section.user.set(section_users)
-
-#         # Update the users of the contract based on the users of its sections
-#         contract_users = set()
-#         for section in contract.section.all():
-#             contract_users.update(section.user.all())
-#         contract.user.set(contract_users)
-
-#         return JsonResponse({'status': 'success'})
-    
-#     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 @csrf_exempt
 @login_required
@@ -1058,38 +851,6 @@ def add_users(request):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
-
-# @csrf_exempt
-# @login_required
-# def add_budget(request):
-#     if request.method == 'POST':
-#         contract_id = request.POST.get('contract_id')
-#         if not contract_id:
-#             return JsonResponse({'error': 'Missing contract ID'}, status=400)
-
-#         contract = get_object_or_404(Contract, id=contract_id)
-
-#         for section in contract.section.all():
-#             for item in section.Item.all():
-#                 quantity_key = f'quantity_{item.id}'
-#                 unit_key = f'unit_{item.id}'
-#                 rate_key = f'rate_{item.id}'
-#                 if quantity_key in request.POST and rate_key in request.POST:
-#                     try:
-#                         quantity = float(request.POST[quantity_key])
-#                         unit = request.POST[unit_key]
-#                         rate = float(request.POST[rate_key])
-#                         item.quantity = quantity
-#                         item.unit = unit
-#                         item.rate = rate
-#                         item.total = quantity * rate
-#                         item.save()
-#                     except (ValueError, Item.DoesNotExist):
-#                         continue
-
-#         return JsonResponse({'status': 'success'})
-
-#     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
 
@@ -1278,6 +1039,112 @@ def generate_word_document(request, contract_id):
     # Create HTTP response
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
     response['Content-Disposition'] = f'attachment; filename=project_estimate_{project.project_no}.docx'
+    doc.save(response)
+
+    return response
+
+
+@login_required
+def create_invoice(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    contracts = project.contract.all()
+
+    if request.method == 'POST':
+        form = InvoiceForm(request.POST, project=project)
+        if form.is_valid():
+            invoice = form.save(commit=False)
+            invoice.project = project
+            invoice.provided_quantities = json.loads(request.POST.get('provided_quantities'))
+            invoice.save()
+            # Redirect to the edit project page with the invoice tab open
+            return HttpResponseRedirect(reverse('edit_project', args=[project_id]) + '?tab=invoices')
+        else:
+            return JsonResponse({'status': 'error', 'errors': form.errors})
+    else:
+        form = InvoiceForm(project=project)
+    
+    return render(request, 'tracker/create_invoice.html', {'form': form, 'project': project, 'contracts': contracts})
+
+
+
+def calculate_available_quantity(project, item):
+    all_invoices = Invoice.objects.filter(project=project)
+    total_quantity_invoiced = sum(
+        json.loads(invoice.provided_quantities).get(str(item.id), {}).get('quantity', 0)
+        for invoice in all_invoices
+    )
+    return item.quantity - total_quantity_invoiced
+
+
+# View for deleting an invoice
+@login_required
+def delete_invoice(request, invoice_id):
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+    project_id = invoice.project.id  # Assuming an invoice belongs to a project
+    invoice.delete()
+    return redirect('edit_project', project_id=project_id)
+
+# View for getting invoice details
+@login_required
+def view_invoice(request, invoice_id):
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+    project = invoice.project
+    contract = invoice.contract
+    provided_quantities = [
+        {
+            'name': item_name,
+            'quantity': details['quantity'],
+            'rate': details['rate'],
+            'unit': 'unit'  # Replace 'unit' with actual unit if available
+        }
+        for item_name, details in invoice.provided_quantities.items()
+    ]
+
+    data = {
+        'project_name': project.project_name,
+        'contract_name': contract.contract_name,
+        'invoice_net': invoice.invoice_net,
+        'amount_received': invoice.amount_received,
+        'provided_quantities': provided_quantities
+    }
+    return JsonResponse(data)
+
+
+
+@login_required
+def download_invoice(request, invoice_id):
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+    project = invoice.project
+    contract = invoice.contract
+
+    provided_quantities = invoice.provided_quantities  # This should be a dictionary
+    items = []
+    for item_id, details in provided_quantities.items():
+        item = Item.objects.get(id=item_id)
+        items.append({
+            'name': item.Item_name,
+            'unit': item.unit,
+            'rate': details['rate'],
+            'quantity': details['quantity']
+        })
+
+    template_path = os.path.join(settings.BASE_DIR, 'tracker', 'templates', 'tracker', 'invoice_templates', 'Invoice_Template.docx')
+    doc = DocxTemplate(template_path)
+
+    context = {
+        'project_name': project.project_name,
+        'contract_name': contract.contract_name,
+        'invoice_net': invoice.invoice_net,
+        'amount_received': invoice.amount_received,
+        'provided_quantities': items,
+        'invoice_title': invoice.title,
+        'created_at': invoice.created_at.strftime('%d %B %Y'),
+    }
+
+    doc.render(context)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    response['Content-Disposition'] = f'attachment; filename=invoice_{invoice.id}.docx'
     doc.save(response)
 
     return response
