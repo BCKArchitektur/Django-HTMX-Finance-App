@@ -37,4 +37,6 @@ urlpatterns = [
     path("delete-invoice/<int:invoice_id>/", views.delete_invoice, name="delete_invoice"),
     path("ajax/view-invoice/<int:invoice_id>/", views.view_invoice, name="view_invoice"),
     path('download-invoice/<int:invoice_id>/', views.download_invoice, name='download_invoice'),
+    path('record-payment/<int:invoice_id>/', views.record_payment, name='record_payment'),
+
     ]

@@ -211,7 +211,7 @@ class Invoice(models.Model):
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE)
     provided_quantities = models.JSONField(default=dict)
     invoice_net = models.FloatField()
-    amount_received = models.FloatField(null=True, blank=True)
+    amount_received = models.FloatField(null=True, blank=True, default=0)
     title = models.CharField(max_length=200)
     created_at = models.DateTimeField(default=timezone.now) 
 

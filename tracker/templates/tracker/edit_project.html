@@ -155,6 +155,7 @@
                             <th>Date Issued</th>
                             <th>Amount</th>
                             <th>Status</th>
+                            <th>Amount Received</th> <!-- New Column -->
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -166,18 +167,20 @@
                             <td>{{ invoice.created_at|date:"d M Y" }}</td>
                             <td>{{ invoice.invoice_net }}</td>
                             <td>{{ invoice.get_status_display }}</td>
+                            <td>{{ invoice.amount_received }}</td> <!-- New Data -->
                             <td>
                                 <button class="btn btn-xs btn-primary" onclick="viewInvoice({{ invoice.id }})">View</button>
                                 <form method="post" action="{% url 'delete_invoice' invoice.id %}" style="display:inline;">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-xs btn-danger">Delete</button>
                                 </form>
-                                <a href="{% url 'download_invoice' invoice.id %}" class="btn btn-xs btn-secondary">Download Invoice</a>
+                                <a href="{% url 'download_invoice' invoice.id %}" class="btn btn-xs btn-secondary">🖪 Invoice</a>
+                                <button class="btn btn-xs btn-accent" onclick="openRecordPaymentModal({{ invoice.id }})">Record Payment</button> <!-- New Button -->
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center">No invoices have been added yet.</td>
+                            <td colspan="7" class="text-center">No invoices have been added yet.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -320,6 +323,7 @@
 </div>
 
 {% include 'tracker/view_invoice_modal.html' %}
+{% include 'tracker/record_payment_modal.html' %}
 
 {% include 'tracker/create_invoice.html' %}
 {% include 'tracker/contract_form_modal.html' %}

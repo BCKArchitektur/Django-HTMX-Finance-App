@@ -1133,6 +1133,7 @@ def view_invoice(request, invoice_id):
             return JsonResponse({'error': 'Invalid data format for provided quantities'}, status=400)
 
         provided_quantities = []
+        sum_of_items = 0
         for item_id, details in provided_quantities_data.items():
             try:
                 # Fetch the item using the item ID
@@ -1142,30 +1143,46 @@ def view_invoice(request, invoice_id):
                 section = Section.objects.filter(Item=item, contract=contract).first()
                 section_name = section.section_name if section else "Unknown Section"
 
+                total = details['rate'] * details['quantity']
+                sum_of_items += total
+
                 provided_quantities.append({
                     'section_name': section_name,
                     'item_name': item.Item_name,
                     'unit': item.unit,
                     'rate': details['rate'],
                     'quantity': details['quantity'],
-                    'total': details['rate'] * details['quantity'],
+                    'total': total,
                 })
             except Item.DoesNotExist:
                 print(f"Item with id {item_id} does not exist.")
+                total = details['rate'] * details['quantity']
+                sum_of_items += total
+
                 provided_quantities.append({
                     'section_name': 'Unknown Section',
                     'item_name': f'Unknown Item (ID: {item_id})',
                     'unit': 'Unknown Unit',
                     'rate': details['rate'],
                     'quantity': details['quantity'],
-                    'total': details['rate'] * details['quantity'],
+                    'total': total,
                 })
+
+        # Calculate the additional fee, invoice net, VAT, and gross invoice values
+        additional_fee_percentage = contract.additional_fee_percentage or 0
+        additional_fee_value = (sum_of_items * additional_fee_percentage) / 100
+        invoice_net = sum_of_items + additional_fee_value
+        tax_value = invoice_net * 0.19  # Assuming VAT is 19%
+        invoice_gross = invoice_net + tax_value
 
         data = {
             'project_name': project.project_name,
             'contract_name': contract.contract_name,
-            'additional_fee_percentage': contract.additional_fee_percentage,
-            'provided_quantities': provided_quantities
+            'additional_fee_percentage': additional_fee_percentage,
+            'provided_quantities': provided_quantities,
+            'invoice_net': invoice_net,
+            'tax_value': tax_value,
+            'invoice_gross': invoice_gross,
         }
 
         return JsonResponse(data)
@@ -1183,40 +1200,98 @@ def view_invoice(request, invoice_id):
 
 
 
-@login_required
 def download_invoice(request, invoice_id):
+    # Fetch the invoice, project, and contract
     invoice = get_object_or_404(Invoice, id=invoice_id)
     project = invoice.project
     contract = invoice.contract
+    client = project.client_name
 
-    provided_quantities = invoice.provided_quantities  # This should be a dictionary
+    # Fetch provided quantities and related items and sections
+    provided_quantities = invoice.provided_quantities  # Assuming this is a dictionary
     items = []
+    sum_of_items = 0
+    section_totals = {}
+    
     for item_id, details in provided_quantities.items():
-        item = Item.objects.get(id=item_id)
+        item = get_object_or_404(Item, id=item_id)
+        section = item.section_set.first()  # Assuming each item belongs to one section
+        section_name = section.section_name if section else "Unknown Section"
+        item_total = details['quantity'] * details['rate']
+        
         items.append({
-            'name': item.Item_name,
+            'section_name': section_name,
+            'item_name': item.Item_name,
             'unit': item.unit,
             'rate': details['rate'],
-            'quantity': details['quantity']
+            'quantity': details['quantity'],
+            'total': item_total,
         })
+        
+        sum_of_items += item_total
+        section_totals[section_name] = section_totals.get(section_name, 0) + item_total
 
-    template_path = os.path.join(settings.BASE_DIR, 'tracker', 'templates', 'tracker', 'invoice_templates', 'Invoice_Template.docx')
-    doc = DocxTemplate(template_path)
+    additional_fee_percentage = contract.additional_fee_percentage
+    additional_fee_value = (sum_of_items * additional_fee_percentage) / 100
+    invoice_net = sum_of_items + additional_fee_value
+    tax_value = invoice_net * 0.19  # Assuming 19% VAT
+    invoice_gross = invoice_net + tax_value
 
+    # Fetch all previous invoices for the same project
+    previous_invoices = Invoice.objects.filter(project=project).exclude(id=invoice_id)
+    previous_invoices_data = [
+        {
+            'invoice_number': inv.title,
+            'invoice_net': inv.invoice_net,
+            'invoice_gross': inv.invoice_net + (inv.invoice_net * 0.19),  # Assuming 19% VAT
+            'amount_paid': inv.amount_received,
+        }
+        for inv in previous_invoices
+    ]
+
+    # Prepare the context for the template
     context = {
-        'project_name': project.project_name,
-        'contract_name': contract.contract_name,
-        'invoice_net': invoice.invoice_net,
-        'amount_received': invoice.amount_received,
-        'provided_quantities': items,
-        'invoice_title': invoice.title,
+        'client_name': client.client_name if client else "Unknown",
+        'client_address': f"{client.street_address}, {client.city}, {client.postal_code}, {client.country.name}" if client else "Unknown",
         'created_at': invoice.created_at.strftime('%d %B %Y'),
+        'project_no': project.project_no,
+        'project_name': project.project_name,
+        'invoice_title': invoice.title,
+        'contract_name': contract.contract_name,
+        'items': items,
+        'sum_of_items': f"{sum_of_items:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'additional_fee_percentage': f"{additional_fee_percentage:.2f}",
+        'additional_fee_value': f"{additional_fee_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'invoice_net': f"{invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'tax_value': f"{tax_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'invoice_gross': f"{invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'previous_invoices': previous_invoices_data,  # Table of previous invoices
     }
 
+    # Path to the invoice template
+    template_path = os.path.join(settings.BASE_DIR, 'tracker', 'templates', 'tracker', 'invoice_templates', 'Invoice_Template.docx')
+    
+    # Load the template
+    doc = DocxTemplate(template_path)
+
+    # Render the document with the context
     doc.render(context)
 
+    # Create the HTTP response with the rendered document
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
     response['Content-Disposition'] = f'attachment; filename=invoice_{invoice.id}.docx'
+    
+    # Save the document to the response
     doc.save(response)
 
     return response
+
+
+def record_payment(request, invoice_id):
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+
+    if request.method == 'POST':
+        amount_received = float(request.POST.get('amount_received'))
+        invoice.amount_received += amount_received
+        invoice.save()
+        return redirect('edit_project', project_id=invoice.project.id)
