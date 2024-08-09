@@ -22,13 +22,35 @@
                 <textarea name="provided_quantities" class="textarea textarea-bordered w-full" hidden></textarea>
                 <div id="provided-quantities-table"></div>
             </div>
-            <div class="form-control">
-                <label class="label">Invoice Net</label>
-                <input type="text" name="invoice_net" id="id_invoice_net" class="input input-bordered w-full" readonly>
-            </div>
-            <div class="form-control">
-                <label class="label">Amount Received</label>
-                <input type="text" name="amount_received" id="id_amount_received" class="input input-bordered w-full">
+            <div class="overflow-x-auto mt-4">
+                <table class="table w-full">
+                    <tbody>
+                        <tr>
+                            <td class="text-right font-thin w-1/6">Sum of Items €</td>
+                            <td><input type="text" id="id_sum_of_items" class="input input-bordered input-sm w-1/4" readonly></td>
+                        </tr>
+                        <tr>
+                            <td class="text-right font-thin w-1/6">Additional Fee %</td>
+                            <td><input type="text" id="id_additional_fee_percentage" class="input input-bordered input-sm w-1/4" readonly value="{{ additional_fee_percentage }}"></td>
+                        </tr>
+                        <tr>
+                            <td class="text-right font-thin w-1/6">Additional Fee €</td>
+                            <td><input type="text" id="id_additional_fee" class="input input-bordered input-sm w-1/4" readonly></td>
+                        </tr>
+                        <tr>
+                            <td class="text-right font-bold w-1/6">Invoice Net €</td>
+                            <td><input type="text" id="id_invoice_net" name="invoice_net" class="input input-bordered input-sm w-1/4" readonly></td>
+                        </tr>
+                        <tr>
+                            <td class="text-right font-thin w-1/6">VAT (19%) €</td>
+                            <td><input type="text" id="id_vat" class="input input-bordered input-sm w-1/4" readonly></td>
+                        </tr>
+                        <tr>
+                            <td class="text-right font-bold w-1/6">Gross Invoice €</td>
+                            <td><input type="text" id="id_gross_invoice" class="input input-bordered input-sm w-1/4" readonly></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
             <div class="modal-action">
                 <button type="submit" class="btn btn-primary">Create Invoice</button>
@@ -39,83 +61,139 @@
 </div>
 
 <script>
-    function openInvoiceModal() {
-        document.getElementById('invoiceModal').classList.add('modal-open');
-    }
+function openInvoiceModal() {
+    document.getElementById('invoiceModal').classList.add('modal-open');
+}
 
-    function closeInvoiceModal() {
-        document.getElementById('invoiceModal').classList.remove('modal-open');
-    }
+function closeInvoiceModal() {
+    document.getElementById('invoiceModal').classList.remove('modal-open');
+}
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const contractField = document.querySelector('#id_contract');
-        const providedQuantitiesField = document.querySelector('textarea[name="provided_quantities"]');
+document.addEventListener('DOMContentLoaded', function() {
+    const contractField = document.querySelector('#id_contract');
+    const providedQuantitiesField = document.querySelector('textarea[name="provided_quantities"]');
 
-        if (contractField) {
-            contractField.addEventListener('change', function() {
-                const contractId = this.value;
+    if (contractField) {
+        contractField.addEventListener('change', function() {
+            const contractId = this.value;
+            if (contractId) {
                 fetch(`/ajax/load-contract-data/?contract_id=${contractId}`)
                     .then(response => response.json())
                     .then(data => {
+                        // Populate additional fee percentage
+                        document.getElementById('id_additional_fee_percentage').value = data.additional_fee_percentage || 0;
+
                         let html = '<table class="table w-full">';
-                        html += '<thead><tr><th>Select</th><th>Section and Item</th><th>Unit</th><th>Rate/Unit</th><th>Quantity (Quoted)</th><th>Quantity (Available)</th><th>Quantity (Provided)</th></tr></thead>';
+                        html += '<thead><tr><th>Select</th><th>Section and Item</th><th>Rate/Unit</th><th>Quantity (Quoted)</th><th>Quantity (Available)</th><th>Quantity (Provided)</th><th>Total</th></tr></thead>';
                         html += '<tbody>';
                         data.sections.forEach(section => {
                             html += `<tr><td colspan="7" class="font-bold">${section.section_name}</td></tr>`;
                             section.items.forEach(item => {
                                 const quotedQuantity = item.quantity;
                                 const availableQuantity = item.available_quantity;
+                                const providedQuantity = item.provided_quantity || 0;
+                                const isChecked = providedQuantity > 0;
+                                console.log(isChecked)
+
                                 html += `<tr>
-                                            <td><input type="checkbox" name="select_${item.id}" /></td>
+                                            <td>
+                                                <input type="checkbox" name="select_${item.id}" ${isChecked ? 'checked' : ''} data-item-id="${item.id}" class="item-checkbox" />
+                                            </td>
                                             <td class="pl-8">${item.Item_name}</td>
-                                            <td>${item.unit}</td>
-                                            <td>${item.rate}</td>
+                                            <td>${item.rate} €/${item.unit}</td>
                                             <td>${quotedQuantity}</td>
                                             <td>${availableQuantity}</td>
-                                            <td><input type="number" name="quantity_${item.id}" class="input input-bordered" data-item-id="${item.id}" data-item-rate="${item.rate}" /></td>
-                                         </tr>`;
+                                            <td>
+                                                <input type="number" name="quantity_${item.id}" class="input input-bordered" data-item-id="${item.id}" data-item-rate="${item.rate}" ${isChecked ? '' : 'disabled'} value="${providedQuantity > 0 ? providedQuantity : ''}" />
+                                            </td>
+                                            <td id="total_${item.id}">${providedQuantity > 0 ? (providedQuantity * item.rate).toFixed(2) : '0.00'}</td>
+                                        </tr>`;
                             });
                         });
                         html += '</tbody></table>';
                         document.getElementById('provided-quantities-table').innerHTML = html;
 
-                        // Calculate the net invoice amount
-                        document.querySelectorAll('input[name^="quantity_"]').forEach(input => {
-                            input.addEventListener('input', calculateInvoiceNet);
-                        });
-                    });
-            });
-        }
+                        // Add event listeners to the inputs for calculating totals and handling checkbox behavior
+                        document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+                            const itemId = checkbox.dataset.itemId;
+                            const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
 
-        function calculateInvoiceNet() {
-            let net = 0;
+                            // Initialize total field calculation
+                            if (checkbox.checked) {
+                                calculateInvoiceNet();
+                            }
+
+                            // Checkbox toggle behavior
+                            checkbox.addEventListener('change', function() {
+                                if (this.checked) {
+                                    quantityInput.disabled = false;
+                                } else {
+                                    quantityInput.value = '';
+                                    quantityInput.disabled = true;
+                                }
+                                calculateInvoiceNet(); // Recalculate totals whenever the checkbox state changes
+                            });
+
+                            // Quantity input event listener
+                            quantityInput.addEventListener('input', calculateInvoiceNet);
+                        });
+
+                        // Trigger the calculation for all pre-checked items
+                        calculateInvoiceNet();
+                    });
+            } else {
+                document.getElementById('provided-quantities-table').innerHTML = '';
+                document.getElementById('id_additional_fee_percentage').value = 0;
+                calculateInvoiceNet();
+            }
+        });
+    }
+
+    function calculateInvoiceNet() {
+        let sumOfItems = 0;
+        document.querySelectorAll('input[name^="quantity_"]').forEach(input => {
+            const totalField = document.getElementById(`total_${input.dataset.itemId}`);
+            if (input.closest('tr').querySelector('input[name^="select_"]').checked) {
+                const quantity = parseFloat(input.value) || 0;
+                const rate = parseFloat(input.dataset.itemRate) || 0;
+                const total = quantity * rate;
+                sumOfItems += total;
+                totalField.textContent = total.toFixed(2);
+            } else {
+                totalField.textContent = '0.00';
+            }
+        });
+
+        document.getElementById('id_sum_of_items').value = sumOfItems.toFixed(2);
+
+        const additionalFeePercentage = parseFloat(document.getElementById('id_additional_fee_percentage').value) || 0;
+        const additionalFee = (sumOfItems * additionalFeePercentage) / 100;
+        const invoiceNet = sumOfItems + additionalFee;
+        const vat = invoiceNet * 0.19;
+        const grossInvoice = invoiceNet + vat;
+
+        document.getElementById('id_additional_fee').value = additionalFee.toFixed(2);
+        document.getElementById('id_invoice_net').value = invoiceNet.toFixed(2);
+        document.getElementById('id_vat').value = vat.toFixed(2);
+        document.getElementById('id_gross_invoice').value = grossInvoice.toFixed(2);
+    }
+
+    const invoiceForm = document.querySelector('#invoice-form');
+    if (invoiceForm) {
+        invoiceForm.addEventListener('submit', function(event) {
+            const quantities = {};
             document.querySelectorAll('input[name^="quantity_"]').forEach(input => {
                 if (input.closest('tr').querySelector('input[name^="select_"]').checked) {
-                    const quantity = parseFloat(input.value) || 0;
-                    const rate = parseFloat(input.dataset.itemRate) || 0;
-                    net += quantity * rate;
+                    quantities[input.dataset.itemId] = {
+                        quantity: parseFloat(input.value) || 0,
+                        rate: parseFloat(input.dataset.itemRate) || 0
+                    };
                 }
             });
-            const invoiceNetField = document.querySelector('#id_invoice_net');
-            if (invoiceNetField) {
-                invoiceNetField.value = net.toFixed(2);
-            }
-        }
+            providedQuantitiesField.value = JSON.stringify(quantities);
+        });
+    }
+});
 
-        const invoiceForm = document.querySelector('#invoice-form');
-        if (invoiceForm) {
-            invoiceForm.addEventListener('submit', function(event) {
-                const quantities = {};
-                document.querySelectorAll('input[name^="quantity_"]').forEach(input => {
-                    if (input.closest('tr').querySelector('input[name^="select_"]').checked) {
-                        quantities[input.dataset.itemId] = {
-                            quantity: parseFloat(input.value) || 0,
-                            rate: parseFloat(input.dataset.itemRate) || 0
-                        };
-                    }
-                });
-                providedQuantitiesField.value = JSON.stringify(quantities);
-            });
-        }
-    });
+
 </script>

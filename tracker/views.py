@@ -1048,6 +1048,10 @@ def generate_word_document(request, contract_id):
 def create_invoice(request, project_id):
     project = get_object_or_404(Project, id=project_id)
     contracts = project.contract.all()
+    
+    # Assuming the user will select a contract, and you'll fetch the first contract as a default
+    selected_contract = contracts.first() if contracts else None
+    additional_fee_percentage = selected_contract.additional_fee_percentage if selected_contract else 0
 
     if request.method == 'POST':
         form = InvoiceForm(request.POST, project=project)
@@ -1063,9 +1067,12 @@ def create_invoice(request, project_id):
     else:
         form = InvoiceForm(project=project)
     
-    return render(request, 'tracker/create_invoice.html', {'form': form, 'project': project, 'contracts': contracts})
-
-
+    return render(request, 'tracker/create_invoice.html', {
+        'form': form, 
+        'project': project, 
+        'contracts': contracts, 
+        'additional_fee_percentage': additional_fee_percentage
+    })
 
 def calculate_available_quantity(project, item):
     all_invoices = Invoice.objects.filter(project=project)
