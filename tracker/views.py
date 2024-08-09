@@ -1349,34 +1349,37 @@ def download_invoice(request, invoice_id):
     contract = invoice.contract
     client = project.client_name
 
+    # Initialize the sections dictionary and sum_of_items
+    sections = {}
+    sum_of_items = Decimal('0.00')
+
     # Fetch provided quantities and related items and sections
     provided_quantities = invoice.provided_quantities  # Assuming this is a dictionary
-    items = []
-    sum_of_items = 0
-    section_totals = {}
-    
     for item_id, details in provided_quantities.items():
         item = get_object_or_404(Item, id=item_id)
         section = item.section_set.first()  # Assuming each item belongs to one section
         section_name = section.section_name if section else "Unknown Section"
-        item_total = details['quantity'] * details['rate']
+        item_total = Decimal(details['quantity']) * Decimal(details['rate'])
         
-        items.append({
-            'section_name': section_name,
+        if section_name not in sections:
+            sections[section_name] = []
+
+        sections[section_name].append({
             'item_name': item.Item_name,
             'unit': item.unit,
-            'rate': details['rate'],
+            'rate': f"{Decimal(details['rate']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
             'quantity': details['quantity'],
-            'total': item_total,
+            'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         })
-        
-        sum_of_items += item_total
-        section_totals[section_name] = section_totals.get(section_name, 0) + item_total
 
-    additional_fee_percentage = contract.additional_fee_percentage
-    additional_fee_value = (sum_of_items * additional_fee_percentage) / 100
+        sum_of_items += item_total
+
+    # Calculate additional fee and taxes
+    additional_fee_percentage = Decimal(contract.additional_fee_percentage)
+    additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
     invoice_net = sum_of_items + additional_fee_value
-    tax_value = invoice_net * 0.19  # Assuming 19% VAT
+    vat_percentage = Decimal(contract.vat_percentage) / Decimal(100)  # Use VAT from contract
+    tax_value = invoice_net * vat_percentage
     invoice_gross = invoice_net + tax_value
 
     # Fetch all previous invoices for the same project
@@ -1384,12 +1387,16 @@ def download_invoice(request, invoice_id):
     previous_invoices_data = [
         {
             'invoice_number': inv.title,
-            'invoice_net': inv.invoice_net,
-            'invoice_gross': inv.invoice_net + (inv.invoice_net * 0.19),  # Assuming 19% VAT
-            'amount_paid': inv.amount_received,
+            'invoice_net': f"{Decimal(inv.invoice_net):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'invoice_gross': f"{Decimal(inv.invoice_net) + (Decimal(inv.invoice_net) * vat_percentage):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'amount_paid': f"{Decimal(inv.amount_received):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         }
         for inv in previous_invoices
     ]
+
+    # Ensure previous_invoices_data is always a list (even if empty)
+    if not previous_invoices_data:
+        previous_invoices_data = []
 
     # Prepare the context for the template
     context = {
@@ -1400,15 +1407,20 @@ def download_invoice(request, invoice_id):
         'project_name': project.project_name,
         'invoice_title': invoice.title,
         'contract_name': contract.contract_name,
-        'items': items,
+        'sections': sections,  # Organized by section
         'sum_of_items': f"{sum_of_items:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'additional_fee_percentage': f"{additional_fee_percentage:.2f}",
         'additional_fee_value': f"{additional_fee_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'invoice_net': f"{invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'vat_percentage': vat_percentage,  # Pass this to template to multiply by 100
         'tax_value': f"{tax_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'invoice_gross': f"{invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        'previous_invoices': previous_invoices_data,  # Table of previous invoices
+        'previous_invoices': previous_invoices_data,  # Ensure this is always a list
     }
+
+    # Print context for debugging
+    import pprint
+    pprint.pprint(context)
 
     # Path to the invoice template
     template_path = os.path.join(settings.BASE_DIR, 'tracker', 'templates', 'tracker', 'invoice_templates', 'Invoice_Template.docx')
