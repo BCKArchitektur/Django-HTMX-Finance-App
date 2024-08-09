@@ -217,10 +217,18 @@ class Invoice(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.title:
-            year = timezone.now().year
+            year = timezone.now().year % 100  # Get last two digits of the year
             month = timezone.now().month
-            count = Invoice.objects.filter(title__contains=f"{year}-{month}").count() + 700
-            self.title = f"{year}{count}-{month}"
+
+            # Create the filter format based on year and month
+            prefix = f"{year:02d}"  # Ensures year is always two digits
+
+            # Count how many invoices have this prefix in their title
+            count = Invoice.objects.filter(title__startswith=prefix).count() + 700
+            
+            # Generate the title using the format yycount-month
+            self.title = f"{prefix}{count}-{month:02d}"  # Ensures month is always two digits
+        
         super().save(*args, **kwargs)
 
     def __str__(self):

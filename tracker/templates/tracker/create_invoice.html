@@ -18,7 +18,7 @@
             </div>
             <div class="form-control">
                 <label class="label">Provided Quantities</label>
-                <textarea name="provided_quantities" class="textarea textarea-bordered w-full" hidden></textarea>
+                <textarea name="provided_quantities" class="textarea textarea-bordered w-full" hidden>{{ form.initial.provided_quantities }}</textarea>
                 <div id="provided-quantities-table"></div>
             </div>
             <div class="overflow-x-auto mt-4">
@@ -70,8 +70,7 @@ function closeInvoiceModal() {
 
 document.addEventListener('DOMContentLoaded', function() {
     const contractField = document.querySelector('#id_contract');
-    const providedQuantitiesField = document.querySelector('textarea[name="provided_quantities"]');
-
+    
     if (contractField) {
         contractField.addEventListener('change', function() {
             const contractId = this.value;
@@ -82,10 +81,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Populate additional fee percentage
                         document.getElementById('id_additional_fee_percentage').value = data.additional_fee_percentage || 0;
 
-                        // Parse the providedQuantities from the textarea
-                        const providedQuantities = JSON.parse(providedQuantitiesField.value || '{}');
-                        console.log('Provided Quantities:', providedQuantities);
-
                         let html = '<table class="table w-full">';
                         html += '<thead><tr><th>Select</th><th>Section and Item</th><th>Rate/Unit</th><th>Quantity (Quoted)</th><th>Quantity (Available)</th><th>Quantity (Provided)</th><th>Total</th></tr></thead>';
                         html += '<tbody>';
@@ -95,12 +90,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                 const quotedQuantity = item.quantity;
                                 const availableQuantity = item.available_quantity;
 
-                                // Check if the item ID exists in providedQuantities
-                                const isChecked = providedQuantities.hasOwnProperty(item.id.toString());
+                                // Check if quotedQuantity and availableQuantity are different
+                                const isChecked = quotedQuantity !== availableQuantity;
                                 console.log(`Item ID: ${item.id}, isChecked: ${isChecked}`);
-
-                                // Retrieve provided quantity for display if present
-                                const providedQuantity = isChecked ? providedQuantities[item.id].quantity : '';
 
                                 html += `<tr>
                                             <td>
@@ -111,9 +103,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                             <td>${quotedQuantity}</td>
                                             <td>${availableQuantity}</td>
                                             <td>
-                                                <input type="number" name="quantity_${item.id}" class="input input-bordered" data-item-id="${item.id}" data-item-rate="${item.rate}" ${isChecked ? '' : 'disabled'} value="${providedQuantity}" />
+                                                <input type="float" name="quantity_${item.id}" class="input input-bordered" data-item-id="${item.id}" data-item-rate="${item.rate}" ${isChecked ? '' : 'disabled'} />
                                             </td>
-                                            <td id="total_${item.id}">${providedQuantity ? (providedQuantity * item.rate).toFixed(2) : '0.00'}</td>
+                                            <td id="total_${item.id}">0.00</td>
                                         </tr>`;
                             });
                         });
@@ -124,11 +116,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         document.querySelectorAll('.checkbox').forEach(checkbox => {
                             const itemId = checkbox.dataset.itemId;
                             const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
-
-                            // Initialize total field calculation
-                            if (checkbox.checked) {
-                                calculateInvoiceNet();
-                            }
 
                             // Checkbox toggle behavior
                             checkbox.addEventListener('change', function() {
@@ -201,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     };
                 }
             });
-            providedQuantitiesField.value = JSON.stringify(quantities);
+            document.querySelector('textarea[name="provided_quantities"]').value = JSON.stringify(quantities);
         });
     }
 });
