@@ -220,7 +220,7 @@ class Invoice(models.Model):
             year = timezone.now().year
             month = timezone.now().month
             count = Invoice.objects.filter(title__contains=f"{year}-{month}").count() + 700
-            self.title = f"{year}-{count}-{month}"
+            self.title = f"{year}{count}-{month}"
         super().save(*args, **kwargs)
 
     def __str__(self):

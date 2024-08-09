@@ -1,4 +1,3 @@
-<!-- tracker/create_invoice.html -->
 <div id="invoiceModal" class="modal">
     <div class="modal-box max-w-5xl">
         <h3 class="font-bold text-lg m-4">Create a New Invoice</h3>
@@ -83,6 +82,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Populate additional fee percentage
                         document.getElementById('id_additional_fee_percentage').value = data.additional_fee_percentage || 0;
 
+                        // Parse the providedQuantities from the textarea
+                        const providedQuantities = JSON.parse(providedQuantitiesField.value || '{}');
+                        console.log('Provided Quantities:', providedQuantities);
+
                         let html = '<table class="table w-full">';
                         html += '<thead><tr><th>Select</th><th>Section and Item</th><th>Rate/Unit</th><th>Quantity (Quoted)</th><th>Quantity (Available)</th><th>Quantity (Provided)</th><th>Total</th></tr></thead>';
                         html += '<tbody>';
@@ -91,22 +94,26 @@ document.addEventListener('DOMContentLoaded', function() {
                             section.items.forEach(item => {
                                 const quotedQuantity = item.quantity;
                                 const availableQuantity = item.available_quantity;
-                                const providedQuantity = item.provided_quantity || 0;
-                                const isChecked = providedQuantity > 0;
-                                console.log(isChecked)
+
+                                // Check if the item ID exists in providedQuantities
+                                const isChecked = providedQuantities.hasOwnProperty(item.id.toString());
+                                console.log(`Item ID: ${item.id}, isChecked: ${isChecked}`);
+
+                                // Retrieve provided quantity for display if present
+                                const providedQuantity = isChecked ? providedQuantities[item.id].quantity : '';
 
                                 html += `<tr>
                                             <td>
-                                                <input type="checkbox" name="select_${item.id}" ${isChecked ? 'checked' : ''} data-item-id="${item.id}" class="item-checkbox" />
+                                                <input type="checkbox" name="select_${item.id}" ${isChecked ? 'checked="checked"' : ''} data-item-id="${item.id}" class="checkbox" />
                                             </td>
                                             <td class="pl-8">${item.Item_name}</td>
                                             <td>${item.rate} €/${item.unit}</td>
                                             <td>${quotedQuantity}</td>
                                             <td>${availableQuantity}</td>
                                             <td>
-                                                <input type="number" name="quantity_${item.id}" class="input input-bordered" data-item-id="${item.id}" data-item-rate="${item.rate}" ${isChecked ? '' : 'disabled'} value="${providedQuantity > 0 ? providedQuantity : ''}" />
+                                                <input type="number" name="quantity_${item.id}" class="input input-bordered" data-item-id="${item.id}" data-item-rate="${item.rate}" ${isChecked ? '' : 'disabled'} value="${providedQuantity}" />
                                             </td>
-                                            <td id="total_${item.id}">${providedQuantity > 0 ? (providedQuantity * item.rate).toFixed(2) : '0.00'}</td>
+                                            <td id="total_${item.id}">${providedQuantity ? (providedQuantity * item.rate).toFixed(2) : '0.00'}</td>
                                         </tr>`;
                             });
                         });
@@ -114,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         document.getElementById('provided-quantities-table').innerHTML = html;
 
                         // Add event listeners to the inputs for calculating totals and handling checkbox behavior
-                        document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+                        document.querySelectorAll('.checkbox').forEach(checkbox => {
                             const itemId = checkbox.dataset.itemId;
                             const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
 
@@ -125,6 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                             // Checkbox toggle behavior
                             checkbox.addEventListener('change', function() {
+                                console.log(`Checkbox for item ID ${itemId} changed to: ${this.checked}`);
                                 if (this.checked) {
                                     quantityInput.disabled = false;
                                 } else {
@@ -140,6 +148,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         // Trigger the calculation for all pre-checked items
                         calculateInvoiceNet();
+                    })
+                    .catch(error => {
+                        console.error('Error loading contract data:', error);
                     });
             } else {
                 document.getElementById('provided-quantities-table').innerHTML = '';
@@ -194,6 +205,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
-
 </script>

@@ -1091,30 +1091,95 @@ def delete_invoice(request, invoice_id):
     invoice.delete()
     return redirect('edit_project', project_id=project_id)
 
-# View for getting invoice details
+# # View for getting invoice details
+# @login_required
+# def view_invoice(request, invoice_id):
+#     invoice = get_object_or_404(Invoice, id=invoice_id)
+#     project = invoice.project
+#     contract = invoice.contract
+#     provided_quantities = [
+#         {
+#             'name': item_name,
+#             'quantity': details['quantity'],
+#             'rate': details['rate'],
+#             'unit': 'unit'  # Replace 'unit' with actual unit if available
+#         }
+#         for item_name, details in invoice.provided_quantities.items()
+#     ]
+
+#     data = {
+#         'project_name': project.project_name,
+#         'contract_name': contract.contract_name,
+#         'invoice_net': invoice.invoice_net,
+#         'amount_received': invoice.amount_received,
+#         'provided_quantities': provided_quantities
+#     }
+#     return JsonResponse(data)
+
+
+
 @login_required
 def view_invoice(request, invoice_id):
-    invoice = get_object_or_404(Invoice, id=invoice_id)
-    project = invoice.project
-    contract = invoice.contract
-    provided_quantities = [
-        {
-            'name': item_name,
-            'quantity': details['quantity'],
-            'rate': details['rate'],
-            'unit': 'unit'  # Replace 'unit' with actual unit if available
-        }
-        for item_name, details in invoice.provided_quantities.items()
-    ]
+    try:
+        invoice = get_object_or_404(Invoice, id=invoice_id)
+        project = invoice.project
+        contract = invoice.contract
 
-    data = {
-        'project_name': project.project_name,
-        'contract_name': contract.contract_name,
-        'invoice_net': invoice.invoice_net,
-        'amount_received': invoice.amount_received,
-        'provided_quantities': provided_quantities
-    }
-    return JsonResponse(data)
+        # Assume provided_quantities is a JSON string field in the Invoice model
+        try:
+            provided_quantities_data = invoice.provided_quantities
+        except ValueError as e:
+            print(f"Error parsing provided_quantities: {e}")
+            return JsonResponse({'error': 'Invalid data format for provided quantities'}, status=400)
+
+        provided_quantities = []
+        for item_id, details in provided_quantities_data.items():
+            try:
+                # Fetch the item using the item ID
+                item = Item.objects.get(id=item_id)
+                
+                # Find the section to which this item belongs within the contract
+                section = Section.objects.filter(Item=item, contract=contract).first()
+                section_name = section.section_name if section else "Unknown Section"
+
+                provided_quantities.append({
+                    'section_name': section_name,
+                    'item_name': item.Item_name,
+                    'unit': item.unit,
+                    'rate': details['rate'],
+                    'quantity': details['quantity'],
+                    'total': details['rate'] * details['quantity'],
+                })
+            except Item.DoesNotExist:
+                print(f"Item with id {item_id} does not exist.")
+                provided_quantities.append({
+                    'section_name': 'Unknown Section',
+                    'item_name': f'Unknown Item (ID: {item_id})',
+                    'unit': 'Unknown Unit',
+                    'rate': details['rate'],
+                    'quantity': details['quantity'],
+                    'total': details['rate'] * details['quantity'],
+                })
+
+        data = {
+            'project_name': project.project_name,
+            'contract_name': contract.contract_name,
+            'additional_fee_percentage': contract.additional_fee_percentage,
+            'provided_quantities': provided_quantities
+        }
+
+        return JsonResponse(data)
+
+    except Http404 as e:
+        print(f"Invoice or related data not found: {e}")
+        return JsonResponse({'error': 'Invoice not found'}, status=404)
+
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+
+
+
 
 
 

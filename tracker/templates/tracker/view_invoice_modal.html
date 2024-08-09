@@ -60,38 +60,42 @@ function closeViewInvoiceModal() {
 
 function viewInvoice(invoiceId) {
     fetch(`/ajax/view-invoice/${invoiceId}/`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
-            document.getElementById('view_project_name').value = data.project_name || '';
-            document.getElementById('view_contract_name').value = data.contract_name || '';
-            document.getElementById('view_additional_fee_percentage').value = parseFloat(data.additional_fee_percentage).toFixed(2);
+            // Set project and contract names
+            document.getElementById('view_project_name').value = data.project_name || 'N/A';
+            document.getElementById('view_contract_name').value = data.contract_name || 'N/A';
+            
+            // Set additional fee percentage
+            const additionalFeePercentage = parseFloat(data.additional_fee_percentage || 0).toFixed(2);
+            document.getElementById('view_additional_fee_percentage').value = additionalFeePercentage;
 
+            // Generate the provided quantities table
             let html = '<table class="table w-full">';
-            html += '<thead><tr><th>Section and Item</th><th>Unit</th><th>Rate/Unit €</th><th>Quantity (Provided)</th><th>Total €</th></tr></thead>';
+            html += '<thead><tr><th>Section and Item</th><th>Rate/Unit €</th><th>Quantity (Provided)</th><th>Total €</th></tr></thead>';
             html += '<tbody>';
-            let currentSection = '';
             let sumOfItems = 0;
+            let currentSection = '';
 
             data.provided_quantities.forEach(item => {
-                if (currentSection !== item.section_name) {
-                    currentSection = item.section_name;
-                    html += `<tr><td colspan="5" class="font-bold">${currentSection}</td></tr>`;
-                }
-
-                const rate = parseFloat(item.rate).toFixed(2);
-                const quantity = parseFloat(item.quantity).toFixed(2);
+                const sectionName = item.section_name || 'Unknown Section';
+                const itemName = item.item_name || 'Unknown Item';
+                const rate = parseFloat(item.rate || 0).toFixed(2);
+                const unit = item.unit || 'unit';
+                const quantity = parseFloat(item.quantity || 0).toFixed(2);
                 const total = (quantity * rate).toFixed(2);
+
                 sumOfItems += parseFloat(total);
 
+                // Check if we need to print a new section header
+                if (currentSection !== sectionName) {
+                    currentSection = sectionName;
+                    html += `<tr><td colspan="4" class="font-bold">${currentSection}</td></tr>`;
+                }
+
                 html += `<tr>
-                            <td class="pl-8">${item.item_name}</td>
-                            <td>${item.unit}</td>
-                            <td>${rate}</td>
+                            <td class="pl-8">${itemName}</td>
+                            <td>${rate} €/${unit}</td>
                             <td>${quantity}</td>
                             <td>${total}</td>
                          </tr>`;
@@ -103,7 +107,6 @@ function viewInvoice(invoiceId) {
             // Calculate the totals
             document.getElementById('view_sum_of_items').value = sumOfItems.toFixed(2);
 
-            const additionalFeePercentage = parseFloat(document.getElementById('view_additional_fee_percentage').value) || 0;
             const additionalFee = (sumOfItems * additionalFeePercentage) / 100;
             const invoiceNet = sumOfItems + additionalFee;
             const vat = invoiceNet * 0.19;

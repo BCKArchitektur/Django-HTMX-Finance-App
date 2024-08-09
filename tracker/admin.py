@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Project, Employee, Client, Logs, Contract, Section, Item, Task, ProjectPreset, UserPreset
+from .models import User, Project, Employee, Client, Logs, Contract, Section, Item, Task, ProjectPreset, UserPreset , Invoice
 from django.http import HttpResponse
 from openpyxl import Workbook
 from django.contrib.auth.admin import UserAdmin
@@ -260,3 +260,12 @@ class TaskLibraryAdmin(admin.ModelAdmin):
 
 
 # admin.site.register(Item, ItemAdmin)
+
+
+
+class InvoiceAdmin(admin.ModelAdmin):
+    list_display = ('title', 'project', 'contract', 'invoice_net', 'amount_received', 'created_at')
+    search_fields = ('title', 'project__name', 'contract__name')
+    list_filter = ('created_at',)
+
+admin.site.register(Invoice, InvoiceAdmin)
