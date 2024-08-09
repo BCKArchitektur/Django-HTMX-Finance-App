@@ -268,8 +268,18 @@
                         </tr>
                         <tr>
                             <td class="text-right font-thin w-1/6">VAT (%)</td>
-                            <td><input type="number" id="id_vat_percentage" name="vat_percentage" class="input input-bordered input-sm w-1/4" value="{{ vat_percentage }}" step="0.01"></td>
-                        </tr>
+                            <td>
+                                <!-- Select field for VAT percentage -->
+                                <select id="vat_percentage_select" class="select select-bordered input-sm w-1/4">
+                                    <option value="0.00">0%</option>
+                                    <option value="19.00">19%</option>
+                                </select>
+                            
+                                <!-- Hidden input field to store the selected VAT value -->
+                                <input type="number" id="id_vat_percentage" name="vat_percentage" class="input input-bordered input-sm hidden">
+                            </td>
+                        </tr>                     
+                        
                         <tr>
                             <td class="text-right font-thin w-1/6">VAT €</td>
                             <td><input type="text" id="vat" class="input input-bordered input-sm w-1/4" readonly></td>
@@ -450,22 +460,33 @@
     }
 
     function updateSummaryFields() {
+        console.log('Updating summary fields...');
+        
         const itemTotals = document.querySelectorAll('[id^="total_"]');
         let sumOfItems = 0;
         itemTotals.forEach(totalField => {
             sumOfItems += parseFloat(totalField.textContent) || 0;
         });
 
+        console.log('Sum of items:', sumOfItems);
+
         const additionalFeePercentageInput = document.getElementById('additional_fee_percentage');
         const additionalFeePercentage = parseFloat(additionalFeePercentageInput.value) || 0;
         const additionalFee = (sumOfItems * additionalFeePercentage) / 100;
+
+        console.log('Additional Fee Percentage:', additionalFeePercentage);
+        console.log('Additional Fee:', additionalFee);
 
         const netContract = sumOfItems + additionalFee;
 
         const vatPercentageInput = document.getElementById('id_vat_percentage');
         const vatPercentage = parseFloat(vatPercentageInput.value) || 0;
         const vat = (netContract * vatPercentage) / 100;
-        
+
+        console.log('Net Contract:', netContract);
+        console.log('VAT Percentage:', vatPercentage);
+        console.log('VAT:', vat);
+
         const grossContract = netContract + vat;
 
         document.getElementById('sum_of_items').value = sumOfItems.toFixed(2);
@@ -473,6 +494,8 @@
         document.getElementById('net_contract').value = netContract.toFixed(2);
         document.getElementById('vat').value = vat.toFixed(2);
         document.getElementById('gross_contract').value = grossContract.toFixed(2);
+
+        console.log('Gross Contract:', grossContract);
     }
 
     // Add event listeners to recalculate values when VAT or Additional Fee percentage changes
@@ -481,7 +504,11 @@
 
 
     function populateBudgetTable(contractId) {
+        console.log('Fetching contract data for contract ID:', contractId);
+
         fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
+            console.log('Contract data received:', data);
+
             const budgetTable = document.getElementById('budget-table');
             const thead = budgetTable.querySelector('thead tr');
             const tbody = budgetTable.querySelector('tbody');
@@ -524,17 +551,57 @@
                 additionalFeePercentageInput.disabled = true;
             }
 
-            // Populate VAT percentage and disable if any item is invoiced
+            // Populate VAT percentage and sync select field with hidden input
             const vatPercentageInput = document.getElementById('id_vat_percentage');
+            const vatPercentageSelect = document.getElementById('vat_percentage_select');
+            
             vatPercentageInput.value = data.vat_percentage || 0;
+            vatPercentageSelect.value = vatPercentageInput.value; // Sync select input with hidden field
+
+            console.log('VAT percentage after setting values:', {
+                select: vatPercentageSelect.value,
+                hiddenInput: vatPercentageInput.value
+            });
+
             if (isContractInvoiced) {
-                vatPercentageInput.disabled = true;
+                vatPercentageSelect.disabled = true;
             }
 
             // Initialize the summary fields
             updateSummaryFields();
         });
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const vatPercentageSelect = document.getElementById('vat_percentage_select');
+        const vatPercentageInput = document.getElementById('id_vat_percentage');
+
+        // Function to sync the select and hidden input field
+        function syncVatPercentage() {
+            console.log('Syncing VAT percentage...');
+            // Update the hidden input value to match the select field value
+            vatPercentageInput.value = vatPercentageSelect.value;
+            // Log the updated hidden input value
+            console.log('Hidden input VAT percentage after sync:', vatPercentageInput.value);
+
+            // Recalculate the summary fields based on the new VAT value
+            updateSummaryFields();
+        }
+
+        // Initialize the select field based on the current value of the hidden input
+        function initializeVatPercentage() {
+            console.log('Initializing VAT percentage...');
+            console.log('Initial hidden input value:', vatPercentageInput.value);
+            vatPercentageSelect.value = vatPercentageInput.value || '0';
+            console.log('Select field value after initialization:', vatPercentageSelect.value);
+        }
+
+        // Ensure the hidden input reflects the select field value upon page load
+        initializeVatPercentage();
+
+        // Add event listener to update the hidden input and recalculate when the select value changes
+        vatPercentageSelect.addEventListener('change', syncVatPercentage);
+    });
 
     
     function populateUsersTable(contractId, projectUsers) {
@@ -679,5 +746,8 @@
         // Optionally, reset the form itself
         document.getElementById('add-budget-form').reset();
     }
+
+
+
 </script>
 {% endblock %}
