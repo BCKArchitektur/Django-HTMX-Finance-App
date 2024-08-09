@@ -116,7 +116,7 @@ class ClientForm(forms.ModelForm):
 class ContractForm(forms.ModelForm):
     class Meta:
         model = Contract
-        fields = ['contract_name']
+        fields = ['contract_name', 'vat_percentage']  # Include vat_percentage
 
 class AddUsersForm(forms.Form):
     items = forms.ModelChoiceField(queryset=Item.objects.all(), label="Select Item")

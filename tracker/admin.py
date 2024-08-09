@@ -184,7 +184,7 @@ class ContractAdminForm(forms.ModelForm):
 class ContractAdmin(admin.ModelAdmin):
     form = ContractAdminForm
 
-# admin.site.register(Contract, ContractAdmin)
+admin.site.register(Contract, ContractAdmin)
 
 
 # Task Admin

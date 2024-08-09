@@ -41,7 +41,11 @@
                             <td><input type="text" id="id_invoice_net" name="invoice_net" class="input input-bordered input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-right font-thin w-1/6">VAT (19%) €</td>
+                            <td class="text-right font-thin w-1/6">VAT(%)</td>
+                            <td><input type="text" id="vat_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
+                        </tr>                        
+                        <tr>
+                            <td class="text-right font-thin w-1/6">VAT €</td>
                             <td><input type="text" id="id_vat" class="input input-bordered input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
@@ -60,15 +64,15 @@
 </div>
 
 <script>
-function openInvoiceModal() {
-    document.getElementById('invoiceModal').classList.add('modal-open');
-}
-
-function closeInvoiceModal() {
-    document.getElementById('invoiceModal').classList.remove('modal-open');
-}
-
-document.addEventListener('DOMContentLoaded', function() {
+    function openInvoiceModal() {
+        document.getElementById('invoiceModal').classList.add('modal-open');
+    }
+    
+    function closeInvoiceModal() {
+        document.getElementById('invoiceModal').classList.remove('modal-open');
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
     const contractField = document.querySelector('#id_contract');
     
     if (contractField) {
@@ -80,7 +84,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     .then(data => {
                         // Populate additional fee percentage
                         document.getElementById('id_additional_fee_percentage').value = data.additional_fee_percentage || 0;
-
+                        
+                        // Populate VAT percentage
+                        document.getElementById('vat_percentage').value = data.vat_percentage || 0;
+    
                         let html = '<table class="table w-full">';
                         html += '<thead><tr><th>Select</th><th>Section and Item</th><th>Rate/Unit</th><th>Quantity (Quoted)</th><th>Quantity (Available)</th><th>Quantity (Provided)</th><th>Total</th></tr></thead>';
                         html += '<tbody>';
@@ -89,11 +96,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             section.items.forEach(item => {
                                 const quotedQuantity = item.quantity;
                                 const availableQuantity = item.available_quantity;
-
+    
                                 // Check if quotedQuantity and availableQuantity are different
                                 const isChecked = quotedQuantity !== availableQuantity;
                                 console.log(`Item ID: ${item.id}, isChecked: ${isChecked}`);
-
+    
                                 html += `<tr>
                                             <td>
                                                 <input type="checkbox" name="select_${item.id}" ${isChecked ? 'checked="checked"' : ''} data-item-id="${item.id}" class="checkbox" />
@@ -111,12 +118,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                         html += '</tbody></table>';
                         document.getElementById('provided-quantities-table').innerHTML = html;
-
+    
                         // Add event listeners to the inputs for calculating totals and handling checkbox behavior
                         document.querySelectorAll('.checkbox').forEach(checkbox => {
                             const itemId = checkbox.dataset.itemId;
                             const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
-
+    
                             // Checkbox toggle behavior
                             checkbox.addEventListener('change', function() {
                                 console.log(`Checkbox for item ID ${itemId} changed to: ${this.checked}`);
@@ -128,11 +135,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                 }
                                 calculateInvoiceNet(); // Recalculate totals whenever the checkbox state changes
                             });
-
+    
                             // Quantity input event listener
                             quantityInput.addEventListener('input', calculateInvoiceNet);
                         });
-
+    
                         // Trigger the calculation for all pre-checked items
                         calculateInvoiceNet();
                     })
@@ -142,6 +149,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 document.getElementById('provided-quantities-table').innerHTML = '';
                 document.getElementById('id_additional_fee_percentage').value = 0;
+                document.getElementById('vat_percentage').value = 0; // Reset VAT percentage
                 calculateInvoiceNet();
             }
         });
@@ -165,9 +173,10 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('id_sum_of_items').value = sumOfItems.toFixed(2);
 
         const additionalFeePercentage = parseFloat(document.getElementById('id_additional_fee_percentage').value) || 0;
+        const vatPercentage = parseFloat(document.getElementById('vat_percentage').value) || 0;  // Use the VAT percentage input value
         const additionalFee = (sumOfItems * additionalFeePercentage) / 100;
         const invoiceNet = sumOfItems + additionalFee;
-        const vat = invoiceNet * 0.19;
+        const vat = invoiceNet * vatPercentage / 100;
         const grossInvoice = invoiceNet + vat;
 
         document.getElementById('id_additional_fee').value = additionalFee.toFixed(2);

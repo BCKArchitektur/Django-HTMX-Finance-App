@@ -267,7 +267,11 @@
                             <td><input type="text" id="net_contract" class="input input-bordered input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-right font-thin w-1/6">VAT (19%) €</td>
+                            <td class="text-right font-thin w-1/6">VAT (%)</td>
+                            <td><input type="number" id="id_vat_percentage" name="vat_percentage" class="input input-bordered input-sm w-1/4" value="{{ vat_percentage }}" step="0.01"></td>
+                        </tr>
+                        <tr>
+                            <td class="text-right font-thin w-1/6">VAT €</td>
                             <td><input type="text" id="vat" class="input input-bordered input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
@@ -276,7 +280,7 @@
                         </tr>
                     </tbody>
                 </table>
-            </div>
+            </div>                      
             <div class="modal-action">
                 <button type="submit" class="btn btn-primary">Save</button>
                 <a href="#" class="btn" onclick="closeAddBudgetModal()">Cancel</a>
@@ -314,12 +318,7 @@
     </div>
 </div>
 
-<!-- Invoice Details Modal -->
-<div id="invoiceDetailModal" class="modal">
-    <div id="invoice-details-content">
-        <!-- Invoice details will be populated here -->
-    </div>
-</div>
+
 
 {% include 'tracker/view_invoice_modal.html' %}
 {% include 'tracker/record_payment_modal.html' %}
@@ -462,7 +461,11 @@
         const additionalFee = (sumOfItems * additionalFeePercentage) / 100;
 
         const netContract = sumOfItems + additionalFee;
-        const vat = netContract * 0.19;
+
+        const vatPercentageInput = document.getElementById('id_vat_percentage');
+        const vatPercentage = parseFloat(vatPercentageInput.value) || 0;
+        const vat = (netContract * vatPercentage) / 100;
+        
         const grossContract = netContract + vat;
 
         document.getElementById('sum_of_items').value = sumOfItems.toFixed(2);
@@ -472,7 +475,10 @@
         document.getElementById('gross_contract').value = grossContract.toFixed(2);
     }
 
+    // Add event listeners to recalculate values when VAT or Additional Fee percentage changes
+    document.getElementById('id_vat_percentage').addEventListener('input', updateSummaryFields);
     document.getElementById('additional_fee_percentage').addEventListener('input', updateSummaryFields);
+
 
     function populateBudgetTable(contractId) {
         fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
@@ -509,11 +515,14 @@
             const additionalFeePercentageInput = document.getElementById('additional_fee_percentage');
             additionalFeePercentageInput.value = data.additional_fee_percentage || 0;
 
+            // Populate VAT percentage
+            const vatPercentageInput = document.getElementById('id_vat_percentage');
+            vatPercentageInput.value = data.vat_percentage || 0;
+
             // Initialize the summary fields
             updateSummaryFields();
         });
     }
-
 
     
     function populateUsersTable(contractId, projectUsers) {

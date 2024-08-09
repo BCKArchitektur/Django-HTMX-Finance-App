@@ -33,7 +33,11 @@
                         <td><input type="text" id="view_invoice_net" class="input input-bordered input-sm w-1/4" readonly></td>
                     </tr>
                     <tr>
-                        <td class="text-right font-thin w-1/6">VAT (19%) €</td>
+                        <td class="text-right font-thin w-1/6">VAT (%)</td>
+                        <td><input type="text" id="view_vat_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
+                    </tr>
+                    <tr>
+                        <td class="text-right font-thin w-1/6">VAT €</td>
                         <td><input type="text" id="view_vat" class="input input-bordered input-sm w-1/4" readonly></td>
                     </tr>
                     <tr>
@@ -50,78 +54,82 @@
 </div>
 
 <script>
-function openViewInvoiceModal() {
-    document.getElementById('viewInvoiceModal').classList.add('modal-open');
-}
+    function openViewInvoiceModal() {
+        document.getElementById('viewInvoiceModal').classList.add('modal-open');
+    }
+    
+    function closeViewInvoiceModal() {
+        document.getElementById('viewInvoiceModal').classList.remove('modal-open');
+    }
+    
+    function viewInvoice(invoiceId) {
+        fetch(`/ajax/view-invoice/${invoiceId}/`)
+            .then(response => response.json())
+            .then(data => {
+                // Set project and contract names
+                document.getElementById('view_project_name').value = data.project_name || 'N/A';
+                document.getElementById('view_contract_name').value = data.contract_name || 'N/A';
+                
+                // Set additional fee percentage
+                const additionalFeePercentage = parseFloat(data.additional_fee_percentage || 0).toFixed(2);
+                document.getElementById('view_additional_fee_percentage').value = additionalFeePercentage;
+    
+                // Get the VAT percentage from the contract data
+                const vatPercentage = parseFloat(data.vat_percentage || 0).toFixed(2);
+                document.getElementById('view_vat_percentage').value = vatPercentage;
 
-function closeViewInvoiceModal() {
-    document.getElementById('viewInvoiceModal').classList.remove('modal-open');
-}
-
-function viewInvoice(invoiceId) {
-    fetch(`/ajax/view-invoice/${invoiceId}/`)
-        .then(response => response.json())
-        .then(data => {
-            // Set project and contract names
-            document.getElementById('view_project_name').value = data.project_name || 'N/A';
-            document.getElementById('view_contract_name').value = data.contract_name || 'N/A';
-            
-            // Set additional fee percentage
-            const additionalFeePercentage = parseFloat(data.additional_fee_percentage || 0).toFixed(2);
-            document.getElementById('view_additional_fee_percentage').value = additionalFeePercentage;
-
-            // Generate the provided quantities table
-            let html = '<table class="table w-full">';
-            html += '<thead><tr><th>Section and Item</th><th>Rate/Unit €</th><th>Quantity (Provided)</th><th>Total €</th></tr></thead>';
-            html += '<tbody>';
-            let sumOfItems = 0;
-            let currentSection = '';
-
-            data.provided_quantities.forEach(item => {
-                const sectionName = item.section_name || 'Unknown Section';
-                const itemName = item.item_name || 'Unknown Item';
-                const rate = parseFloat(item.rate || 0).toFixed(2);
-                const unit = item.unit || 'unit';
-                const quantity = parseFloat(item.quantity || 0).toFixed(2);
-                const total = (quantity * rate).toFixed(2);
-
-                sumOfItems += parseFloat(total);
-
-                // Check if we need to print a new section header
-                if (currentSection !== sectionName) {
-                    currentSection = sectionName;
-                    html += `<tr><td colspan="4" class="font-bold">${currentSection}</td></tr>`;
-                }
-
-                html += `<tr>
-                            <td class="pl-8">${itemName}</td>
-                            <td>${rate} €/${unit}</td>
-                            <td>${quantity}</td>
-                            <td>${total}</td>
-                         </tr>`;
+                // Generate the provided quantities table
+                let html = '<table class="table w-full">';
+                html += '<thead><tr><th>Section and Item</th><th>Rate/Unit €</th><th>Quantity (Provided)</th><th>Total €</th></tr></thead>';
+                html += '<tbody>';
+                let sumOfItems = 0;
+                let currentSection = '';
+    
+                data.provided_quantities.forEach(item => {
+                    const sectionName = item.section_name || 'Unknown Section';
+                    const itemName = item.item_name || 'Unknown Item';
+                    const rate = parseFloat(item.rate || 0).toFixed(2);
+                    const unit = item.unit || 'unit';
+                    const quantity = parseFloat(item.quantity || 0).toFixed(2);
+                    const total = (quantity * rate).toFixed(2);
+    
+                    sumOfItems += parseFloat(total);
+    
+                    // Check if we need to print a new section header
+                    if (currentSection !== sectionName) {
+                        currentSection = sectionName;
+                        html += `<tr><td colspan="4" class="font-bold">${currentSection}</td></tr>`;
+                    }
+    
+                    html += `<tr>
+                                <td class="pl-8">${itemName}</td>
+                                <td>${rate} €/${unit}</td>
+                                <td>${quantity}</td>
+                                <td>${total}</td>
+                             </tr>`;
+                });
+    
+                html += '</tbody></table>';
+                document.getElementById('view_provided_quantities_table').innerHTML = html;
+    
+                // Calculate the totals
+                document.getElementById('view_sum_of_items').value = sumOfItems.toFixed(2);
+    
+                const additionalFee = (sumOfItems * additionalFeePercentage) / 100;
+                const invoiceNet = sumOfItems + additionalFee;
+                const vat = invoiceNet * vatPercentage / 100;
+                const grossInvoice = invoiceNet + vat;
+    
+                document.getElementById('view_additional_fee').value = additionalFee.toFixed(2);
+                document.getElementById('view_invoice_net').value = invoiceNet.toFixed(2);
+                document.getElementById('view_vat').value = vat.toFixed(2);
+                document.getElementById('view_gross_invoice').value = grossInvoice.toFixed(2);
+    
+                openViewInvoiceModal();
+            })
+            .catch(error => {
+                console.error('Error fetching invoice:', error);
+                alert('Error fetching invoice: ' + error.message);
             });
-
-            html += '</tbody></table>';
-            document.getElementById('view_provided_quantities_table').innerHTML = html;
-
-            // Calculate the totals
-            document.getElementById('view_sum_of_items').value = sumOfItems.toFixed(2);
-
-            const additionalFee = (sumOfItems * additionalFeePercentage) / 100;
-            const invoiceNet = sumOfItems + additionalFee;
-            const vat = invoiceNet * 0.19;
-            const grossInvoice = invoiceNet + vat;
-
-            document.getElementById('view_additional_fee').value = additionalFee.toFixed(2);
-            document.getElementById('view_invoice_net').value = invoiceNet.toFixed(2);
-            document.getElementById('view_vat').value = vat.toFixed(2);
-            document.getElementById('view_gross_invoice').value = grossInvoice.toFixed(2);
-
-            openViewInvoiceModal();
-        })
-        .catch(error => {
-            console.error('Error fetching invoice:', error);
-            alert('Error fetching invoice: ' + error.message);
-        });
-}
+    }
 </script>

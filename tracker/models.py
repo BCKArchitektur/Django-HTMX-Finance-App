@@ -5,6 +5,7 @@ from django_countries.fields import CountryField
 from django.db.models import UniqueConstraint
 from datetime import date
 from django.utils import timezone
+from decimal import Decimal
 
 #Creating custom user model
 class User(AbstractUser):
@@ -109,6 +110,7 @@ class Contract(models.Model):
     user = models.ManyToManyField(User)
     section = models.ManyToManyField(Section)
     additional_fee_percentage = models.FloatField(default=6.5) 
+    vat_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=19.00) 
 
     def __str__(self):
         return self.contract_name
@@ -217,8 +219,11 @@ class Invoice(models.Model):
     created_at = models.DateTimeField(default=timezone.now) 
 
     def save(self, *args, **kwargs):
-        # Calculate invoice gross based on invoice net
-        self.invoice_gross = self.invoice_net * 1.19
+        # Retrieve the VAT percentage from the associated contract
+        vat_percentage = Decimal(self.contract.vat_percentage ) 
+        
+        # Calculate the invoice gross based on invoice net and VAT percentage
+        self.invoice_gross = float(Decimal(self.invoice_net) * (1 + vat_percentage / Decimal(100)))
 
         if not self.title:
             year = timezone.now().year % 100  # Get last two digits of the year
