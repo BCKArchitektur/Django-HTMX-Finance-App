@@ -489,35 +489,47 @@
             thead.innerHTML = '<th>NO.</th><th>SECTION</th><th>ITEM</th><th>QUANTITY</th><th>UNIT</th><th>RATE</th><th>TOTAL</th>';
             tbody.innerHTML = '';
 
+            let isContractInvoiced = false;
+
             data.sections.forEach((section, sectionIndex) => {
                 section.items.forEach((item, itemIndex) => {
+                    const itemInvoiced = item.quantity !== item.available_quantity;
+                    if (itemInvoiced) {
+                        isContractInvoiced = true;
+                    }
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${sectionIndex + 1},${itemIndex + 1}</td>
-                        <td>${section.section_name}</td>
-                        <td>${item.Item_name}</td>
-                        <td><input type="text" name="quantity_${item.id}" value="${item.quantity || ''}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" /></td>
+                        <td><input type="text" value="${section.section_name}" class="input input-bordered w-full" ${itemInvoiced ? 'disabled' : ''}></td>
+                        <td><input type="text" value="${item.Item_name}" class="input input-bordered w-full" ${itemInvoiced ? 'disabled' : ''}></td>
+                        <td><input type="text" name="quantity_${item.id}" value="${item.quantity || ''}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" ${itemInvoiced ? 'disabled' : ''}></td>
                         <td>
-                            <select name="unit_${item.id}" class="select select-bordered w-full">
+                            <select name="unit_${item.id}" class="select select-bordered w-full" ${itemInvoiced ? 'disabled' : ''}>
                                 <option value="Std." ${item.unit === 'Std' ? 'selected' : ''}>Std</option>
                                 <option value="Psch" ${item.unit === 'Psch' ? 'selected' : ''}>Psch</option>
                                 <option value="Stk" ${item.unit === 'Stk' ? 'selected' : ''}>Stk</option>
                             </select>
                         </td>
-                        <td><input type="text" name="rate_${item.id}" value="${item.rate || ''}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" /></td>
+                        <td><input type="text" name="rate_${item.id}" value="${item.rate || ''}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" ${itemInvoiced ? 'disabled' : ''}></td>
                         <td id="total_${item.id}">${item.total || 0}</td>
                     `;
                     tbody.appendChild(tr);
                 });
             });
 
-            // Populate additional fee percentage
+            // Populate additional fee percentage and disable if any item is invoiced
             const additionalFeePercentageInput = document.getElementById('additional_fee_percentage');
             additionalFeePercentageInput.value = data.additional_fee_percentage || 0;
+            if (isContractInvoiced) {
+                additionalFeePercentageInput.disabled = true;
+            }
 
-            // Populate VAT percentage
+            // Populate VAT percentage and disable if any item is invoiced
             const vatPercentageInput = document.getElementById('id_vat_percentage');
             vatPercentageInput.value = data.vat_percentage || 0;
+            if (isContractInvoiced) {
+                vatPercentageInput.disabled = true;
+            }
 
             // Initialize the summary fields
             updateSummaryFields();

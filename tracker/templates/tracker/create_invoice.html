@@ -82,10 +82,7 @@
                 fetch(`/ajax/load-contract-data/?contract_id=${contractId}`)
                     .then(response => response.json())
                     .then(data => {
-                        // Populate additional fee percentage
                         document.getElementById('id_additional_fee_percentage').value = data.additional_fee_percentage || 0;
-                        
-                        // Populate VAT percentage
                         document.getElementById('vat_percentage').value = data.vat_percentage || 0;
     
                         let html = '<table class="table w-full">';
@@ -96,9 +93,8 @@
                             section.items.forEach(item => {
                                 const quotedQuantity = item.quantity;
                                 const availableQuantity = item.available_quantity;
-    
-                                // Check if quotedQuantity and availableQuantity are different
                                 const isChecked = quotedQuantity !== availableQuantity;
+    
                                 console.log(`Item ID: ${item.id}, isChecked: ${isChecked}`);
     
                                 html += `<tr>
@@ -110,7 +106,7 @@
                                             <td>${quotedQuantity}</td>
                                             <td>${availableQuantity}</td>
                                             <td>
-                                                <input type="float" name="quantity_${item.id}" class="input input-bordered" data-item-id="${item.id}" data-item-rate="${item.rate}" ${isChecked ? '' : 'disabled'} />
+                                                <input type="text" name="quantity_${item.id}" class="input input-bordered" data-item-id="${item.id}" data-item-rate="${item.rate}" onchange="updateTotal(${item.id})" ${isChecked ? '' : 'disabled'} />
                                             </td>
                                             <td id="total_${item.id}">0.00</td>
                                         </tr>`;
@@ -119,12 +115,10 @@
                         html += '</tbody></table>';
                         document.getElementById('provided-quantities-table').innerHTML = html;
     
-                        // Add event listeners to the inputs for calculating totals and handling checkbox behavior
                         document.querySelectorAll('.checkbox').forEach(checkbox => {
                             const itemId = checkbox.dataset.itemId;
                             const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
     
-                            // Checkbox toggle behavior
                             checkbox.addEventListener('change', function() {
                                 console.log(`Checkbox for item ID ${itemId} changed to: ${this.checked}`);
                                 if (this.checked) {
@@ -133,14 +127,12 @@
                                     quantityInput.value = '';
                                     quantityInput.disabled = true;
                                 }
-                                calculateInvoiceNet(); // Recalculate totals whenever the checkbox state changes
+                                calculateInvoiceNet();
                             });
     
-                            // Quantity input event listener
                             quantityInput.addEventListener('input', calculateInvoiceNet);
                         });
     
-                        // Trigger the calculation for all pre-checked items
                         calculateInvoiceNet();
                     })
                     .catch(error => {
@@ -149,7 +141,7 @@
             } else {
                 document.getElementById('provided-quantities-table').innerHTML = '';
                 document.getElementById('id_additional_fee_percentage').value = 0;
-                document.getElementById('vat_percentage').value = 0; // Reset VAT percentage
+                document.getElementById('vat_percentage').value = 0;
                 calculateInvoiceNet();
             }
         });
@@ -157,23 +149,46 @@
 
     function calculateInvoiceNet() {
         let sumOfItems = 0;
+
         document.querySelectorAll('input[name^="quantity_"]').forEach(input => {
-            const totalField = document.getElementById(`total_${input.dataset.itemId}`);
-            if (input.closest('tr').querySelector('input[name^="select_"]').checked) {
+            const itemId = input.dataset.itemId;
+
+            if (!itemId) {
+                console.warn('Item ID is undefined for an input element:', input);
+                return;
+            }
+
+            const totalField = document.getElementById(`total_${itemId}`);
+            const checkbox = input.closest('tr').querySelector(`input[name="select_${itemId}"]`);
+
+            if (!checkbox) {
+                console.warn(`Checkbox not found for item ID ${itemId}`);
+                if (totalField) {
+                    totalField.textContent = '0.00';
+                }
+                return;
+            }
+
+            if (checkbox.checked) {
                 const quantity = parseFloat(input.value) || 0;
                 const rate = parseFloat(input.dataset.itemRate) || 0;
                 const total = quantity * rate;
                 sumOfItems += total;
-                totalField.textContent = total.toFixed(2);
+
+                if (totalField) {
+                    totalField.textContent = total.toFixed(2);
+                }
             } else {
-                totalField.textContent = '0.00';
+                if (totalField) {
+                    totalField.textContent = '0.00';
+                }
             }
         });
 
         document.getElementById('id_sum_of_items').value = sumOfItems.toFixed(2);
 
         const additionalFeePercentage = parseFloat(document.getElementById('id_additional_fee_percentage').value) || 0;
-        const vatPercentage = parseFloat(document.getElementById('vat_percentage').value) || 0;  // Use the VAT percentage input value
+        const vatPercentage = parseFloat(document.getElementById('vat_percentage').value) || 0;
         const additionalFee = (sumOfItems * additionalFeePercentage) / 100;
         const invoiceNet = sumOfItems + additionalFee;
         const vat = invoiceNet * vatPercentage / 100;

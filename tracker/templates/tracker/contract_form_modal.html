@@ -198,49 +198,55 @@ document.addEventListener("DOMContentLoaded", function() {
             if (data.sections) {
                 data.sections.forEach((section, sectionIndex) => {
                     const sectionId = Math.random().toString(36).substr(2, 9);
+
+                    // Check if all items in the section are invoiced
+                    const isSectionEditable = section.items.every(item => item.quantity === item.available_quantity);
+
                     const sectionTemplate = `
                         <div class="section-block form-control w-full m-1 p-2">
                             <div class="flex items-center space-x-2">
                                 <div class="form-control flex items-center max-w-xs m-0">
                                     <label class="cursor-pointer label m-0 p-0">
                                         <span class="label-text m-1 mb-2 font-extralight ">⧗</span>
-                                        <input type="checkbox" name="sections[${sectionId}][billable]" class="checkbox checkbox-accent checkbox-sm section-billable" ${section.section_billed_hourly ? 'checked' : ''} />
+                                        <input type="checkbox" name="sections[${sectionId}][billable]" class="checkbox checkbox-accent checkbox-sm section-billable" ${section.section_billed_hourly ? 'checked' : ''} ${isSectionEditable ? '' : 'disabled'}>
                                     </label>
                                 </div>
                                 <div class="w-full">
-                                    <input type="text" name="section_name" value="${section.section_name}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
+                                    <input type="text" name="section_name" value="${section.section_name}" class="input input-sm input-bordered w-full m-2 section-name" ${isSectionEditable ? '' : 'disabled'}>
                                 </div>
                                 <div class="flex space-x-2">
-                                    <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this)">+ Item</button>
-                                    <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove()">x</button>
+                                    <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this)" ${isSectionEditable ? '' : 'disabled'}>+ Item</button>
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove()" ${isSectionEditable ? '' : 'disabled'}>x</button>
                                 </div>
                             </div>
-                            <div id="section-name-error-${sectionId}" class="text-red-500 text-sm mb-2"></div>
                             <div class="items-container">
                                 ${section.items ? section.items.map(item => {
                                     const itemId = Math.random().toString(36).substr(2, 9);
+
+                                    // Check if item is invoiced by comparing quantity and available_quantity
+                                    const isItemEditable = item.quantity === item.available_quantity;
+
                                     const tasksHTML = item.tasks ? item.tasks.map(task => {
                                         const taskId = Math.random().toString(36).substr(2, 9);
                                         const taskTemplate = `
                                             <div class="task-block form-control w-full max-w-xs m-1">
                                                 <div class="flex justify-between items-center">
-                                                    <input type="text" name="task_name" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
-                                                    <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
+                                                    <input type="text" name="task_name" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" ${isItemEditable ? '' : 'disabled'}>
+                                                    <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()" ${isItemEditable ? '' : 'disabled'}>x</button>
                                                 </div>
-                                                <div id="task-name-error-${taskId}" class="text-red-500 text-sm mb-2"></div>
                                             </div>
                                         `;
                                         return taskTemplate;
                                     }).join('') : '';
+
                                     const itemTemplate = `
                                         <div class="item-block form-control w-full m-2 p-2">
                                             <div class="flex justify-between items-center">
-                                                <input type="text" name="Item_name" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
-                                                <textarea name="description" placeholder="Description" class="textarea textarea-bordered w-full m-2 item-description">${item.description}</textarea>
+                                                <input type="text" name="Item_name" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" ${isItemEditable ? '' : 'disabled'}>
+                                                <textarea name="description" placeholder="Description" class="textarea textarea-bordered w-full m-2 item-description" ${isItemEditable ? '' : 'disabled'}>${item.description}</textarea>
                                                 <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this)">+ Task</button>
-                                                <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
+                                                <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()" ${isItemEditable ? '' : 'disabled'}>x</button>
                                             </div>
-                                            <div id="item-name-error-${itemId}" class="text-red-500 text-sm m-1"></div>
                                             <div class="tasks-container">
                                                 ${tasksHTML}
                                             </div>
