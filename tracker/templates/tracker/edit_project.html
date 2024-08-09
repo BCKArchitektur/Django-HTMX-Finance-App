@@ -251,31 +251,37 @@
                 <table class="table w-full">
                     <tbody>
                         <tr>
-                            <td class="text-right font-thin w-1/6">Sum of Items €</td>
+                            <td class="text-center font-thin w-1/6">Sum of Items €</td>
                             <td><input type="text" id="sum_of_items" class="input input-bordered input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-right font-thin w-1/6">Additional Fee %</td>
+                            <td class="text-center font-thin w-1/6">Additional Fee %</td>
                             <td><input type="text" name="additional_fee_percentage" id="additional_fee_percentage" class="input input-bordered stroke-slate-950 input-sm w-1/4"></td>
                         </tr>
                         <tr>
-                            <td class="text-right font-thin w-1/6">Additional Fee €</td>
+                            <td class="text-center font-thin w-1/6">Additional Fee €</td>
                             <td><input type="text" id="additional_fee" class="input input-bordered input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-right font-bold w-1/6">Net Contract €</td>
+                            <td class="text-center font-bold w-1/6">Net Contract €</td>
                             <td><input type="text" id="net_contract" class="input input-bordered input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-right font-thin w-1/6">VAT (%)</td>
-                            <td><input type="number" id="id_vat_percentage" name="vat_percentage" class="input input-bordered input-sm w-1/4" value="{{ vat_percentage }}" step="0.01"></td>
+                            <td class="text-center font-thin w-1/6">
+                                <div class="flex items-center justify-center">
+                                    <input type="checkbox" id="vat_toggle" class="checkbox mr-2" checked="checked" />
+                                    <label for="vat_toggle" class="ml-1">VAT (%)</label>
+                                </div>
+                            </td>
+                            <td><input type="number" id="id_vat_percentage" name="vat_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
                         </tr>
+                        
                         <tr>
-                            <td class="text-right font-thin w-1/6">VAT €</td>
+                            <td class="text-center font-thin w-1/6">VAT €</td>
                             <td><input type="text" id="vat" class="input input-bordered input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-right font-bold w-1/6">Gross Contract €</td>
+                            <td class="text-center font-bold w-1/6">Gross Contract €</td>
                             <td><input type="text" id="gross_contract" class="input input-bordered input-sm w-1/4" readonly></td>
                         </tr>
                     </tbody>
@@ -462,10 +468,10 @@
 
         const netContract = sumOfItems + additionalFee;
 
-        const vatPercentageInput = document.getElementById('id_vat_percentage');
-        const vatPercentage = parseFloat(vatPercentageInput.value) || 0;
+        const vatToggle = document.getElementById('vat_toggle');
+        const vatPercentage = vatToggle.checked ? 19 : 0;  // Set VAT to 19% if checked, otherwise 0%
         const vat = (netContract * vatPercentage) / 100;
-        
+
         const grossContract = netContract + vat;
 
         document.getElementById('sum_of_items').value = sumOfItems.toFixed(2);
@@ -473,7 +479,11 @@
         document.getElementById('net_contract').value = netContract.toFixed(2);
         document.getElementById('vat').value = vat.toFixed(2);
         document.getElementById('gross_contract').value = grossContract.toFixed(2);
+        document.getElementById('id_vat_percentage').value = vatPercentage;  // Update the VAT percentage input field
     }
+
+    // Event listener to dynamically change VAT percentage when checkbox is toggled
+    document.getElementById('vat_toggle').addEventListener('change', updateSummaryFields);
 
     // Add event listeners to recalculate values when VAT or Additional Fee percentage changes
     document.getElementById('id_vat_percentage').addEventListener('input', updateSummaryFields);
@@ -515,9 +525,21 @@
             const additionalFeePercentageInput = document.getElementById('additional_fee_percentage');
             additionalFeePercentageInput.value = data.additional_fee_percentage || 0;
 
-            // Populate VAT percentage
+            // Populate VAT percentage and set the toggle
             const vatPercentageInput = document.getElementById('id_vat_percentage');
+            const vatToggle = document.getElementById('vat_toggle');
             vatPercentageInput.value = data.vat_percentage || 0;
+
+            if (data.invoices_exist) {
+                vatToggle.disabled = true;  // Disable the toggle if invoices exist
+                vatToggle.checked = true;
+                vatPercentageInput.value = 19;
+            } else {
+                vatToggle.disabled = false;  // Enable the toggle if no invoices exist
+                vatToggle.addEventListener('change', function() {
+                    vatPercentageInput.value = vatToggle.checked ? 19 : 0;
+                });
+            }
 
             // Initialize the summary fields
             updateSummaryFields();

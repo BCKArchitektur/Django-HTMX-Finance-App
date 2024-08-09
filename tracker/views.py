@@ -828,6 +828,9 @@ def load_contract_data(request):
     # Fetch all previous invoices for this project
     previous_invoices = Invoice.objects.filter(project_id=project_id)
 
+    # Check if any invoices exist
+    invoices_exist = previous_invoices.exists()
+
     users = list(User.objects.all().values('id', 'username'))
     sections = contract.section.all()
     section_data = []
@@ -868,6 +871,7 @@ def load_contract_data(request):
         'sections': section_data,
         'additional_fee_percentage': contract.additional_fee_percentage,
         'vat_percentage': contract.vat_percentage,  # Add VAT percentage to the response
+        'invoices_exist': invoices_exist,  # Add whether invoices exist to the response
     }
 
     return JsonResponse(contract_data)
