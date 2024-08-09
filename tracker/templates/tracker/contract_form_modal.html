@@ -192,7 +192,21 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('contract_id').value = contractId;
         fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
             console.log('Fetched Data:', data);
+
+           // Determine if any section or item is not editable
+            let isContractEditable = true;
+
+            data.sections.forEach(section => {
+                const isSectionEditable = section.items.every(item => item.quantity === item.available_quantity);
+                if (!isSectionEditable) {
+                    isContractEditable = false;
+                }
+            });
+
             document.getElementById('id_contract_name').value = data.contract_name;
+            document.getElementById('id_contract_name').disabled = !isContractEditable;
+
+            
             const sectionsContainer = document.getElementById('sections-container');
             sectionsContainer.innerHTML = '';
             if (data.sections) {

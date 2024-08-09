@@ -524,17 +524,32 @@
                     if (itemInvoiced) {
                         isContractInvoiced = true;
                     }
+
+                    const unitOptions = `
+                        <option value="Std." ${item.unit === 'Std' ? 'selected' : ''}>Std</option>
+                        <option value="Psch" ${item.unit === 'Psch' ? 'selected' : ''}>Psch</option>
+                        <option value="Stk" ${item.unit === 'Stk' ? 'selected' : ''}>Stk</option>
+                    `;
+
+                    const isPsch = item.unit === 'Psch';
+                    const quantityValue = isPsch ? '1' : (item.quantity || '');
+                    const quantityInput = `
+                        <input type="text" name="quantity_${item.id}" value="${quantityValue}" 
+                            class="input input-bordered w-full" 
+                            ${itemInvoiced ? 'disabled' : (isPsch ? 'readonly' : '')} 
+                            onchange="updateTotal(${item.id})">
+                        <input type="hidden" name="original_quantity_${item.id}" value="${item.quantity || ''}">
+                    `;
+
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${sectionIndex + 1},${itemIndex + 1}</td>
                         <td><input type="text" value="${section.section_name}" class="input input-bordered w-full" ${itemInvoiced ? 'disabled' : ''}></td>
                         <td><input type="text" value="${item.Item_name}" class="input input-bordered w-full" ${itemInvoiced ? 'disabled' : ''}></td>
-                        <td><input type="text" name="quantity_${item.id}" value="${item.quantity || ''}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" ${itemInvoiced ? 'disabled' : ''}></td>
+                        <td>${quantityInput}</td>
                         <td>
-                            <select name="unit_${item.id}" class="select select-bordered w-full" ${itemInvoiced ? 'disabled' : ''}>
-                                <option value="Std." ${item.unit === 'Std' ? 'selected' : ''}>Std</option>
-                                <option value="Psch" ${item.unit === 'Psch' ? 'selected' : ''}>Psch</option>
-                                <option value="Stk" ${item.unit === 'Stk' ? 'selected' : ''}>Stk</option>
+                            <select name="unit_${item.id}" class="select select-bordered w-full" ${itemInvoiced ? 'disabled' : ''} onchange="handleUnitChange(this, ${item.id})">
+                                ${unitOptions}
                             </select>
                         </td>
                         <td><input type="text" name="rate_${item.id}" value="${item.rate || ''}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" ${itemInvoiced ? 'disabled' : ''}></td>
@@ -570,6 +585,21 @@
             // Initialize the summary fields
             updateSummaryFields();
         });
+    }
+
+    function handleUnitChange(selectElement, itemId) {
+        const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
+        const originalQuantityInput = document.querySelector(`input[name="original_quantity_${itemId}"]`);
+
+        if (selectElement.value === 'Psch') {
+            quantityInput.value = '1';
+            quantityInput.readOnly = true;
+        } else {
+            quantityInput.value = originalQuantityInput.value;
+            quantityInput.readOnly = false;
+        }
+
+        updateTotal(itemId);
     }
 
     document.addEventListener('DOMContentLoaded', function() {
