@@ -211,11 +211,15 @@ class Invoice(models.Model):
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE)
     provided_quantities = models.JSONField(default=dict)
     invoice_net = models.FloatField()
+    invoice_gross = models.FloatField(editable=False)  # New field for Invoice Gross
     amount_received = models.FloatField(null=True, blank=True, default=0)
     title = models.CharField(max_length=200)
     created_at = models.DateTimeField(default=timezone.now) 
 
     def save(self, *args, **kwargs):
+        # Calculate invoice gross based on invoice net
+        self.invoice_gross = self.invoice_net * 1.19
+
         if not self.title:
             year = timezone.now().year % 100  # Get last two digits of the year
             month = timezone.now().month

@@ -153,8 +153,8 @@
                             <th>Invoice Number</th>
                             <th>Contract</th>
                             <th>Date Issued</th>
-                            <th>Amount</th>
-                            <th>Status</th>
+                            <th>Invoice Net</th>
+                            <th>Invoice Gross</th>
                             <th>Amount Received</th> <!-- New Column -->
                             <th>Actions</th>
                         </tr>
@@ -165,17 +165,17 @@
                             <td>{{ invoice.title }}</td>
                             <td>{{ invoice.contract.contract_name }}</td>
                             <td>{{ invoice.created_at|date:"d M Y" }}</td>
-                            <td>{{ invoice.invoice_net }}</td>
-                            <td>{{ invoice.get_status_display }}</td>
-                            <td>{{ invoice.amount_received }}</td> <!-- New Data -->
+                            <td>{{ invoice.invoice_net|floatformat:2 }}</td>
+                            <td>{{ invoice.invoice_gross|floatformat:2 }}</td>
+                            <td>{{ invoice.amount_received }}</td> 
                             <td>
-                                <button class="btn btn-xs btn-primary" onclick="viewInvoice({{ invoice.id }})">View</button>
+                                <button class="btn btn-xs btn-primary btn-outline m-1" onclick="viewInvoice({{ invoice.id }})">View</button>
                                 <form method="post" action="{% url 'delete_invoice' invoice.id %}" style="display:inline;">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+                                    <button type="submit" class="btn btn-xs btn-error btn-outline m-1">Delete</button>
                                 </form>
-                                <a href="{% url 'download_invoice' invoice.id %}" class="btn btn-xs btn-secondary">🖪 Invoice</a>
-                                <button class="btn btn-xs btn-accent" onclick="openRecordPaymentModal({{ invoice.id }})">Record Payment</button> <!-- New Button -->
+                                <a href="{% url 'download_invoice' invoice.id %}" class="btn btn-xs btn-secondary btn-outline m-1">🖪 Invoice</a>
+                                <button class="btn btn-xs btn-primary btn-outline m-1" onclick="openRecordPaymentModal({{ invoice.id }})">Record Payment</button> <!-- New Button -->
                             </td>
                         </tr>
                         {% empty %}
@@ -187,7 +187,6 @@
                 </table>
             </div>
         </div>
-        
     </div>
 
 
