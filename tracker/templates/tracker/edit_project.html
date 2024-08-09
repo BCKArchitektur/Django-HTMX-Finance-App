@@ -664,6 +664,20 @@
 
     window.closeAddBudgetModal = function() {
         document.getElementById('addBudgetModal').classList.remove('modal-open');
+        
+        // Clear the budget table
+        const budgetTableBody = document.getElementById('budget-table').querySelector('tbody');
+        budgetTableBody.innerHTML = '';
+
+        // Reset the summary fields
+        document.getElementById('sum_of_items').value = '';
+        document.getElementById('additional_fee').value = '';
+        document.getElementById('net_contract').value = '';
+        document.getElementById('vat').value = '';
+        document.getElementById('gross_contract').value = '';
+
+        // Optionally, reset the form itself
+        document.getElementById('add-budget-form').reset();
     }
 </script>
 {% endblock %}

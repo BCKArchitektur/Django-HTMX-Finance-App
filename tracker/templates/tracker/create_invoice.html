@@ -64,15 +64,29 @@
 </div>
 
 <script>
-    function openInvoiceModal() {
-        document.getElementById('invoiceModal').classList.add('modal-open');
-    }
+function openInvoiceModal() {
+    // Reinitialize dynamic content or event listeners if necessary
     
-    function closeInvoiceModal() {
-        document.getElementById('invoiceModal').classList.remove('modal-open');
-    }
+    // Clear any previous errors or data
+    document.getElementById('provided-quantities-table').innerHTML = '';
     
-    document.addEventListener('DOMContentLoaded', function() {
+    // Open the modal
+    document.getElementById('invoiceModal').classList.add('modal-open');
+}
+
+function closeInvoiceModal() {
+    // Clear modal content here if needed
+    const invoiceForm = document.querySelector('#invoice-form');
+    if (invoiceForm) {
+        invoiceForm.reset(); // This resets all the form fields
+    }
+    document.getElementById('provided-quantities-table').innerHTML = ''; // Clear any dynamically added content
+
+    document.getElementById('invoiceModal').classList.remove('modal-open');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Rest of your code...
     const contractField = document.querySelector('#id_contract');
     
     if (contractField) {
