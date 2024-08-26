@@ -1117,16 +1117,24 @@ def generate_word_document(request, contract_id):
     postal_code = getattr(client, 'postal_code', 'Unknown')
     country = getattr(client.country, 'name', 'Unknown') if hasattr(client, 'country') else 'Unknown'
 
-    # Calculate contract details
+    # Calculate contract details with serial numbers
     contract_sections = []
     sum_of_items = Decimal(0)  # Ensure this is a Decimal for accurate calculations
+
+    # Initialize section counter
+    section_counter = 1
 
     for section in contract.section.all():
         section_total = Decimal(0)  # Initialize as Decimal
         items = []
+
+        # Initialize item counter for the current section
+        item_counter = 1
+
         for item in section.Item.all():
             item_total = Decimal(item.quantity) * Decimal(item.rate)  # Convert to Decimal
             item_data = {
+                'Item_serial': f"{section_counter}.{item_counter}",  # Serial number for item
                 'Item_name': item.Item_name,
                 'quantity': item.quantity,
                 'unit': item.unit,
@@ -1137,13 +1145,21 @@ def generate_word_document(request, contract_id):
                 item_data['description'] = item.description
             items.append(item_data)
             section_total += item_total
+
+            # Increment item counter
+            item_counter += 1
         
         contract_sections.append({
+            'section_serial': section_counter,  # Serial number for section
             'section_name': section.section_name,
             'net_section': f"{section_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
             'Item': items
         })
         sum_of_items += section_total
+
+        # Increment section counter
+        section_counter += 1
+
 
     additional_fee_percentage = Decimal(contract.additional_fee_percentage)
     additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)

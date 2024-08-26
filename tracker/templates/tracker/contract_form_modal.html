@@ -520,11 +520,11 @@ document.addEventListener("DOMContentLoaded", function() {
                         </label>
                     </div>
                     <div class="w-full">
-                        <input type="text" name="sections[${sectionId}][section_name]" placeholder="Section Name" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
+                        <input type="text" name="sections[${sectionId}][section_name]" placeholder="Section Name" class="input input-sm input-bordered w-full m-2 p-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
                     </div>
                     <div class="flex space-x-2">
-                        <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this, '${sectionId}')">+ Item</button>
-                        <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove()">x</button>
+                        <button type="button" class="btn btn-sm btn-accent m-1" onclick="addItem(this, '${sectionId}')">+ Item</button>
+                        <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.parentNode.remove()">x</button>
                     </div>
                 </div>
                 <div id="section-name-error-${sectionId}" class="text-red-500 text-sm mb-2"></div>
