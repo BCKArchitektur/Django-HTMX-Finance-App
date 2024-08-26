@@ -259,7 +259,7 @@ class TaskLibraryAdmin(admin.ModelAdmin):
 
 
 
-# admin.site.register(Item, ItemAdmin)
+admin.site.register(Item, ItemAdmin)
 
 
 

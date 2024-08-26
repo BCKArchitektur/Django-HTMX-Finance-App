@@ -4676,6 +4676,10 @@ details.collapse summary::-webkit-details-marker {
   margin-top: 2rem;
 }
 
+.ml-1 {
+  margin-left: 0.25rem;
+}
+
 .line-clamp-1 {
   overflow: hidden;
   display: -webkit-box;

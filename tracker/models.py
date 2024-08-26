@@ -110,7 +110,7 @@ class Contract(models.Model):
     user = models.ManyToManyField(User)
     section = models.ManyToManyField(Section)
     additional_fee_percentage = models.FloatField(default=6.5) 
-    vat_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=19.00) 
+    vat_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=19.00,blank=True, null=True) 
 
     def __str__(self):
         return self.contract_name

@@ -306,6 +306,98 @@ def handle_project_form(request, project):
     return redirect('edit_project', project_id=project.id)
 
 
+# def handle_existing_contract_form(request, project):
+#     print("Request received for handling existing contract form.")
+    
+#     contract_id = request.POST['contract_id']
+#     print(f"Contract ID: {contract_id}")
+
+#     contract = get_object_or_404(Contract, id=contract_id)
+#     print(f"Contract found: {contract}")
+
+#     contract_form = ContractForm(request.POST, instance=contract)
+
+#     if contract_form.is_valid():
+#         print("Contract form is valid.")
+#         contract_form.save()
+#         contract_json = request.POST.get('contract_json')
+#         print(f"Contract JSON: {contract_json}")
+
+#         if contract_json:
+#             try:
+#                 contract_data = json.loads(contract_json)
+#                 print(f"Contract data: {contract_data}")
+
+#                 # Track sections to keep
+#                 sections_to_keep = []
+
+#                 for section_data in contract_data['sections']:
+#                     section_name = section_data['section_name']
+#                     section_billed_hourly = section_data.get('section_billed_hourly', False)
+                    
+#                     # Create a new section
+#                     section = Section.objects.create(
+#                         section_name=section_name,
+#                         section_billed_hourly=section_billed_hourly
+#                     )
+#                     sections_to_keep.append(section)
+
+#                     # Track items to keep
+#                     items_to_keep = []
+
+#                     for item_data in section_data['items']:
+#                         Item_name = item_data['Item_name']
+#                         description = item_data.get('description', '')  # Handle description
+                        
+#                         # Create a new item
+#                         item = Item.objects.create(
+#                             Item_name=Item_name,
+#                             description=description
+#                         )
+#                         items_to_keep.append(item)
+
+#                         # Preserve users for the new item
+#                         existing_users = set(item.users.all())
+#                         for user in existing_users:
+#                             item.users.add(user)
+
+#                         # Track tasks to keep
+#                         tasks_to_keep = []
+
+#                         for task_data in item_data['tasks']:
+#                             task_name = task_data['task_name']
+#                             task = Task.objects.create(task_name=task_name)
+#                             tasks_to_keep.append(task)
+#                             item.tasks.add(task)
+
+#                         item.tasks.set(tasks_to_keep)
+#                         section.Item.add(item)
+
+#                     section.Item.set(items_to_keep)
+#                     contract.section.add(section)
+
+#                 contract.section.set(sections_to_keep)
+#                 contract.save()
+
+#                 project.contract.add(contract)
+#                 project.save()
+#                 print("Project updated with contract.")
+
+#                 messages.success(request, "Contract updated successfully.")
+#             except json.JSONDecodeError as e:
+#                 print(f"JSON decode error: {e}")
+#                 messages.error(request, "Error decoding the contract JSON data.")
+#         else:
+#             print("No contract JSON data provided.")
+#             messages.error(request, "No contract JSON data provided.")
+#     else:
+#         print(f"Contract form errors: {contract_form.errors}")
+#         messages.error(request, f"Error updating contract: {contract_form.errors}")
+
+#     return redirect('edit_project', project_id=project.id)
+
+
+
 def handle_existing_contract_form(request, project):
     print("Request received for handling existing contract form.")
     
@@ -335,7 +427,7 @@ def handle_existing_contract_form(request, project):
                     section_name = section_data['section_name']
                     section_billed_hourly = section_data.get('section_billed_hourly', False)
                     
-                    # Create a new section
+                    # Create or retrieve a section
                     section = Section.objects.create(
                         section_name=section_name,
                         section_billed_hourly=section_billed_hourly
@@ -346,17 +438,43 @@ def handle_existing_contract_form(request, project):
                     items_to_keep = []
 
                     for item_data in section_data['items']:
-                        Item_name = item_data['Item_name']
+                        item_id = item_data.get('id')  # Use the item ID from the data
+                        print(f"Processing item with ID: {item_id}")
+                        
                         description = item_data.get('description', '')  # Handle description
                         
-                        # Create a new item
-                        item = Item.objects.create(
-                            Item_name=Item_name,
-                            description=description
-                        )
+                        # Initialize item
+                        item = None
+                        
+                        if item_id:
+                            # Retrieve the existing item by ID
+                            item = Item.objects.filter(id=item_id).first()
+                            
+                            if item:
+                                print(f"Existing item found with ID: {item_id}. Updating item.")
+                                # Update the existing item
+                                item.Item_name = item_data['Item_name']  # Update the item name if it has changed
+                                item.description = description
+                                item.quantity = item_data.get('quantity', item.quantity)
+                                item.unit = item_data.get('unit', item.unit)
+                                item.rate = item_data.get('rate', item.rate)
+                                item.save()
+                            else:
+                                print(f"No existing item found with ID: {item_id}. Creating new item.")
+                        
+                        if not item:
+                            # Create a new item if no existing item found or if item_id is None
+                            item = Item.objects.create(
+                                Item_name=item_data['Item_name'],
+                                description=description,
+                                quantity=item_data.get('quantity', 0),
+                                unit=item_data.get('unit', 'Std'),
+                                rate=item_data.get('rate', 0.0)
+                            )
+                        
                         items_to_keep.append(item)
 
-                        # Preserve users for the new item
+                        # Preserve users for the new or existing item
                         existing_users = set(item.users.all())
                         for user in existing_users:
                             item.users.add(user)
@@ -395,6 +513,8 @@ def handle_existing_contract_form(request, project):
         messages.error(request, f"Error updating contract: {contract_form.errors}")
 
     return redirect('edit_project', project_id=project.id)
+
+
 
 
 
@@ -732,92 +852,6 @@ def add_project(request):
 
 
 
-# def load_contract_data(request):
-#     contract_id = request.GET.get('contract_id')
-#     contract = get_object_or_404(Contract, id=contract_id)
-
-#     users = list(User.objects.all().values('id', 'username'))
-#     sections = contract.section.all()
-#     section_data = []
-
-#     for section in sections:
-#         items = section.Item.all()
-#         item_data = [{
-#             'id': item.id,
-#             'Item_name': item.Item_name,
-#             'description': item.description,
-#             'quantity': item.quantity,
-#             'unit': item.unit,
-#             'rate': item.rate,
-#             'total': item.total,
-#             'users': list(item.users.values_list('id', flat=True)),
-#             'tasks': list(item.tasks.values('id', 'task_name'))
-#         } for item in items]
-#         section_data.append({
-#             'section_name': section.section_name,
-#             'section_billed_hourly': section.section_billed_hourly,
-#             'items': item_data
-#         })
-
-#     contract_data = {
-#         'contract_name': contract.contract_name,
-#         'users': users,
-#         'sections': section_data,
-#         'additional_fee_percentage': contract.additional_fee_percentage  # Include additional_fee_percentage
-#     }
-
-#     return JsonResponse(contract_data)
-
-# def load_contract_data(request):
-#     contract_id = request.GET.get('contract_id')
-#     contract = get_object_or_404(Contract, id=contract_id)
-#     project_id = contract.project_set.first().id  # Assuming a contract belongs to at least one project
-
-#     # Fetch all previous invoices for this project
-#     previous_invoices = Invoice.objects.filter(project_id=project_id)
-
-#     users = list(User.objects.all().values('id', 'username'))
-#     sections = contract.section.all()
-#     section_data = []
-
-#     for section in sections:
-#         items = section.Item.all()
-#         item_data = []
-
-#         for item in items:
-#             # Calculate the total provided quantity from previous invoices
-#             total_provided_quantity = sum(
-#                 invoice.provided_quantities.get(str(item.id), {}).get('quantity', 0)
-#                 for invoice in previous_invoices
-#             )
-#             available_quantity = item.quantity - total_provided_quantity
-#             item_data.append({
-#                 'id': item.id,
-#                 'Item_name': item.Item_name,
-#                 'description': item.description,
-#                 'quantity': item.quantity,
-#                 'available_quantity': available_quantity,
-#                 'unit': item.unit,
-#                 'rate': item.rate,
-#                 'total': item.total,
-#                 'users': list(item.users.values_list('id', flat=True)),
-#                 'tasks': list(item.tasks.values('id', 'task_name'))
-#             })
-        
-#         section_data.append({
-#             'section_name': section.section_name,
-#             'section_billed_hourly': section.section_billed_hourly,
-#             'items': item_data
-#         })
-
-#     contract_data = {
-#         'contract_name': contract.contract_name,
-#         'users': users,
-#         'sections': section_data,
-#         'additional_fee_percentage': contract.additional_fee_percentage
-#     }
-
-#     return JsonResponse(contract_data)
 
 
 def load_contract_data(request):
@@ -950,44 +984,6 @@ def add_users(request):
 
 
 
-# @csrf_exempt
-# @login_required
-# def add_budget(request):
-#     if request.method == 'POST':
-#         contract_id = request.POST.get('contract_id')
-#         if not contract_id:
-#             return JsonResponse({'error': 'Missing contract ID'}, status=400)
-
-#         contract = get_object_or_404(Contract, id=contract_id)
-
-#         additional_fee_percentage = request.POST.get('additional_fee_percentage')
-#         try:
-#             contract.additional_fee_percentage = float(additional_fee_percentage)
-#         except (ValueError, TypeError):
-#             contract.additional_fee_percentage = 0.0
-
-#         for section in contract.section.all():
-#             for item in section.Item.all():
-#                 quantity_key = f'quantity_{item.id}'
-#                 unit_key = f'unit_{item.id}'
-#                 rate_key = f'rate_{item.id}'
-#                 if quantity_key in request.POST and rate_key in request.POST:
-#                     try:
-#                         quantity = float(request.POST[quantity_key])
-#                         unit = request.POST[unit_key]
-#                         rate = float(request.POST[rate_key])
-#                         item.quantity = quantity
-#                         item.unit = unit
-#                         item.rate = rate
-#                         item.total = quantity * rate
-#                         item.save()
-#                     except (ValueError, Item.DoesNotExist):
-#                         continue
-
-#         contract.save()
-#         return JsonResponse({'status': 'success'})
-
-#     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 @csrf_exempt
 @login_required

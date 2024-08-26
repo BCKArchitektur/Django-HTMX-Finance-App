@@ -91,8 +91,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
             sectionBlock.querySelectorAll('.item-block').forEach(itemBlock => {
                 let item = {
+                    id: itemBlock.getAttribute('data-item-id') || null,  // Include item id if it exists
                     Item_name: itemBlock.querySelector('.item-name').value,
-                    description: itemBlock.querySelector('.item-description').value,  // Include description field
+                    description: itemBlock.querySelector('.item-description').value,
                     tasks: []
                 };
 
@@ -111,6 +112,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         return contract;
     }
+
 
 
 
@@ -217,7 +219,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     const isSectionEditable = section.items.every(item => item.quantity === item.available_quantity);
 
                     const sectionTemplate = `
-                        <div class="section-block form-control w-full m-1 p-2">
+                        <div class="section-block form-control w-full m-1 p-2" data-section-id="{{ section.id }}">
                             <div class="flex items-center space-x-2">
                                 <div class="form-control flex items-center max-w-xs m-0">
                                     <label class="cursor-pointer label m-0 p-0">
@@ -254,7 +256,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                     }).join('') : '';
 
                                     const itemTemplate = `
-                                        <div class="item-block form-control w-full m-2 p-2">
+                                        <div class="item-block form-control w-full m-2 p-2"  data-item-id="${item.id}">
                                             <div class="flex justify-between items-center">
                                                 <input type="text" name="Item_name" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" ${isItemEditable ? '' : 'disabled'}>
                                                 <textarea name="description" placeholder="Description" class="textarea textarea-bordered w-full m-2 item-description" ${isItemEditable ? '' : 'disabled'}>${item.description}</textarea>
@@ -432,7 +434,7 @@ document.addEventListener("DOMContentLoaded", function() {
         contract.sections.forEach(section => {
             const sectionId = Math.random().toString(36).substr(2, 9);
             const sectionTemplate = `
-                <div class="section-block form-control w-full m-1 p-2">
+                <div class="section-block form-control w-full m-1 p-2" data-section-id="{{ section.id }}">
                     <div class="flex items-center space-x-2">
                         <div class="form-control flex items-center max-w-xs m-0">
                             <label class="cursor-pointer label m-0 p-0">
@@ -453,7 +455,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         ${section.items.map(item => {
                             const itemId = Math.random().toString(36).substr(2, 9);
                             return `
-                                <div class="item-block form-control w-full m-2 p-2">
+                                <div class="item-block form-control w-full m-2 p-2"  data-item-id="{{ item.id }}">
                                     <div class="flex justify-between items-center">
                                         <input type="text" name="sections[${sectionId}][items][${itemId}][Item_name]" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
                                         <textarea name="sections[${sectionId}][items][${itemId}][description]" placeholder="Description" class="textarea textarea-bordered w-full m-2 item-description">${item.description}</textarea>
@@ -509,7 +511,7 @@ document.addEventListener("DOMContentLoaded", function() {
     window.addSection = function() {
         const sectionId = Math.random().toString(36).substr(2, 9);
         const sectionTemplate = `
-            <div class="section-block form-control w-full m-1 p-2">
+            <div class="section-block form-control w-full m-1 p-2" data-section-id="{{ section.id }}">
                 <div class="flex items-center space-x-2">
                     <div class="form-control flex items-center max-w-xs m-0">
                         <label class="cursor-pointer label m-0 p-0">
@@ -535,7 +537,7 @@ document.addEventListener("DOMContentLoaded", function() {
     window.addItem = function(button, sectionId) {
         const itemId = Math.random().toString(36).substr(2, 9);
         const itemTemplate = `
-            <div class="item-block form-control w-full m-2 p-2">
+            <div class="item-block form-control w-full m-2 p-2"  data-item-id="{{ item.id }}">
                 <div class="flex justify-between items-center">
                     <input type="text" name="sections[${sectionId}][items][${itemId}][Item_name]" placeholder="Item Name" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
                     <textarea name="sections[${sectionId}][items][${itemId}][description]" placeholder="Description" class="textarea textarea-bordered w-full m-2 item-description"></textarea>
@@ -589,7 +591,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         ${data.items.map(item => {
                             const itemId = Math.random().toString(36).substr(2, 9);
                             return `
-                                <div class="item-block form-control w-full m-2 p-2">
+                                <div class="item-block form-control w-full m-2 p-2" data-item-id="{{ item.id }}">
                                     <div class="flex justify-between items-center">
                                         <input type="text" name="sections[${newSectionId}][items][${itemId}][Item_name]" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
                                         <textarea name="sections[${newSectionId}][items][${itemId}][description]" class="textarea textarea-bordered w-full m-2 item-description">${item.description}</textarea>
