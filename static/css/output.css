@@ -4589,10 +4589,6 @@ details.collapse summary::-webkit-details-marker {
   margin: 1.5rem;
 }
 
-.m-3 {
-  margin: 0.75rem;
-}
-
 .mx-1 {
   margin-left: 0.25rem;
   margin-right: 0.25rem;
@@ -4678,10 +4674,6 @@ details.collapse summary::-webkit-details-marker {
 
 .mt-8 {
   margin-top: 2rem;
-}
-
-.ml-1 {
-  margin-left: 0.25rem;
 }
 
 .line-clamp-1 {
