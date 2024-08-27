@@ -1383,6 +1383,10 @@ def download_invoice(request, invoice_id):
             'quantity': details['quantity'],
             'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         })
+        if item.description:
+            sections[section_name].append({
+            'description' : item.description,
+            })
 
         sum_of_items += item_total
 
@@ -1398,8 +1402,11 @@ def download_invoice(request, invoice_id):
     previous_invoices = Invoice.objects.filter(project=project).exclude(id=invoice_id)
     previous_invoices_data = [
         {
-            'invoice_number': inv.title,
+            'invoice_title': inv.title,
+            'created_at' : inv.created_at.strftime('%d %B %Y'),
             'invoice_net': f"{Decimal(inv.invoice_net):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'invoice_tax%': vat_percentage,
+            'invoice_tax':  f"{(Decimal(inv.invoice_net) * vat_percentage):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
             'invoice_gross': f"{Decimal(inv.invoice_net) + (Decimal(inv.invoice_net) * vat_percentage):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
             'amount_paid': f"{Decimal(inv.amount_received):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         }
@@ -1421,14 +1428,19 @@ def download_invoice(request, invoice_id):
         'contract_name': contract.contract_name,
         'sections': sections,  # Organized by section
         'sum_of_items': f"{sum_of_items:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        'additional_fee_percentage': f"{additional_fee_percentage:.2f}",
-        'additional_fee_value': f"{additional_fee_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'invoice_net': f"{invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'vat_percentage': vat_percentage,  # Pass this to template to multiply by 100
-        'tax_value': f"{tax_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'tax': f"{tax_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'invoice_gross': f"{invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'previous_invoices': previous_invoices_data,  # Ensure this is always a list
     }
+
+        # Only add the additional fee to the context if it's greater than 0
+    if additional_fee_percentage > 0:
+        context.update({
+            'additional_fee_percentage': f"{additional_fee_percentage:.2f}",
+            'additional_fee_value': f"{additional_fee_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        })
 
     # Print context for debugging
     import pprint

@@ -8,7 +8,7 @@
                 <input type="text" id="payment_invoice_net" class="input input-bordered w-full" readonly>
             </div>
             <div class="form-control">
-                <label class="label">VAT (19%) (€)</label>
+                <label class="label">VAT (%) (€)</label>
                 <input type="text" id="payment_vat" class="input input-bordered w-full" readonly>
             </div>
             <div class="form-control">
@@ -44,8 +44,9 @@
             .then(data => {
                 console.log(`Fetched data:`, data);
     
+                const vatPercentage = parseFloat(data.vat_percentage) || 0;  // Use VAT percentage from data
                 const invoiceNet = parseFloat(data.invoice_net) || 0;
-                const taxValue = invoiceNet * 0.19;  // VAT is 19%
+                const taxValue = invoiceNet * vatPercentage / 100;
                 const invoiceGross = invoiceNet + taxValue;
     
                 console.log(`Calculated Values - Net: ${invoiceNet}, VAT: ${taxValue}, Gross: ${invoiceGross}`);
