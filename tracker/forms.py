@@ -132,7 +132,7 @@ class AddBudgetForm(forms.Form):
 class InvoiceForm(forms.ModelForm):
     class Meta:
         model = Invoice
-        fields = ['contract', 'provided_quantities', 'invoice_net', 'amount_received']
+        fields = ['contract', 'provided_quantities', 'invoice_net', 'amount_received', 'invoice_type']  # Added 'invoice_type' here
 
     def __init__(self, *args, **kwargs):
         project = kwargs.pop('project', None)

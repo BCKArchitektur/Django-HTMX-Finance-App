@@ -977,7 +977,7 @@ def generate_word_document(request, contract_id):
     client = project.client_name  # Assuming client_name is a related model, not just a field
 
     # Construct the template path using the template name from the URL parameter
-    template_path = os.path.join(settings.BASE_DIR, 'tracker', 'templates', 'tracker', 'invoice_templates', template_name)
+    template_path = os.path.join(r'Z:\02_Zubehör\3_Vorlagen\BCK App Templates', template_name)
     if not os.path.exists(template_path):
         raise FileNotFoundError(f"Template not found at {template_path}")
 
@@ -1309,7 +1309,7 @@ def download_invoice(request, invoice_id):
 
         previous_invoices_data.append({
             'invoice_title': inv.title,
-            'created_at': timezone.localtime(inv.created_at).strftime('%d.%m.%Y %H:%M:%S'),  # German format with time
+            'created_at': timezone.localtime(inv.created_at).strftime('%d.%m.%Y'),  # German format with time
             'invoice_net': f"{Decimal(inv.invoice_net):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
             'invoice_tax%': vat_percentage,
             'invoice_tax': f"{(Decimal(inv.invoice_net) * vat_percentage):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
@@ -1327,7 +1327,7 @@ def download_invoice(request, invoice_id):
     context = {
         'client_name': client.client_name if client else "Unknown",
         'client_address': f"{client.street_address}, {client.city}, {client.postal_code}, {client.country.name}" if client else "Unknown",
-        'created_at': timezone.localtime(invoice.created_at).strftime('%d.%m.%Y %H:%M:%S'),  # German format with time
+        'created_at': timezone.localtime(invoice.created_at).strftime('%d.%m.%Y'),  # German format with time
         'project_no': project.project_no,
         'project_name': project.project_name,
         'invoice_title': invoice.title,
@@ -1342,6 +1342,7 @@ def download_invoice(request, invoice_id):
         'total_invoice_gross': f"{total_invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'total_amount_paid': f"{total_amount_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'invoice_tobepaid': f"{invoice_tobepaid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'invoice_type':invoice.invoice_type
     }
 
     if additional_fee_percentage > 0:
@@ -1355,8 +1356,8 @@ def download_invoice(request, invoice_id):
     pprint.pprint(context)
 
     # Path to the invoice template
-    template_path = os.path.join(settings.BASE_DIR, 'tracker', 'templates', 'tracker', 'invoice_templates', 'Invoice_Template.docx')
-    
+    template_path = r'Z:\02_Zubehör\3_Vorlagen\BCK App Templates\Invoice_Template.docx'
+
     # Load the template
     doc = DocxTemplate(template_path)
 

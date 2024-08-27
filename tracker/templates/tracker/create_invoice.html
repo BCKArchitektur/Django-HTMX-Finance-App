@@ -8,6 +8,14 @@
                 <input type="text" class="input input-bordered w-full" value="{{ project.project_name }}" disabled>
             </div>
             <div class="form-control">
+                <label class="label">Invoice Type</label>
+                <select id="id_invoice_type" name="invoice_type" class="select select-bordered w-full">
+                    <option value="AR">Abschlagsrechnung</option>
+                    <option value="SR">Schlussrechnung</option>
+                </select>
+            </div>
+                    
+            <div class="form-control">
                 <label class="label">Contract</label>
                 <select id="id_contract" name="contract" class="select select-bordered w-full">
                     <option value="">Select Contract</option>

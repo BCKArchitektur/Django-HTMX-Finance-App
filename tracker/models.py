@@ -209,6 +209,11 @@ class TaskLibrary(models.Model):
     
 
 class Invoice(models.Model):
+    INVOICE_TYPE_CHOICES = [
+        ('SR', 'Schlussrechnung'),  # Final invoice
+        ('AR', 'Abschlagsrechnung'),  # Partial invoice
+    ]
+
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE)
     provided_quantities = models.JSONField(default=dict)
@@ -216,11 +221,12 @@ class Invoice(models.Model):
     invoice_gross = models.FloatField(editable=False)  # New field for Invoice Gross
     amount_received = models.FloatField(null=True, blank=True, default=0)
     title = models.CharField(max_length=200)
-    created_at = models.DateTimeField(default=timezone.now) 
+    created_at = models.DateTimeField(default=timezone.now)
+    invoice_type = models.CharField(max_length=2, choices=INVOICE_TYPE_CHOICES, default='AR')  # New field for invoice type
 
     def save(self, *args, **kwargs):
         # Retrieve the VAT percentage from the associated contract
-        vat_percentage = Decimal(self.contract.vat_percentage ) 
+        vat_percentage = Decimal(self.contract.vat_percentage) 
         
         # Calculate the invoice gross based on invoice net and VAT percentage
         self.invoice_gross = float(Decimal(self.invoice_net) * (1 + vat_percentage / Decimal(100)))
@@ -235,8 +241,11 @@ class Invoice(models.Model):
             # Count how many invoices have this prefix in their title
             count = Invoice.objects.filter(title__startswith=prefix).count() + 700
             
-            # Generate the title using the format yycount-month
-            self.title = f"{prefix}{count}-{month:02d}"  # Ensures month is always two digits
+            # Determine the invoice type prefix ('AR' or 'SR')
+            type_prefix = self.invoice_type
+            
+            # Generate the title using the format yycount-month with the type prefix
+            self.title = f"{type_prefix}-{prefix}{count}-{month:02d}"  # Ensures month is always two digits
         
         super().save(*args, **kwargs)
 
