@@ -143,8 +143,8 @@ def projects(request):
                 return redirect('projects')
 
     context = {
-        'projects': projects,
-        'clients': clients,
+        'projects': projects.order_by('-project_no'),
+        'clients': clients.order_by('-firm_name'),
         'project_form': project_form,
         'client_form': client_form,
     }
