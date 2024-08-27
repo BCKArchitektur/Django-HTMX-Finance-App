@@ -172,42 +172,6 @@ def delete_client(request, client_id):
 
 
 
-
-# @login_required
-# def edit_project(request, project_id):
-#     project = get_object_or_404(Project, id=project_id)
-#     contracts = project.contract.all()
-#     clients = Client.objects.all()
-#     users = User.objects.all()
-#     contract_form = ContractForm()
-#     section_library = SectionLibrary.objects.all()  # Add this line to fetch all sections from the library
-#     invoices = Invoice.objects.filter(project=project)
-
-#     if request.method == 'POST':
-#         if 'project_name' in request.POST:
-#             return handle_project_form(request, project)
-#         elif 'contract_name' in request.POST and not request.POST.get('contract_id'):
-#             return handle_new_contract_form(request, project)
-#         elif request.POST.get('contract_id'):
-#             return handle_existing_contract_form(request, project)
-#         elif 'user' in request.POST:
-#             updated_users = request.POST.getlist('user')
-#             handle_user_updates(project, updated_users)
-#     else:
-#         form = ProjectForm(instance=project)
-
-#     context = {
-#         'form': form,
-#         'project': project,
-#         'contracts': contracts,
-#         'contract_form': contract_form,
-#         'clients': clients,
-#         'users': users,
-#         'section_library': section_library, 
-#         'invoices': invoices
-#     }
-#     return render(request, 'tracker/edit_project.html', context)
-
 @login_required
 def edit_project(request, project_id):
     project = get_object_or_404(Project, id=project_id)
@@ -305,96 +269,6 @@ def handle_project_form(request, project):
         messages.error(request, "Error updating project: {}".format(form.errors))
     return redirect('edit_project', project_id=project.id)
 
-
-# def handle_existing_contract_form(request, project):
-#     print("Request received for handling existing contract form.")
-    
-#     contract_id = request.POST['contract_id']
-#     print(f"Contract ID: {contract_id}")
-
-#     contract = get_object_or_404(Contract, id=contract_id)
-#     print(f"Contract found: {contract}")
-
-#     contract_form = ContractForm(request.POST, instance=contract)
-
-#     if contract_form.is_valid():
-#         print("Contract form is valid.")
-#         contract_form.save()
-#         contract_json = request.POST.get('contract_json')
-#         print(f"Contract JSON: {contract_json}")
-
-#         if contract_json:
-#             try:
-#                 contract_data = json.loads(contract_json)
-#                 print(f"Contract data: {contract_data}")
-
-#                 # Track sections to keep
-#                 sections_to_keep = []
-
-#                 for section_data in contract_data['sections']:
-#                     section_name = section_data['section_name']
-#                     section_billed_hourly = section_data.get('section_billed_hourly', False)
-                    
-#                     # Create a new section
-#                     section = Section.objects.create(
-#                         section_name=section_name,
-#                         section_billed_hourly=section_billed_hourly
-#                     )
-#                     sections_to_keep.append(section)
-
-#                     # Track items to keep
-#                     items_to_keep = []
-
-#                     for item_data in section_data['items']:
-#                         Item_name = item_data['Item_name']
-#                         description = item_data.get('description', '')  # Handle description
-                        
-#                         # Create a new item
-#                         item = Item.objects.create(
-#                             Item_name=Item_name,
-#                             description=description
-#                         )
-#                         items_to_keep.append(item)
-
-#                         # Preserve users for the new item
-#                         existing_users = set(item.users.all())
-#                         for user in existing_users:
-#                             item.users.add(user)
-
-#                         # Track tasks to keep
-#                         tasks_to_keep = []
-
-#                         for task_data in item_data['tasks']:
-#                             task_name = task_data['task_name']
-#                             task = Task.objects.create(task_name=task_name)
-#                             tasks_to_keep.append(task)
-#                             item.tasks.add(task)
-
-#                         item.tasks.set(tasks_to_keep)
-#                         section.Item.add(item)
-
-#                     section.Item.set(items_to_keep)
-#                     contract.section.add(section)
-
-#                 contract.section.set(sections_to_keep)
-#                 contract.save()
-
-#                 project.contract.add(contract)
-#                 project.save()
-#                 print("Project updated with contract.")
-
-#                 messages.success(request, "Contract updated successfully.")
-#             except json.JSONDecodeError as e:
-#                 print(f"JSON decode error: {e}")
-#                 messages.error(request, "Error decoding the contract JSON data.")
-#         else:
-#             print("No contract JSON data provided.")
-#             messages.error(request, "No contract JSON data provided.")
-#     else:
-#         print(f"Contract form errors: {contract_form.errors}")
-#         messages.error(request, f"Error updating contract: {contract_form.errors}")
-
-#     return redirect('edit_project', project_id=project.id)
 
 
 
@@ -1205,7 +1079,7 @@ def generate_word_document(request, contract_id):
 
     # Create HTTP response
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-    response['Content-Disposition'] = f'attachment; filename=project_estimate_{project.project_no}.docx'
+    response['Content-Disposition'] = f'attachment; filename=estimate_{project.project_no}_{project.project_name}.docx'
     doc.save(response)
 
     return response
@@ -1354,124 +1228,6 @@ def view_invoice(request, invoice_id):
 
 
 
-# def download_invoice(request, invoice_id):
-#     # Fetch the invoice, project, and contract
-#     invoice = get_object_or_404(Invoice, id=invoice_id)
-#     project = invoice.project
-#     contract = invoice.contract
-#     client = project.client_name
-
-#     # Initialize the sections dictionary and sum_of_items
-#     sections = {}
-#     sum_of_items = Decimal('0.00')
-
-#     # Fetch provided quantities and related items and sections
-#     provided_quantities = invoice.provided_quantities  # Assuming this is a dictionary
-#     for item_id, details in provided_quantities.items():
-#         item = get_object_or_404(Item, id=item_id)
-#         section = item.section_set.first()  # Assuming each item belongs to one section
-#         section_name = section.section_name if section else "Unknown Section"
-#         item_total = Decimal(details['quantity']) * Decimal(details['rate'])
-        
-#         if section_name not in sections:
-#             sections[section_name] = []
-
-#         sections[section_name].append({
-#             'item_name': item.Item_name,
-#             'unit': item.unit,
-#             'rate': f"{Decimal(details['rate']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-#             'quantity': details['quantity'],
-#             'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-#         })
-#         if item.description:
-#             sections[section_name].append({
-#             'description' : item.description,
-#             })
-
-#         sum_of_items += item_total
-
-#     # Calculate additional fee and taxes
-#     additional_fee_percentage = Decimal(contract.additional_fee_percentage)
-#     additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
-#     invoice_net = sum_of_items + additional_fee_value
-#     vat_percentage = Decimal(contract.vat_percentage) / Decimal(100)  # Use VAT from contract
-#     tax_value = invoice_net * vat_percentage
-#     invoice_gross = invoice_net + tax_value
-
-#     # Fetch all previous invoices for the same project
-#     previous_invoices = Invoice.objects.filter(project=project).exclude(id=invoice_id)
-#     previous_invoices_data = [
-#         {
-#             'invoice_title': inv.title,
-#             'created_at' : inv.created_at.strftime('%d %B %Y'),
-#             'invoice_net': f"{Decimal(inv.invoice_net):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-#             'invoice_tax%': vat_percentage,
-#             'invoice_tax':  f"{(Decimal(inv.invoice_net) * vat_percentage):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-#             'invoice_gross': f"{Decimal(inv.invoice_net) + (Decimal(inv.invoice_net) * vat_percentage):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-#             'amount_paid': f"{Decimal(inv.amount_received):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-#         }
-#         for inv in previous_invoices
-#     ]
-
-#     # Ensure previous_invoices_data is always a list (even if empty)
-#     if not previous_invoices_data:
-#         previous_invoices_data = []
-
-#     # Prepare the context for the template
-#     context = {
-#         'client_name': client.client_name if client else "Unknown",
-#         'client_address': f"{client.street_address}, {client.city}, {client.postal_code}, {client.country.name}" if client else "Unknown",
-#         'created_at': invoice.created_at.strftime('%d %B %Y'),
-#         'project_no': project.project_no,
-#         'project_name': project.project_name,
-#         'invoice_title': invoice.title,
-#         'contract_name': contract.contract_name,
-#         'sections': sections,  # Organized by section
-#         'sum_of_items': f"{sum_of_items:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-#         'invoice_net': f"{invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-#         'vat_percentage': vat_percentage,  # Pass this to template to multiply by 100
-#         'tax': f"{tax_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-#         'invoice_gross': f"{invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-#         'previous_invoices': previous_invoices_data,  # Ensure this is always a list
-#     }
-
-#         # Only add the additional fee to the context if it's greater than 0
-#     if additional_fee_percentage > 0:
-#         context.update({
-#             'additional_fee_percentage': f"{additional_fee_percentage:.2f}",
-#             'additional_fee_value': f"{additional_fee_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-#         })
-
-#     # Print context for debugging
-#     import pprint
-#     pprint.pprint(context)
-
-#     # Path to the invoice template
-#     template_path = os.path.join(settings.BASE_DIR, 'tracker', 'templates', 'tracker', 'invoice_templates', 'Invoice_Template.docx')
-    
-#     # Load the template
-#     doc = DocxTemplate(template_path)
-
-#     # Render the document with the context
-#     doc.render(context)
-
-#     # Create the HTTP response with the rendered document
-#     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-#     response['Content-Disposition'] = f'attachment; filename=invoice_{invoice.id}.docx'
-    
-#     # Save the document to the response
-#     doc.save(response)
-
-#     return response
-
-from django.shortcuts import get_object_or_404
-from django.http import HttpResponse
-from decimal import Decimal
-from .models import Invoice, Item, Project
-import os
-from docxtpl import DocxTemplate
-from django.utils import timezone
-
 def download_invoice(request, invoice_id):
     # Fetch the invoice, project, and contract
     invoice = get_object_or_404(Invoice, id=invoice_id)
@@ -1493,7 +1249,7 @@ def download_invoice(request, invoice_id):
         section = item.section_set.first()  # Assuming each item belongs to one section
         section_name = section.section_name if section else "Unknown Section"
         item_total = Decimal(details['quantity']) * Decimal(details['rate'])
-        
+
         if section_name not in sections:
             sections[section_name] = {
                 'section_number': section_counter,
@@ -1534,29 +1290,29 @@ def download_invoice(request, invoice_id):
     total_invoice_gross = Decimal('0.00')
     total_amount_paid = Decimal('0.00')
 
-    previous_invoices_data = [
-        {
+    previous_invoices_data = []
+
+    for inv in previous_invoices:
+        inv_gross = Decimal(inv.invoice_net) * (1 + vat_percentage)
+        inv_paid = Decimal(inv.amount_received)
+
+        total_invoice_gross += inv_gross
+        total_amount_paid += inv_paid
+
+        previous_invoices_data.append({
             'invoice_title': inv.title,
             'created_at': timezone.localtime(inv.created_at).strftime('%d.%m.%Y %H:%M:%S'),  # German format with time
             'invoice_net': f"{Decimal(inv.invoice_net):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
             'invoice_tax%': vat_percentage,
             'invoice_tax': f"{(Decimal(inv.invoice_net) * vat_percentage):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-            'invoice_gross': f"{Decimal(inv.invoice_net) + (Decimal(inv.invoice_net) * vat_percentage):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-            'amount_paid': f"{Decimal(inv.amount_received):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        }
-        for inv in previous_invoices
-    ]
+            'invoice_gross': f"{inv_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'amount_paid': f"{inv_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        })
 
-    # Calculate totals from previous invoices
-    for inv in previous_invoices:
-        total_invoice_gross += Decimal(inv.invoice_gross)
-        total_amount_paid += Decimal(inv.amount_received)
+    # Add the current invoice's gross to the total
+    total_invoice_gross += invoice_gross
 
-    # Add the current invoice to the totals
-    total_invoice_gross += Decimal(invoice_gross)
-    total_amount_paid += Decimal(invoice.amount_received)
-
-    # Calculate the amount to be paid
+    # Calculate the amount to be paid (excluding the current invoice's amount received)
     invoice_tobepaid = total_invoice_gross - total_amount_paid
 
     # Prepare the context for the template
@@ -1586,7 +1342,6 @@ def download_invoice(request, invoice_id):
             'additional_fee_value': f"{additional_fee_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
         })
 
-
     # Print context for debugging
     import pprint
     pprint.pprint(context)
@@ -1602,12 +1357,13 @@ def download_invoice(request, invoice_id):
 
     # Create the HTTP response with the rendered document
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-    response['Content-Disposition'] = f'attachment; filename=invoice_{invoice.id}.docx'
+    response['Content-Disposition'] = f'attachment; filename=invoice_{invoice.title}_{invoice.project}.docx'
     
     # Save the document to the response
     doc.save(response)
 
     return response
+
 
 
 

@@ -107,7 +107,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             section.items.forEach(item => {
                                 const quotedQuantity = item.quantity;
                                 const availableQuantity = item.available_quantity;
-                                const isChecked = quotedQuantity !== availableQuantity;
+                                const isChecked = (quotedQuantity > availableQuantity) && (availableQuantity > 0);
+
+                                 // Apply conditional styling
+                                const quantityColorClass = availableQuantity > 0 ? 'text-green-600' : 'text-red-500';
     
                                 console.log(`Item ID: ${item.id}, isChecked: ${isChecked}`);
     
@@ -118,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             <td class="pl-8">${item.Item_name}</td>
                                             <td>${item.rate} €/${item.unit}</td>
                                             <td>${quotedQuantity}</td>
-                                            <td>${availableQuantity}</td>
+                                            <td class="${quantityColorClass}">${availableQuantity}</td>  <!-- Conditional styling applied here -->
                                             <td>
                                                 <input type="text" name="quantity_${item.id}" class="input input-bordered" data-item-id="${item.id}" data-item-rate="${item.rate}" onchange="updateTotal(${item.id})" ${isChecked ? '' : 'disabled'} />
                                             </td>
