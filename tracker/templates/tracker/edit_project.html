@@ -343,16 +343,40 @@
     function showContracts() {
         document.getElementById('contracts-content').style.display = 'block';
         document.getElementById('invoices-content').style.display = 'none';
-        document.getElementById('contracts-tab').classList.add('tab-active');
-        document.getElementById('invoices-tab').classList.remove('tab-active');
+        document.getElementById('contracts-tab').checked = true; // Ensure the Contracts tab is checked
+        document.getElementById('invoices-tab').checked = false; // Ensure the Invoices tab is unchecked
+        history.pushState(null, '', window.location.pathname + '?tab=contracts');
     }
 
     function showInvoices() {
         document.getElementById('contracts-content').style.display = 'none';
         document.getElementById('invoices-content').style.display = 'block';
-        document.getElementById('contracts-tab').classList.remove('tab-active');
-        document.getElementById('invoices-tab').classList.add('tab-active');
+        document.getElementById('contracts-tab').checked = false; // Ensure the Contracts tab is unchecked
+        document.getElementById('invoices-tab').checked = true; // Ensure the Invoices tab is checked
+        history.pushState(null, '', window.location.pathname + '?tab=invoices');
     }
+
+    document.getElementById('contracts-tab').addEventListener('click', showContracts);
+    document.getElementById('invoices-tab').addEventListener('click', showInvoices);
+
+
+    function initializeTab() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab');
+
+        if (tab === 'invoices') {
+            showInvoices();
+            document.getElementById('invoices-tab').checked = true;
+        } else {
+            showContracts();
+            document.getElementById('contracts-tab').checked = true;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeTab();
+    });
+    
     // Function to open the template modal
     function openTemplateModal(contractId) {
         document.getElementById('template_contract_id').value = contractId;

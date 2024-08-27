@@ -1087,11 +1087,13 @@ def generate_word_document(request, contract_id):
 
 
 
+from django.contrib import messages
+
 @login_required
 def create_invoice(request, project_id):
     project = get_object_or_404(Project, id=project_id)
     contracts = project.contract.all()
-    
+
     # Assuming the user will select a contract, and you'll fetch the first contract as a default
     selected_contract = contracts.first() if contracts else None
     additional_fee_percentage = selected_contract.additional_fee_percentage if selected_contract else 0
@@ -1104,20 +1106,25 @@ def create_invoice(request, project_id):
             invoice.project = project
             invoice.provided_quantities = json.loads(request.POST.get('provided_quantities'))
             invoice.save()
-            # Redirect to the edit project page with the invoice tab open
+
+            # Add a success message
+            messages.success(request, 'Invoice created successfully.')
+
+            # Redirect to the edit project page with the invoices tab open
             return HttpResponseRedirect(reverse('edit_project', args=[project_id]) + '?tab=invoices')
         else:
             return JsonResponse({'status': 'error', 'errors': form.errors})
     else:
         form = InvoiceForm(project=project)
-    
+
     return render(request, 'tracker/create_invoice.html', {
-        'form': form, 
-        'project': project, 
-        'contracts': contracts, 
+        'form': form,
+        'project': project,
+        'contracts': contracts,
         'additional_fee_percentage': additional_fee_percentage,
         'vat_percentage': vat_percentage  # Pass VAT percentage to the template
     })
+
 
 
 
@@ -1136,9 +1143,9 @@ def delete_invoice(request, invoice_id):
     invoice = get_object_or_404(Invoice, id=invoice_id)
     project_id = invoice.project.id  # Assuming an invoice belongs to a project
     invoice.delete()
-    return redirect('edit_project', project_id=project_id)
 
-
+    # Redirect to the edit project page with the invoices tab open
+    return redirect(reverse('edit_project', args=[project_id]) + '?tab=invoices')
 
 
 
@@ -1214,6 +1221,7 @@ def view_invoice(request, invoice_id):
             'tax_value': str(tax_value),
             'invoice_gross': str(invoice_gross),
             'vat_percentage': str(vat_percentage),  # Include VAT percentage in the response
+            'amount_received':invoice.amount_received
         }
 
         return JsonResponse(data)
@@ -1373,6 +1381,13 @@ def record_payment(request, invoice_id):
 
     if request.method == 'POST':
         amount_received = float(request.POST.get('amount_received'))
-        invoice.amount_received += amount_received
+        invoice.amount_received = amount_received
         invoice.save()
-        return redirect('edit_project', project_id=invoice.project.id)
+
+        # Add a success message
+        messages.success(request, 'Payment recorded successfully.')
+
+        # Redirect to the project page with the invoices tab active
+        return redirect(reverse('edit_project', args=[invoice.project.id]) + '?tab=invoices')
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)

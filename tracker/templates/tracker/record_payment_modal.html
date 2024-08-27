@@ -44,7 +44,7 @@
             .then(data => {
                 console.log(`Fetched data:`, data);
     
-                const vatPercentage = parseFloat(data.vat_percentage) || 0;  // Use VAT percentage from data
+                const vatPercentage = parseFloat(data.vat_percentage) || 0;
                 const invoiceNet = parseFloat(data.invoice_net) || 0;
                 const taxValue = invoiceNet * vatPercentage / 100;
                 const invoiceGross = invoiceNet + taxValue;
@@ -54,6 +54,9 @@
                 document.getElementById('payment_invoice_net').value = invoiceNet.toFixed(2);
                 document.getElementById('payment_vat').value = taxValue.toFixed(2);
                 document.getElementById('payment_invoice_gross').value = invoiceGross.toFixed(2);
+                
+                // Populate the existing amount received in the modal
+                document.getElementById('amount_received').value = parseFloat(data.amount_received).toFixed(2);
     
                 const form = document.getElementById('record-payment-form');
                 form.action = `{% url 'record_payment' 0 %}`.replace('0', invoiceId);
@@ -74,5 +77,13 @@
     function closeRecordPaymentModal() {
         console.log(`Closing Record Payment Modal`);
         document.getElementById('recordPaymentModal').classList.remove('modal-open');
+        showInvoices();  // Switch to the Invoices tab after closing the modal
+    }
+
+    function showInvoices() {
+        document.getElementById('contracts-content').style.display = 'none';
+        document.getElementById('invoices-content').style.display = 'block';
+        document.getElementById('contracts-tab').classList.remove('tab-active');
+        document.getElementById('invoices-tab').classList.add('tab-active');
     }
 </script>
