@@ -71,71 +71,65 @@
           </div>
           <div class="overflow-x-auto h-80">
               <table class="table" id="contract-table">
-                  <thead>
-                      <tr>
-                          <th></th>
-                          <th>Contract Name</th>
-                          <th>Users</th>
-                          <th>Budget</th>
-                          <th>Actions</th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                      {% for contract in contracts %}
-                      <tr class="hover">
-                          <td>
-                              <form method="post" action="{% url 'delete_contract' contract.id %}" style="display:inline;">
-                                  {% csrf_token %}
-                                  <button type="submit" class="btn btn-sm btn-error btn-outline p-1 m-1" onclick="return confirm('Are you sure you want to delete this contract?');">
-                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                      </svg>
-                                  </button>
-                              </form>
-                          </td>
-                          <td>
-                              <a href="javascript:void(0);" onclick="openEditContractModal({{ contract.id }})" class="font-semibold hover:text-secondary">
-                                  {{ contract.contract_name }}
-                              </a>
-                          </td>
-                          <td>
-                              {% for section in contract.section.all %}
-                                  <strong>{{ section.section_name }}</strong><br>
-                                  {% for item in section.Item.all %}
-                                      {{ item.Item_name }}:
-                                      {% for user in item.users.all %}
-                                          {{ user.username }}{% if not forloop.last %}, {% endif %}
-                                      {% endfor %}
-                                      <br>
-                                  {% endfor %}
-                              {% endfor %}
-                          </td>
-                          <td>
-                              {% for section in contract.section.all %}
-                                  <strong>{{ section.section_name }}</strong><br>
-                                  {% for item in section.Item.all %}
-                                      {{ item.Item_name }}: {{ item.budget }}<br>
-                                  {% endfor %}
-                              {% endfor %}
-                          </td>
-                          <td style="display: flexbox; align-items: center; gap: 2px;">
-                              <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openAddUsersModal({{ contract.id }})">
-                                  ✎ Users
-                              </button>
-                              <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openAddBudgetModal({{ contract.id }})">
-                                  ✎ Budget
-                              </button>
-                              <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openTemplateModal({{ contract.id }})">
-                                  🖪 Estimate
-                              </button>
-                          </td>
-                      </tr>
-                      {% empty %}
-                      <tr>
-                          <td colspan="4" class="text-center">No contracts have been added yet.</td>
-                      </tr>
-                      {% endfor %}
-                  </tbody>
+                <thead>
+                    <tr>
+                        <th class="w-1/12"></th> <!-- First column for the delete button -->
+                        <th class="w-1/4">Contract Name</th>
+                        <th class="w-1/2">Users</th>
+                        <th class="w-1/2 justify-start">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contract in contracts %}
+                    <tr class="hover">
+                        <td class="w-1/12">
+                            <form method="post" action="{% url 'delete_contract' contract.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-error btn-outline p-1 m-1" onclick="return confirm('Are you sure you want to delete this contract?');">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </form>
+                        </td>
+                        <td class="w-1/4">
+                            <a href="javascript:void(0);" onclick="openEditContractModal({{ contract.id }})" class="font-semibold hover:text-secondary">
+                                {{ contract.contract_name }}
+                            </a>
+                        </td>
+                        <td class="w-1/2">
+                            <div class="max-h-36 overflow-y-auto">
+                                {% for section in contract.section.all %}
+                                <strong>{{ section.section_name }}</strong><br>
+                                {% for item in section.Item.all %}
+                                    {{ item.Item_name }}:
+                                    {% for user in item.users.all %}
+                                        {{ user.username }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                    <br>
+                                {% endfor %}
+                            {% endfor %}
+                            </div>
+                        </td>
+                        <td class="w-1/2 flex flex-col gap-0.5 items-center justify-center">
+                            <button class="btn btn-xs btn-primary btn-outline m-1 h-10" onclick="openAddUsersModal({{ contract.id }})">
+                                ✎ Users
+                            </button>
+                            <button class="btn btn-xs btn-primary btn-outline m-1 h-10" onclick="openAddBudgetModal({{ contract.id }})">
+                                ✎ Budget
+                            </button>
+                            <button class="btn btn-xs btn-secondary btn-outline m-1 h-10" onclick="openTemplateModal({{ contract.id }})">
+                                🖪 Estimate
+                            </button>
+                        </td>                        
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">No contracts have been added yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                            
               </table>
           </div>
         </div>

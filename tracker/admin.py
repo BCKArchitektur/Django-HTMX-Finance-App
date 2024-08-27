@@ -167,7 +167,7 @@ class SectionAdmin(admin.ModelAdmin):
     list_display = ('section_name', 'section_billed_hourly')
     search_fields = ('section_name', 'section_billed_hourly')
 
-# admin.site.register(Section, SectionAdmin)
+admin.site.register(Section, SectionAdmin)
 
 # Contract Admin
 class ContractAdminForm(forms.ModelForm):
