@@ -1235,6 +1235,7 @@ def view_invoice(request, invoice_id):
         return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
 
 
+from django.utils.dateparse import parse_date
 
 def download_invoice(request, invoice_id):
     # Fetch the invoice, project, and contract
@@ -1242,6 +1243,18 @@ def download_invoice(request, invoice_id):
     project = invoice.project
     contract = invoice.contract
     client = project.client_name
+
+    # Get the template name and date range from the request
+    template_name = request.GET.get('invoice_template_name', 'inv_BCK_De.docx')
+    print(f"Template name from modal: {template_name}")
+    
+    from_date_str = request.GET.get('from_date')
+    to_date_str = request.GET.get('to_date')
+
+    # Parse the date strings into date objects
+    from_date = parse_date(from_date_str) if from_date_str else None
+    to_date = parse_date(to_date_str) if to_date_str else None
+
 
     # Initialize the sections dictionary and sum_of_items
     sections = {}
@@ -1342,7 +1355,9 @@ def download_invoice(request, invoice_id):
         'total_invoice_gross': f"{total_invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'total_amount_paid': f"{total_amount_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'invoice_tobepaid': f"{invoice_tobepaid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        'invoice_type':invoice.invoice_type
+        'invoice_type':invoice.invoice_type,
+        'from_date': from_date.strftime('%d.%m.%Y') if from_date else None,
+        'to_date': to_date.strftime('%d.%m.%Y') if to_date else None,
     }
 
     if additional_fee_percentage > 0:
@@ -1356,7 +1371,11 @@ def download_invoice(request, invoice_id):
     pprint.pprint(context)
 
     # Path to the invoice template
-    template_path = r'Z:\02_Zubehör\3_Vorlagen\BCK App Templates\Invoice_Template.docx'
+    # template_path = r'Z:\02_Zubehör\3_Vorlagen\BCK App Templates\Invoice_Template.docx'
+
+    # Construct the template path using the selected template name from the request
+    template_path = os.path.join(r'Z:\02_Zubehör\3_Vorlagen\BCK App Templates', template_name)
+
 
     # Load the template
     doc = DocxTemplate(template_path)
