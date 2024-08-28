@@ -106,12 +106,12 @@
                                     <div class="flex flex-wrap gap-2 ml-2 mt-1">
                                         {% for user in item.users.all %}
                                             <div class="avatar">
-                                                <div class="ring-primary ring-offset-base-100 w-6 rounded-full ring ring-opacity-20">
+                                                <div class="ring-primary ring-offset-base-100 w-6 rounded-full ring-1 ring-opacity-50">
                                                     <span class="text-xs p-1">{{ user.username|slice:":2"|upper }}</span>
                                                 </div>
                                             </div>
                                         {% endfor %}
-                                    </div>
+                                    </div>                                    
                                     <br>
                                 {% endfor %}
                                 {% endfor %}
