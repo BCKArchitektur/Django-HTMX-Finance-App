@@ -252,25 +252,25 @@
                     <tbody>
                         <tr>
                             <td class="text-right font-thin w-1/6">Sum of Items €</td>
-                            <td><input type="text" id="sum_of_items" class="input input-bordered input-sm w-1/4" readonly></td>
+                            <td><input type="text" id="sum_of_items" class="input  input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-right font-thin w-1/6">Additional Fee %</td>
-                            <td><input type="text" name="additional_fee_percentage" id="additional_fee_percentage" class="input input-bordered stroke-slate-950 input-sm w-1/4"></td>
+                            <td class="text-right font-thin w-1/6">Additional Fee(%)*</td>
+                            <td><input type="number" step="0.01" name="additional_fee_percentage" id="additional_fee_percentage" class="input input-bordered input-primary input-sm w-1/4"></td>
                         </tr>
                         <tr>
                             <td class="text-right font-thin w-1/6">Additional Fee €</td>
-                            <td><input type="text" id="additional_fee" class="input input-bordered input-sm w-1/4" readonly></td>
+                            <td><input type="text" id="additional_fee" class="input  input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
                             <td class="text-right font-bold w-1/6">Net Contract €</td>
-                            <td><input type="text" id="net_contract" class="input input-bordered input-sm w-1/4" readonly></td>
+                            <td><input type="text" id="net_contract" class="input  input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-right font-thin w-1/6">VAT (%)</td>
+                            <td class="text-right font-thin w-1/6">VAT (%)*</td>
                             <td>
                                 <!-- Select field for VAT percentage -->
-                                <select id="vat_percentage_select" class="select select-bordered input-sm w-1/4">
+                                <select id="vat_percentage_select" class="select select-bordered select-secondary input-sm w-1/4">
                                     <option value="0.00">0%</option>
                                     <option value="19.00">19%</option>
                                 </select>
@@ -282,11 +282,11 @@
                         
                         <tr>
                             <td class="text-right font-thin w-1/6">VAT €</td>
-                            <td><input type="text" id="vat" class="input input-bordered input-sm w-1/4" readonly></td>
+                            <td><input type="text" id="vat" class="input  input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
                             <td class="text-right font-bold w-1/6">Gross Contract €</td>
-                            <td><input type="text" id="gross_contract" class="input input-bordered input-sm w-1/4" readonly></td>
+                            <td><input type="text" id="gross_contract" class="input input-sm w-1/4" readonly></td>
                         </tr>
                     </tbody>
                 </table>
@@ -568,7 +568,7 @@
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${sectionIndex + 1},${itemIndex + 1}</td>
-                        <td><input type="text" value="${section.section_name}" class="input input-bordered w-full" ${itemInvoiced ? 'disabled' : ''}></td>
+                        <td><input type="text" value="${section.section_name}" class="input input-bordered w-full readonly" ${itemInvoiced ? 'disabled' : ''}></td>
                         <td><input type="text" value="${item.Item_name}" class="input input-bordered w-full" ${itemInvoiced ? 'disabled' : ''}></td>
                         <td>${quantityInput}</td>
                         <td>
