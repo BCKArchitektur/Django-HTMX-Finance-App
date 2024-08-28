@@ -239,7 +239,7 @@ class Invoice(models.Model):
             prefix = f"{year:02d}"  # Ensures year is always two digits
 
             # Count how many invoices have this prefix in their title
-            count = Invoice.objects.filter(title__startswith=prefix).count() + 700
+            count = Invoice.objects.count() + 700
             
             # Determine the invoice type prefix ('AR' or 'SR')
             type_prefix = self.invoice_type

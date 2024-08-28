@@ -206,7 +206,7 @@ document.addEventListener("DOMContentLoaded", function() {
             });
 
             document.getElementById('id_contract_name').value = data.contract_name;
-            document.getElementById('id_contract_name').disabled = !isContractEditable;
+            document.getElementById('id_contract_name').readonly = !isContractEditable;
 
             
             const sectionsContainer = document.getElementById('sections-container');
@@ -224,11 +224,13 @@ document.addEventListener("DOMContentLoaded", function() {
                                 <div class="form-control flex items-center max-w-xs m-0">
                                     <label class="cursor-pointer label m-0 p-0">
                                         <span class="label-text m-1 mb-2 font-extralight ">⧗</span>
-                                        <input type="checkbox" name="sections[${sectionId}][billable]" class="checkbox checkbox-accent checkbox-sm section-billable" ${section.section_billed_hourly ? 'checked' : ''} ${isSectionEditable ? '' : 'disabled'}>
+                                        <input type="checkbox" name="sections[${sectionId}][billable]" class="checkbox checkbox-accent checkbox-sm section-billable" ${section.section_billed_hourly ? 'checked' : ''} ${isSectionEditable ? '' : ''}>
                                     </label>
                                 </div>
                                 <div class="w-full">
-                                    <input type="text" name="section_name" value="${section.section_name}" class="input input-sm input-bordered w-full m-2 section-name" ${isSectionEditable ? '' : 'disabled'}>
+                                    <input type="text" name="section_name" value="${section.section_name}" 
+                                        class="input input-sm input-bordered w-full m-2 section-name ${isSectionEditable ? '' : 'input-error'}" 
+                                        ${isSectionEditable ? '' : 'readonly'}>
                                 </div>
                                 <div class="flex space-x-2">
                                     <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this)" ${isSectionEditable ? '' : 'disabled'}>+ Item</button>
@@ -247,7 +249,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                         const taskTemplate = `
                                             <div class="task-block form-control w-full max-w-xs m-1">
                                                 <div class="flex justify-between items-center">
-                                                    <input type="text" name="task_name" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" ${isItemEditable ? '' : 'disabled'}>
+                                                    <input type="text" name="task_name" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" ${isItemEditable ? '' : 'readonly'}>
                                                     <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()" ${isItemEditable ? '' : 'disabled'}>x</button>
                                                 </div>
                                             </div>
@@ -258,8 +260,8 @@ document.addEventListener("DOMContentLoaded", function() {
                                     const itemTemplate = `
                                         <div class="item-block form-control w-full m-2 p-2"  data-item-id="${item.id}">
                                             <div class="flex justify-between items-center">
-                                                <input type="text" name="Item_name" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" ${isItemEditable ? '' : 'disabled'}>
-                                                <textarea name="description" placeholder="Description" class="textarea textarea-bordered w-full m-2 item-description" ${isItemEditable ? '' : 'disabled'}>${item.description}</textarea>
+                                                <input type="text" name="Item_name" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name ${isItemEditable ? '' : 'input-error'} "  ${isItemEditable ? '' : 'readonly'}>
+                                                <textarea name="description" placeholder="Description" class="textarea textarea-bordered w-full m-2 item-description ${isItemEditable ? '' : 'textarea-ghost'}" ${isItemEditable ? '' : ''}>${item.description}</textarea>
                                                 <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this)">+ Task</button>
                                                 <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()" ${isItemEditable ? '' : 'disabled'}>x</button>
                                             </div>
