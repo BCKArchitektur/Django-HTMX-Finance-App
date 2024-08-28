@@ -17,7 +17,10 @@
             </div>
             <div class="form-control">
                 <label class="label">Amount Received (€)</label>
-                <input type="number" step="0.01" name="amount_received" id="amount_received" class="input input-bordered w-full" required>
+                <div class="flex">
+                    <input type="number" step="0.01" name="amount_received" id="amount_received" class="input input-bordered w-full" required>
+                    <button type="button" class="btn btn-secondary btn-outline ml-2" onclick="copyGrossInvoice()">Copy from Invoice Gross</button>
+                </div>
             </div>
             <div class="modal-action">
                 <button type="submit" class="btn btn-primary">Save Payment</button>
@@ -85,5 +88,11 @@
         document.getElementById('invoices-content').style.display = 'block';
         document.getElementById('contracts-tab').classList.remove('tab-active');
         document.getElementById('invoices-tab').classList.add('tab-active');
+    }
+
+    function copyGrossInvoice() {
+        // Copy the value from the Invoice Gross field to the Amount Received field
+        const invoiceGross = document.getElementById('payment_invoice_gross').value;
+        document.getElementById('amount_received').value = invoiceGross;
     }
 </script>
