@@ -103,10 +103,10 @@
                                 <strong>{{ section.section_name }}</strong><br>
                                 {% for item in section.Item.all %}
                                     {{ item.Item_name }}:
-                                    <div class="flex flex-wrap gap-2">
+                                    <div class="flex flex-wrap gap-2 ml-2 mt-1">
                                         {% for user in item.users.all %}
                                             <div class="avatar">
-                                                <div class="bg-base-200 text-neutral-content w-20 rounded-full">
+                                                <div class="ring-primary ring-offset-base-100 w-6 rounded-full ring ring-opacity-20">
                                                     <span class="text-xs p-1">{{ user.username|slice:":2"|upper }}</span>
                                                 </div>
                                             </div>
@@ -161,20 +161,24 @@
                     </thead>
                     <tbody>
                         {% for invoice in invoices %}
-                        <tr>
-                            <td>{{ invoice.title }}</td>
+                        <tr class="hover">
+
+                            <td>
+                                <a href="javascript:void(0);" onclick="viewInvoice({{ invoice.id }})" class="font-semibold hover:text-secondary">
+                                    {{ invoice.title }}
+                                </a> 
+                            </td>
                             <td>{{ invoice.contract.contract_name }}</td>
                             <td>{{ invoice.created_at|date:"d M Y" }}</td>
                             <td>{{ invoice.invoice_net|floatformat:2 }}</td>
                             <td>{{ invoice.invoice_gross|floatformat:2 }}</td>
                             <td>{{ invoice.amount_received }}</td> 
                             <td>
-                                <button class="btn btn-xs btn-primary btn-outline m-1" onclick="viewInvoice({{ invoice.id }})">View</button>
                                 <form method="post" action="{% url 'delete_invoice' invoice.id %}" style="display:inline;">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-xs btn-error btn-outline m-1">Delete</button>
+                                    <button type="submit" class="btn btn-xs btn-error btn-outline m-1 p-1">Delete</button>
                                 </form>
-                                <a href="{% url 'download_invoice' invoice.id %}" class="btn btn-xs btn-secondary btn-outline m-1">🖪 Invoice</a>
+                                <a href="{% url 'download_invoice' invoice.id %}" class="btn btn-xs btn-secondary btn-outline m-1 p-1">🖪 Invoice</a>
                                 <button class="btn btn-xs btn-primary btn-outline m-1" onclick="openRecordPaymentModal({{ invoice.id }})">Record Payment</button> <!-- New Button -->
                             </td>
                         </tr>
@@ -256,7 +260,7 @@
                         </tr>
                         <tr>
                             <td class="text-right font-thin w-1/6">Additional Fee(%)*</td>
-                            <td><input type="number" step="0.01" name="additional_fee_percentage" id="additional_fee_percentage" class="input input-bordered input-primary input-sm w-1/4"></td>
+                            <td><input type="number" step="0.01" name="additional_fee_percentage" id="additional_fee_percentage" class="input input-bordered input-secondary input-sm w-1/4"></td>
                         </tr>
                         <tr>
                             <td class="text-right font-thin w-1/6">Additional Fee €</td>
