@@ -103,13 +103,19 @@
                                 <strong>{{ section.section_name }}</strong><br>
                                 {% for item in section.Item.all %}
                                     {{ item.Item_name }}:
-                                    {% for user in item.users.all %}
-                                        {{ user.username }}{% if not forloop.last %}, {% endif %}
-                                    {% endfor %}
+                                    <div class="flex flex-wrap gap-2">
+                                        {% for user in item.users.all %}
+                                            <div class="avatar">
+                                                <div class="bg-base-200 text-neutral-content w-20 rounded-full">
+                                                    <span class="text-xs p-1">{{ user.username|slice:":2"|upper }}</span>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
                                     <br>
                                 {% endfor %}
-                            {% endfor %}
-                            </div>
+                                {% endfor %}
+                            </div>                            
                         </td>
                         <td class="w-1/2 flex flex-col gap-0.5 items-center justify-center">
                             <button class="btn btn-xs btn-primary btn-outline m-1 h-10" onclick="openAddUsersModal({{ contract.id }})">
