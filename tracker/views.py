@@ -554,23 +554,24 @@ def log_create_compact(request):
     form = Hiddenform(request.POST or None, user=request.user)
     if request.method == 'POST' and form.is_valid():
         log_project_name = form.cleaned_data['log_project_name']
-        log_contract_name = form.cleaned_data['log_contract']
+        log_contract_id = form.cleaned_data['log_contract']  # Use the contract ID
         log_tasks = form.cleaned_data['log_tasks']
-        log_section = form.cleaned_data['log_section']
-        log_Item = form.cleaned_data['log_Item']
+        log_section_id = form.cleaned_data['log_section']  # Use the section ID
+        log_item_id = form.cleaned_data['log_Item']  # Use the item ID
         log_time = form.cleaned_data['log_time']
         log_timestamps = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).strftime('%Y-%m-%d %H:%M:%S')
         
+        # Fetch by ID
         log_project = get_object_or_404(Project, project_name=log_project_name)
-        log_contract = get_object_or_404(Contract, contract_name=log_contract_name)
-        log_section = get_object_or_404(Section, section_name=log_section)
-        log_Item = get_object_or_404(Item, Item_name=log_Item)
+        log_contract = get_object_or_404(Contract, id=log_contract_id)  # Fetch by ID instead of name
+        log_section = get_object_or_404(Section, id=log_section_id)  # Fetch by ID instead of name
+        log_item = get_object_or_404(Item, id=log_item_id)  # Fetch by ID instead of name
 
         log_entry = Logs.objects.create(
             log_project_name=log_project_name,
             log_contract=log_contract,
             log_section=log_section,
-            log_Item=log_Item,
+            log_Item=log_item,
             log_time=log_time,
             log_timestamps=log_timestamps,
             log_tasks=log_tasks,
@@ -590,6 +591,7 @@ def log_create_compact(request):
         'employee': employee,
     }
     return render(request, 'tracker/log_create_compact.html', context)
+
 
 
 @login_required
