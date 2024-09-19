@@ -966,7 +966,6 @@ def delete_contract(request, contract_id):
 
 
 
-
 def generate_word_document(request, contract_id):
     template_name = request.GET.get('template_name', 'Kost_De.docx')
     valid_until = request.GET.get('valid_until')
@@ -1000,6 +999,9 @@ def generate_word_document(request, contract_id):
     # Initialize section counter
     section_counter = 1
 
+    # Flag for checking if the template is in English
+    is_english_template = template_name in ['BCK_En.docx', 'Kost_En.docx']
+
     for section in contract.section.all():
         section_total = Decimal(0)  # Initialize as Decimal
         items = []
@@ -1009,12 +1011,23 @@ def generate_word_document(request, contract_id):
 
         for item in section.Item.all():
             item_total = Decimal(item.quantity) * Decimal(item.rate)  # Convert to Decimal
+
+            # Check if template is in English and replace units if needed
+            unit = item.unit
+            if is_english_template:
+                if unit == 'Psch':
+                    unit = 'Lumpsum'
+                elif unit == 'Stk':
+                    unit = 'Piece'
+                elif unit == 'Std.':
+                    unit = 'Hour'
+
             item_data = {
                 'Item_serial': f"{section_counter}.{item_counter}",  # Serial number for item
                 'Item_name': item.Item_name,
                 'quantity': item.quantity,
-                'unit': item.unit,
-                'rate': f"{Decimal(item.rate):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                'unit': unit,  # Use the modified unit value
+                'rate': f"{Decimal(item.rate):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
                 'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
             }
             if item.description:
@@ -1035,7 +1048,6 @@ def generate_word_document(request, contract_id):
 
         # Increment section counter
         section_counter += 1
-
 
     additional_fee_percentage = Decimal(contract.additional_fee_percentage)
     additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
@@ -1085,6 +1097,7 @@ def generate_word_document(request, contract_id):
     doc.save(response)
 
     return response
+
 
 
 
