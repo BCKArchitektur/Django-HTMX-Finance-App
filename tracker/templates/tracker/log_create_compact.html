@@ -10,8 +10,8 @@
     <!-- Fixed Preset Card -->
     <div class="fixed_preset card bg-base-100 w-3/5 h-56 shadow-md " id="fixed_preset" 
         data-project-name="Büro" 
-        data-contract-name="Allgemein" 
-        data-section-name="Allgemein" 
+        data-contract-id="1" 
+        data-section-id="193" 
         data-Item-name="Allgemein" 
         data-Item-id="292" 
         data-task-id="1">
@@ -255,9 +255,9 @@ $(document).ready(function () {
         $('.fixed_preset').each(function() {
             $(this).find('input[name="log_time"]').val(remainingTimeFormatted);
             $(this).find('input[name="log_project_name"]').val($(this).data('project-name'));
-            $(this).find('input[name="log_contract"]').val($(this).data('contract-name'));
-            $(this).find('input[name="log_section"]').val($(this).data('section-name'));
-            $(this).find('input[name="log_Item"]').val($(this).data('item-name'));
+            $(this).find('input[name="log_contract"]').val($(this).data('contract-id'));
+            $(this).find('input[name="log_section"]').val($(this).data('section-id'));
+            $(this).find('input[name="log_Item"]').val($(this).data('item-id'));
         });
     }
 
