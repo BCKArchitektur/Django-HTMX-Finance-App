@@ -1093,7 +1093,14 @@ def generate_word_document(request, contract_id):
 
     # Create HTTP response
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-    response['Content-Disposition'] = f'attachment; filename=estimate_{project.project_no}_{project.project_name}.docx'
+    if is_english_template and template_name in ['Kost_En.docx']:
+        response['Content-Disposition'] = f'attachment; filename=Kost_Quote_{project.project_no}_{project.project_name}.docx'
+    elif is_english_template and template_name in ['BCK_En.docx']:
+        response['Content-Disposition'] = f'attachment; filename=BCK_Quote_{project.project_no}_{project.project_name}.docx'
+    elif is_english_template =='False' and template_name in ['BCK_De.docx']:
+        response['Content-Disposition'] = f'attachment; filename=BCK_Angebot_{project.project_no}_{project.project_name}.docx'
+    else:
+        response['Content-Disposition'] = f'attachment; filename=Kost_Angebot_{project.project_no}_{project.project_name}.docx'
     doc.save(response)
 
     return response
