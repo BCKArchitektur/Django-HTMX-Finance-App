@@ -413,6 +413,10 @@ $(document).ready(function () {
                 // Convert buttons to dropdown with a specific class for tasks
                 const dropdown = $('<select>').addClass('select select-xs select-bordered w-full text-xs task-dropdown');
 
+                // Add the default "Select Task" option
+                const defaultOption = $('<option>').val('').text('Select Task');
+                dropdown.append(defaultOption);
+
                 taskButtons.each(function () {
                     const taskText = $(this).text();
                     const taskId = $(this).data('task-id');
@@ -430,6 +434,7 @@ $(document).ready(function () {
             }
         });
     }
+
 
 
 
