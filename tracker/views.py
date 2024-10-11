@@ -903,14 +903,15 @@ def add_budget(request):
                 rate_key = f'rate_{item.id}'
                 if quantity_key in request.POST and rate_key in request.POST:
                     try:
-                        quantity = float(request.POST[quantity_key])
+                        quantity = parse_german_number((request.POST[quantity_key]))
                         unit = request.POST[unit_key]
-                        rate = float(request.POST[rate_key])
+                        rate = parse_german_number((request.POST[rate_key]))
                         item.quantity = quantity
                         item.unit = unit
                         item.rate = rate
                         item.total = quantity * rate
                         item.save()
+                        print(f"Received item details: quantity={quantity}, unit={unit}, rate={rate}")  # Debug line
                     except (ValueError, Item.DoesNotExist):
                         continue
 
@@ -922,6 +923,12 @@ def add_budget(request):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
+def parse_german_number(number_string):
+    try:
+        # Convert German-style number (1.000,50) to Python float (1000.50)
+        return float(number_string.replace('.', '').replace(',', '.'))
+    except ValueError:
+        return 0.0
 
 
 

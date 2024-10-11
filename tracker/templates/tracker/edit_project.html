@@ -169,10 +169,10 @@
                                 </a> 
                             </td>
                             <td>{{ invoice.contract.contract_name }}</td>
-                            <td>{{ invoice.created_at|date:"d M Y" }}</td>
-                            <td>{{ invoice.invoice_net|floatformat:2 }}</td>
-                            <td>{{ invoice.invoice_gross|floatformat:2 }}</td>
-                            <td>{{ invoice.amount_received }}</td> 
+                            <td>{{ invoice.created_at  }}</td>
+                            <td>{{ invoice.invoice_net }}</td>
+                            <td>{{ invoice.invoice_gross  }}</td>
+                            <td>{{ invoice.amount_received  }}</td> 
                             <td>
                                 <form method="post" action="{% url 'delete_invoice' invoice.id %}" style="display:inline;">
                                     {% csrf_token %}
@@ -546,23 +546,49 @@
         const rateInput = document.querySelector(`input[name="rate_${itemId}"]`);
         const totalField = document.getElementById(`total_${itemId}`);
 
-        const quantityValue = parseFloat(quantityInput.value) || 0;
-        const rateValue = parseFloat(rateInput.value) || 0;
+        // Parse the quantity and rate inputs
+        const quantityValue = parseGermanNumber(quantityInput.value) || 0;
+        const rateValue = parseGermanNumber(rateInput.value) || 0;
+
+        // Calculate the total
         const totalValue = quantityValue * rateValue;
 
-        totalField.textContent = totalValue.toFixed(2);
+        // Update the total field with the formatted result
+        totalField.textContent = formatNumberToGerman(totalValue);
 
-        // Update summary fields
+        // Update the summary fields
         updateSummaryFields();
     }
 
+    // Helper function to parse German-style number inputs
+    function parseGermanNumber(numberString) {
+        // Convert German formatted number (e.g., "1.234,56") to standard float (e.g., 1234.56)
+        return parseFloat(numberString.replace(/\./g, '').replace(',', '.'));
+    }
+
+    // Format the number into German format (e.g., "1.234,56")
+    function formatNumberToGerman(number) {
+        // Ensure the number is a valid float
+        const parsedNumber = parseFloat(number);
+        if (isNaN(parsedNumber)) return '0,00';  // return a default value if the number is invalid
+
+        // Convert the number to German format (e.g., '1.234,00')
+        return parsedNumber
+            .toFixed(2) // Ensure 2 decimal places
+            .replace('.', ',') // Replace the decimal point with a comma
+            .replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Add dots as thousand separators
+    }
+
+
     function updateSummaryFields() {
         console.log('Updating summary fields...');
-        
+
         const itemTotals = document.querySelectorAll('[id^="total_"]');
         let sumOfItems = 0;
+        
         itemTotals.forEach(totalField => {
-            sumOfItems += parseFloat(totalField.textContent) || 0;
+            // Parse the German formatted total field value
+            sumOfItems += parseGermanNumber(totalField.textContent) || 0;
         });
 
         console.log('Sum of items:', sumOfItems);
@@ -586,14 +612,17 @@
 
         const grossContract = netContract + vat;
 
-        document.getElementById('sum_of_items').value = sumOfItems.toFixed(2);
-        document.getElementById('additional_fee').value = additionalFee.toFixed(2);
-        document.getElementById('net_contract').value = netContract.toFixed(2);
-        document.getElementById('vat').value = vat.toFixed(2);
-        document.getElementById('gross_contract').value = grossContract.toFixed(2);
+        // Apply the custom German number formatting
+        document.getElementById('sum_of_items').value = formatNumberToGerman(sumOfItems);
+        document.getElementById('additional_fee').value = formatNumberToGerman(additionalFee);
+        document.getElementById('net_contract').value = formatNumberToGerman(netContract);
+        document.getElementById('vat').value = formatNumberToGerman(vat);
+        document.getElementById('gross_contract').value = formatNumberToGerman(grossContract);
 
         console.log('Gross Contract:', grossContract);
     }
+
+
 
     // Add event listeners to recalculate values when VAT or Additional Fee percentage changes
     document.getElementById('id_vat_percentage').addEventListener('input', updateSummaryFields);
@@ -630,13 +659,17 @@
 
                     const isPsch = item.unit === 'Psch';
                     const quantityValue = isPsch ? '1' : (item.quantity || '');
+                    const formattedQuantityValue = formatNumberToGerman(quantityValue);
+
                     const quantityInput = `
-                        <input type="text" name="quantity_${item.id}" value="${quantityValue}" 
+                        <input type="text" name="quantity_${item.id}" value="${formattedQuantityValue}" 
                             class="input input-bordered w-full" 
                             ${itemInvoiced ? 'disabled' : (isPsch ? 'readonly' : '')} 
                             onchange="updateTotal(${item.id})">
-                        <input type="hidden" name="original_quantity_${item.id}" value="${item.quantity || ''}">
+                        <input type="hidden" name="original_quantity_${item.id}" value="${quantityValue}">
                     `;
+
+                    const formattedRate = formatNumberToGerman(item.rate || 0);
 
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
@@ -649,8 +682,8 @@
                                 ${unitOptions}
                             </select>
                         </td>
-                        <td><input type="text" name="rate_${item.id}" value="${item.rate || ''}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" ${itemInvoiced ? 'disabled' : ''}></td>
-                        <td id="total_${item.id}">${item.total || 0}</td>
+                        <td><input type="text" name="rate_${item.id}" value="${formattedRate}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" ${itemInvoiced ? 'disabled' : ''}></td>
+                        <td id="total_${item.id}">${formatNumberToGerman(item.total || 0)}</td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -788,6 +821,7 @@
     function handleFormSubmission(event, form, url) {
         event.preventDefault();
         const formData = new FormData(form);
+        console.log(formData)
 
         fetch(url, {
             method: 'POST',
