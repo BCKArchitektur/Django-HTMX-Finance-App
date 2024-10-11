@@ -8,7 +8,7 @@
 
 <div id="preset-container" class="flex flex-col lg:flex-row justify-center items-center space-y-4 lg:space-y-0 lg:space-x-4">
     <!-- Fixed Preset Card -->
-    <div class="fixed_preset card bg-base-100 w-3/5 h-56 shadow-md " id="fixed_preset" 
+    <div class="fixed_preset card bg-base-100 shadow-md" id="fixed_preset" 
         data-project-name="Büro" 
         data-contract-id="1" 
         data-section-id="193" 
@@ -17,10 +17,10 @@
         data-task-id="1">
         <div class="card-body">
             <div class="tooltip" data-tip="Fills up the rest.">
-                <h2 class="card-title font-bold">Büro ⓘ </h2>
+                <h2 class="card-title font-bold">Büro ⓘ</h2>
             </div>
-            <div class="task-container flex flex-wrap gap-2 mb-2 overflow-y-auto max-h-24"></div>
-            <input class="input input-bordered input-xs w-full text-xs mb-2" type="text" name="custom_tasks" id="custom-tasks-fixed" placeholder="Custom tasks">
+            <div class="task-container flex flex-wrap gap-2 overflow-y-auto"></div>
+            <input class="input input-bordered input-xs w-full text-xs" type="text" name="custom_tasks" id="custom-tasks-fixed" placeholder="Custom tasks">
             <form>
                 {% csrf_token %}
                 {% for field in form %}
@@ -30,17 +30,18 @@
                     </div>
                 {% endfor %}
                 <input type="hidden" name="log_time" value="">
-                <button type="submit" class="btn btn-xs btn-primary   w-full">Submit</button>
+                <button type="submit" class="btn btn-xs w-max btn-primary">Fill in the rest</button>
             </form>
         </div>
     </div>
+
     <div class="divider lg:divider-horizontal"></div>
     
     {% for preset in project_presets %}
     <div class="indicator w-96 h-56 mb-4">
         {% if preset.default_section.section_billed_hourly %}
-        <div class="tooltip" data-tip="Billed Hourly">
-            <span class="indicator-item badge badge-secondary badge-outline flex items-center justify-center p-1 pt-0">⧗</span>
+        <div class=" tooltip-left" data-tip="Billed Hourly">
+            <span class="indicator-item badge badge-secondary badge-outline flex items-center justify-center p-1 pt-0 ">⧗</span>
         </div>
         {% endif %}
         <div class="card bg-base-100 w-full h-full shadow-md preset-card" id="preset-{{ preset.id }}" 
@@ -68,10 +69,10 @@
                     </p>
                 </div>
                 <div class="task-container flex flex-wrap gap-1 mb-0"></div>
-                <div class="join justify-between items-center">  
-                    <input class="input input-bordered input-xs w-2/3 text-xs" type="text" name="custom_tasks" id="custom-tasks-{{ forloop.counter }}" placeholder="Custom tasks">
-                    <div class="mb-2">
-                        <select id="time-select-{{ forloop.counter }}" name="time-select-{{ forloop.counter }}" class="select select-xs select-bordered w-full text-xs">
+
+                    <input class="input input-bordered input-xs text-xs mb-0.25" type="text" name="custom_tasks" id="custom-tasks-{{ forloop.counter }}" placeholder="Custom tasks">
+                    <div class="mb-0.25">
+                        <select id="time-select-{{ forloop.counter }}" name="time-select-{{ forloop.counter }}" class="select select-xs select-bordered w-full text-xs m-">
                             <option value="">Time</option>
                             <option value="0.25">15min</option>
                             <option value="0.50">30min</option>
@@ -107,7 +108,7 @@
                             <option value="8.00">8hr</option>
                         </select>
                     </div>
-                </div>
+
                 <form>
                     {% csrf_token %}
                     {% for field in form %}
@@ -304,6 +305,10 @@ $(document).ready(function () {
 
                             taskContainer.append(button);
                         });
+
+                        // Call convertToDropdownIfNeeded after the tasks are populated
+                        convertToDropdownIfNeeded();
+                        
                     } else {
                         card.find('.task-container').html("<p>No tasks available</p>");
                     }
@@ -315,6 +320,7 @@ $(document).ready(function () {
             });
         }
     }
+
 
     // Call populateTasks for both fixed preset and dynamic presets
     populateTasks($('#fixed_preset'));
@@ -358,16 +364,80 @@ $(document).ready(function () {
 
     function updateSelectedTasks(card) {
         let selectedTasks = [];
-        card.find('.task-btn.selected').each(function() {
-            selectedTasks.push($(this).text());
-        });
+
+        // Handle case when tasks are buttons
+        const taskButtons = card.find('.task-btn.selected');
+        if (taskButtons.length > 0) {
+            selectedTasks = taskButtons.map(function () {
+                return $(this).text();
+            }).get(); // .get() converts the jQuery object to a plain array
+        }
+
+        // Handle case when tasks are in the task dropdown (use the task-dropdown class)
+        const taskDropdown = card.find('select.task-dropdown');
+        if (taskDropdown.length > 0) {
+            const selectedOption = taskDropdown.find('option:selected').text();
+            if (selectedOption) {
+                selectedTasks.push(selectedOption);
+            }
+        }
+
+        // Handle custom tasks input (if any)
         let customTasks = card.find('input[name="custom_tasks"]').val();
         if (customTasks) {
             customTasks = customTasks.split(',').map(task => task.trim()).filter(task => task.length > 0);
             selectedTasks = selectedTasks.concat(customTasks);
         }
+
+        // Update the hidden input with the selected tasks
         card.find('input[name="log_tasks"]').val(selectedTasks.join(', '));
     }
+
+
+
+
+    function convertToDropdownIfNeeded() {
+        $('.preset-card').each(function () {
+            const taskContainer = $(this).find('.task-container');
+            const taskButtons = taskContainer.find('.task-btn');
+
+            // Check if the task buttons overflow the container
+            const containerHeight = taskContainer.height();
+            const thresholdHeight = 50; // Customize this height based on your design
+
+            if (containerHeight > thresholdHeight) {
+                // Convert buttons to dropdown with a specific class for tasks
+                const dropdown = $('<select>').addClass('select select-xs select-bordered w-full text-xs task-dropdown');
+                
+                taskButtons.each(function () {
+                    const taskText = $(this).text();
+                    const taskId = $(this).data('task-id');
+                    const option = $('<option>').val(taskId).text(taskText);
+                    dropdown.append(option);
+                });
+
+                // Attach a change event to the dropdown to update selected tasks when a new option is selected
+                dropdown.on('change', function () {
+                    updateSelectedTasks($(this).closest('.preset-card'));
+                });
+
+                // Replace the task buttons with the dropdown
+                taskContainer.empty().append(dropdown);
+            }
+        });
+    }
+
+
+
+    $(document).ready(function () {
+        convertToDropdownIfNeeded();
+
+        // You can also call this function on window resize if necessary
+        $(window).on('resize', function () {
+            convertToDropdownIfNeeded();
+        });
+    });
+
 
     // Handle form submission with AJAX
     $('form').on('submit', function (e) {
