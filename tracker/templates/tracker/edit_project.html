@@ -198,6 +198,8 @@
 <!-- Add/Edit Users Modal -->
 <div id="addUsersModal" class="modal">
     <div class="modal-box max-w-5xl">
+        <button class="btn btn-sm btn-circle btn-ghost position:absolute; top-0; right-0; " onclick="closeAddUsersModal()">✕</button>
+
         <h3 class="font-bold text-lg m-4">Add/Edit Users</h3>
         <form id="add-users-form" method="post" action="{% url 'add_users' %}">
             {% csrf_token %}
@@ -229,6 +231,8 @@
 <!-- Add/Edit Budget Modal -->
 <div id="addBudgetModal" class="modal">
     <div class="modal-box max-w-5xl">
+        <button class="btn btn-sm btn-circle btn-ghost position:absolute; top-0; right-0; " onclick="closeAddBudgetModal()">✕</button>
+
         <h3 class="font-bold text-lg m-4">Add/Edit Budget</h3>
         <form id="add-budget-form" method="post" action="{% url 'add_budget' %}">
             {% csrf_token %}

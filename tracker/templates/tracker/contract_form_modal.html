@@ -1,6 +1,9 @@
 <!-- contract_form_modal.html -->
 <div id="contractModal" class="modal">
     <div class="modal-box max-w-5xl">
+
+        <button class="btn btn-sm btn-circle btn-ghost position:absolute; top-0; right-0; " onclick="closeContractModal()">✕</button>
+
         <h3 class="font-bold text-lg m-4" id="contractModalTitle">Add a New Contract</h3>
         <!-- Add this button to trigger file upload -->
         <input type="file" id="uploadExcel" accept=".xlsx" style="display:none" onchange="handleFileUpload(event)">

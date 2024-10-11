@@ -1,5 +1,6 @@
 <div id="recordPaymentModal" class="modal">
     <div class="modal-box max-w-5xl">
+        
         <h3 class="font-bold text-lg m-4">Record Payment</h3>
         <form id="record-payment-form" method="post" action="{% url 'record_payment' 0 %}">
             {% csrf_token %}
