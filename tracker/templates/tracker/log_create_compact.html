@@ -376,9 +376,13 @@ $(document).ready(function () {
         // Handle case when tasks are in the task dropdown (use the task-dropdown class)
         const taskDropdown = card.find('select.task-dropdown');
         if (taskDropdown.length > 0) {
-            const selectedOption = taskDropdown.find('option:selected').text();
-            if (selectedOption) {
-                selectedTasks.push(selectedOption);
+            const selectedOption = taskDropdown.find('option:selected');
+            const selectedOptionText = selectedOption.text();
+            const selectedOptionValue = selectedOption.val();
+
+            // Ensure the selected option is valid (i.e., not the default 'Select Task')
+            if (selectedOptionValue !== '' && selectedOptionText !== 'Select Task') {
+                selectedTasks.push(selectedOptionText);
             }
         }
 
@@ -392,6 +396,7 @@ $(document).ready(function () {
         // Update the hidden input with the selected tasks
         card.find('input[name="log_tasks"]').val(selectedTasks.join(', '));
     }
+
 
 
 
@@ -413,8 +418,8 @@ $(document).ready(function () {
                 // Convert buttons to dropdown with a specific class for tasks
                 const dropdown = $('<select>').addClass('select select-xs select-bordered w-full text-xs task-dropdown');
 
-                // Add the default "Select Task" option
-                const defaultOption = $('<option>').val('').text('Select Task');
+                // Add the default "Select Task" option and disable it
+                const defaultOption = $('<option>').val('').text('Select Task').prop('disabled', true).prop('selected', true);
                 dropdown.append(defaultOption);
 
                 taskButtons.each(function () {
@@ -424,9 +429,14 @@ $(document).ready(function () {
                     dropdown.append(option);
                 });
 
-                // Attach a change event to the dropdown to update selected tasks when a new option is selected
+                // Attach a change event to the dropdown to update selected tasks when a valid option is selected
                 dropdown.on('change', function () {
-                    updateSelectedTasks($(this).closest('.preset-card'));
+                    const selectedValue = $(this).val();
+
+                    // Ensure that the selected value is not empty (i.e., the default option is not selected)
+                    if (selectedValue !== '') {
+                        updateSelectedTasks($(this).closest('.preset-card'));
+                    }
                 });
 
                 // Replace the task buttons with the dropdown
@@ -434,6 +444,7 @@ $(document).ready(function () {
             }
         });
     }
+
 
 
 
