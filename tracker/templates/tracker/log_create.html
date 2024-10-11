@@ -53,8 +53,10 @@
                 <div id="task-buttons-container" class="task-buttons flex flex-wrap gap-2"></div>
                 <input class="input input-bordered w-full mt-2" type="text" id="custom-tasks" placeholder="Add custom tasks">
             </div>
-            <div class="divider lg:divider-horizontal"></div>
-            <!-- Time Field -->
+        </div>
+
+        <!-- Time Field - Moved to a new line -->
+        <div class="flex flex-col lg:flex-row justify-center items-center space-y-4 lg:space-y-0 lg:space-x-4">
             <div class="basis-1/4">
                 {{ form.log_time.errors }}
                 <select id="id_log_time" name="{{ form.log_time.name }}" class="select select-bordered w-full mt-2">
@@ -64,12 +66,21 @@
                     {% endfor %}
                 </select>
             </div>
+
+            <div class="basis-1/4">
+                <!-- Date Field - Added -->
+                <input id="log-date" name="log_date" type="date" class="input input-bordered w-full mt-2">
+            </div>
+
         </div>
+
         <div class="flex justify-center items-center space-x-6">
-            <button type="submit" class="btn btn-primary btn-sm m-6  ">Submit</button>
+            <button type="submit" class="btn btn-primary btn-sm m-6">Submit</button>
         </div>
     </form>
 </div>
+
+
 <div id="log-container"  class="overflow-x-auto h-48">
     <table class="table table-xs table-pin-rows table-pin-cols">
         <thead>
@@ -141,6 +152,40 @@
         }
 
         const csrftoken = getCookie('csrftoken');
+
+
+        // Function to format date to 'YYYY-MM-DD'
+        function formatDate(date) {
+            const d = new Date(date);
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            const year = d.getFullYear();
+
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+
+            return [year, month, day].join('-');
+        }
+
+        // Set today's date and limit the date picker to 5 days back
+        const today = new Date();
+        const maxDate = formatDate(today); // Today's date
+        const minDate = formatDate(new Date(today.setDate(today.getDate() - 5))); // 5 days back
+
+        // Set the input attributes dynamically
+        $('#log-date').attr({
+            'max': maxDate,
+            'min': minDate,
+            'value': maxDate // Default to today's date
+        });
+
+        // Ensure future dates are disabled by limiting the max attribute of the date picker
+        $('#log-date').on('change', function () {
+            const selectedDate = $(this).val();
+            if (selectedDate > maxDate) {
+                $(this).val(maxDate);
+            }
+        });
 
         // Function to display alert
         function displayAlert(message, type = 'success') {

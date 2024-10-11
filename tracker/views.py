@@ -632,8 +632,13 @@ def log_create(request):
         log_section = form.cleaned_data['log_section']
         log_Item = form.cleaned_data['log_Item']
         log_time = form.cleaned_data['log_time']
-        log_timestamps = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).strftime('%Y-%m-%d %H:%M:%S')
 
+
+        # Get the submitted date and keep the current time
+        submitted_date = form.cleaned_data['log_date'] or today  # Fallback to today's date if empty
+        current_time = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).strftime('%H:%M:%S')
+        log_timestamps = f"{submitted_date} {current_time}"
+        
         # Create the log entry
         log_entry = Logs.objects.create(
             log_project_name=log_project_name,

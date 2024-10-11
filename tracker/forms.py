@@ -46,6 +46,8 @@ class LogForm(forms.ModelForm):
         ('8.00', '8hr'),
     )
     log_time = forms.ChoiceField(choices=TIME_CHOICES, label="Time", initial='', required=True)
+     
+    log_date = forms.CharField(widget=forms.HiddenInput(), required=False)  # CharField for date
 
     class Meta:
         model = Logs
