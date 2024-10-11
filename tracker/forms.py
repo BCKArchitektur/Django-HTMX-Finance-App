@@ -11,7 +11,7 @@ class LogForm(forms.ModelForm):
     log_tasks = forms.CharField(widget=forms.HiddenInput(), label="Tasks", required=True)
 
     TIME_CHOICES = (
-        ('', '--------'),
+        ('', 'Select Time'),
         ('0.25', '15min'),
         ('0.50', '30min'),
         ('0.75', '45min'),

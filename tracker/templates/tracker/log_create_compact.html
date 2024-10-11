@@ -401,14 +401,18 @@ $(document).ready(function () {
             const taskContainer = $(this).find('.task-container');
             const taskButtons = taskContainer.find('.task-btn');
 
-            // Check if the task buttons overflow the container
+            // Check if the task buttons overflow the container height or width
             const containerHeight = taskContainer.height();
-            const thresholdHeight = 50; // Customize this height based on your design
+            const containerWidth = taskContainer.width();
+            const totalButtonWidth = taskButtons.toArray().reduce((sum, button) => sum + $(button).outerWidth(true), 0);
 
-            if (containerHeight > thresholdHeight) {
+            const thresholdHeight = 50; // Customize this height based on your design
+            const thresholdWidth = containerWidth * 0.9; // Customize width threshold, e.g., 90% of container's width
+
+            if (containerHeight > thresholdHeight || totalButtonWidth > thresholdWidth) {
                 // Convert buttons to dropdown with a specific class for tasks
                 const dropdown = $('<select>').addClass('select select-xs select-bordered w-full text-xs task-dropdown');
-                
+
                 taskButtons.each(function () {
                     const taskText = $(this).text();
                     const taskId = $(this).data('task-id');
