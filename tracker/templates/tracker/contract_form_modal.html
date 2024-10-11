@@ -5,6 +5,9 @@
         <!-- Add this button to trigger file upload -->
         <input type="file" id="uploadExcel" accept=".xlsx" style="display:none" onchange="handleFileUpload(event)">
         <button type="button" class="btn btn-xs btn-outline" onclick="document.getElementById('uploadExcel').click()">Import from Excel</button>
+        <!-- Duplicate Existing Contract -->
+        <button type="button" class="btn btn-xs btn-outline" onclick="openDuplicateContractModal()">Duplicate Existing Contract</button>
+
 
         <form id="contract-form" method="post" action="{% url 'edit_project' project.id %}">
             {% csrf_token %}
@@ -55,6 +58,40 @@
         </div>
     </div>
 </div>
+
+<!-- Duplicate Contract Modal -->
+<div id="duplicateContractModal" class="modal">
+    <div class="modal-box max-w-5xl">
+        <h3 class="font-bold text-lg m-4">Select a Contract to Duplicate</h3>
+        <div class="accordion" id="projectAccordion">
+            {% for project in all_projects %}
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ project.id }}" aria-expanded="false">
+                        {{ project.project_name }}
+                    </button>
+                </h2>
+                <div id="collapse-{{ project.id }}" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        <ul>
+                            {% for contract in project.contract.all %}
+                            <li>
+                                <button class="btn btn-sm btn-outline m-2 font-extralight" onclick="duplicateContract('{{ contract.id }}')">{{ contract.contract_name }}</button>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="modal-action">
+            <a href="#" class="btn" onclick="closeDuplicateContractModal()">Cancel</a>
+        </div>
+    </div>
+</div>
+
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.2/xlsx.full.min.js"></script>
 <script>
@@ -339,6 +376,59 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('sheetSelectionModal').classList.remove('modal-open');
     }
 
+
+    // Function to open the duplicate contract modal
+    window.openDuplicateContractModal = function() {
+        document.getElementById('duplicateContractModal').classList.add('modal-open');
+    };
+
+    // Function to close the duplicate contract modal
+    window.closeDuplicateContractModal = function() {
+        document.getElementById('duplicateContractModal').classList.remove('modal-open');
+    };
+
+    // Function to close the sheet selection modal
+    function closeDuplicateContractModal() {
+        document.getElementById('duplicateContractModal').classList.remove('modal-open');
+    }
+
+
+    // Function to duplicate contract
+    window.duplicateContract = function(contractId) {
+        console.log("Starting duplicateContract function with contractId:", contractId);
+
+        fetch(`/ajax/load-contract-data/?contract_id=${contractId}`)
+            .then(response => {
+                console.log("Response received from server:", response);
+                return response.json();
+            })
+            .then(data => {
+                console.log("Parsed contract data structure:", JSON.stringify(data, null, 2));
+
+                if (data && data.contract_name) {
+                    // Populate the contract form with all the data
+                    populateContractFormWithDuplicatedData(data);
+                    // Close the duplicate contract modal
+                    closeDuplicateContractModal();
+                    console.log("Contract form populated and duplicate contract modal closed.");
+                } else {
+                    console.error('Failed to duplicate the contract, data missing contract_name.');
+                    alert('Failed to duplicate the contract.');
+                }
+            })
+            .catch(error => {
+                console.error('Error duplicating contract:', error);
+            });
+    };
+
+    // Function to close the sheet selection modal
+    function closeDuplicateContractModal() {
+        document.getElementById('duplicateContractModal').classList.remove('modal-open');
+    }
+
+
+
+
     // Function to parse Excel data into JSON format
     function parseExcelData(data) {
         const contracts = [];
@@ -421,6 +511,7 @@ document.addEventListener("DOMContentLoaded", function() {
             return;
         }
 
+
         const contract = data[0]; // Assuming only one contract is imported at a time
         console.log('Populating Contract:', contract); // Debugging line
 
@@ -488,6 +579,63 @@ document.addEventListener("DOMContentLoaded", function() {
             sectionsContainer.insertAdjacentHTML('beforeend', sectionTemplate);
         });
     }
+
+
+    // New function to populate contract form with duplicated data
+    function populateContractFormWithDuplicatedData(data) {
+        // Set contract name and other main details
+        document.getElementById('id_contract_name').value = data.contract_name + ' (Copy)';
+        
+        const sectionsContainer = document.getElementById('sections-container');
+        sectionsContainer.innerHTML = ''; // Clear any existing sections
+
+        // Iterate through sections and add them to the form
+        data.sections.forEach(section => {
+            const sectionId = Math.random().toString(36).substr(2, 9);
+
+            let sectionTemplate = `
+                <div class="section-block form-control w-full m-1 p-2" data-section-id="${sectionId}">
+                    <div class="flex items-center space-x-2">
+                        <div class="form-control flex items-center max-w-xs m-0">
+                            <label class="cursor-pointer label m-0 p-0">
+                                <span class="label-text mr-1 font-bold">€</span>
+                                <input type="checkbox" name="sections[${sectionId}][billable]" class="checkbox checkbox-accent section-billable" ${section.section_billed_hourly ? 'checked' : ''} />
+                            </label>
+                        </div>
+                        <div class="w-full">
+                            <input type="text" name="sections[${sectionId}][section_name]" value="${section.section_name}" class="input input-sm input-bordered w-full m-2 section-name">
+                        </div>
+                        <div class="flex space-x-2">
+                            <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this, '${sectionId}')">+ Item</button>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove()">x</button>
+                        </div>
+                    </div>
+                    <div class="items-container">`;
+
+            // Add each item under the section
+            section.items.forEach(item => {
+                const itemId = Math.random().toString(36).substr(2, 9);
+                sectionTemplate += `
+                    <div class="item-block form-control w-full m-2 p-2" data-item-id="${itemId}">
+                        <div class="flex justify-between items-center">
+                            <input type="text" name="sections[${sectionId}][items][${itemId}][Item_name]" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name">
+                            <textarea name="sections[${sectionId}][items][${itemId}][description]" class="textarea textarea-bordered w-full m-2 item-description">${item.description}</textarea>
+                            <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
+                        </div>
+                        <div class="tasks-container"></div>
+                    </div>`;
+            });
+
+            // Close the section div
+            sectionTemplate += `</div></div>`;
+
+            // Add section to the container
+            sectionsContainer.insertAdjacentHTML('beforeend', sectionTemplate);
+        });
+
+        console.log("Form populated with contract details.");
+    }
+
 
     // Event listener for form submission
     document.getElementById('contract-form').addEventListener('submit', function(event) {

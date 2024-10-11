@@ -175,6 +175,10 @@ def delete_client(request, client_id):
 @login_required
 def edit_project(request, project_id):
     project = get_object_or_404(Project, id=project_id)
+
+    # Fetch all projects to pass to the context
+    all_projects = Project.objects.all()
+
     contracts = project.contract.all()
     clients = Client.objects.all()
     users = User.objects.all()
@@ -208,6 +212,7 @@ def edit_project(request, project_id):
         'section_library': section_library, 
         'invoices': invoices.order_by('-created_at'),
         'vat_percentages': vat_percentages,  # Pass VAT percentages to the template
+        'all_projects': all_projects
     }
     return render(request, 'tracker/edit_project.html', context)
 
