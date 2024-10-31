@@ -670,13 +670,24 @@ def log_create(request):
             oldest_preset = user_presets.order_by('id').first()
             oldest_preset.delete()
 
-        ProjectPreset.objects.create(
+        # Check if an existing preset with the same values already exists
+        existing_preset = ProjectPreset.objects.filter(
             user=request.user,
             project=project,
             default_contract=default_contract,
             default_section=default_section,
-            default_Item=default_Item,
-        )
+            default_Item=default_Item
+        ).exists()
+
+        # Only create a new preset if no existing one is found
+        if not existing_preset:
+            ProjectPreset.objects.create(
+                user=request.user,
+                project=project,
+                default_contract=default_contract,
+                default_section=default_section,
+                default_Item=default_Item,
+            )
 
         return redirect('log_create')
     else:
