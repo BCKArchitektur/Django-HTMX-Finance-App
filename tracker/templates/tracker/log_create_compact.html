@@ -48,7 +48,7 @@
             data-project-name="{{ preset.project.project_name }}" 
             data-contract-name="{{ preset.default_contract.contract_name }}" 
             data-contract-id="{{preset.default_contract.id}}"
-            data-section-id="{{ preset.default_section.id }}"  
+            data-section-id="{{ preset.default_section.id|default_if_none:"" }}"
             data-section-name="{{ preset.default_section.section_name }}" 
             data-Item-name="{{ preset.default_Item.Item_name }}" 
             data-Item-id="{{ preset.default_Item.id }}" 
