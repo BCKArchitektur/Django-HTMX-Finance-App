@@ -699,7 +699,7 @@ def log_create(request):
         'total_hours_today': total_hours_today,
         'hours_assigned_today': hours_assigned_today,
         'progress_percentage': progress_percentage,
-        'projects': projects,
+        'projects': projects.order_by('-project_no'),
         'date_override': employee.date_override,
     }
     return render(request, 'tracker/log_create.html', context)
@@ -1097,7 +1097,7 @@ def generate_word_document(request, contract_id):
         'project_no': project.project_no,
         'client_name': client_name,
         'client_firm': firm_name,
-        'client_address': f"{street_address},\n{city}, {postal_code},\n{country}",
+        'client_address': f"{street_address}\n{postal_code} {city} \n{country}",
         'contract_sections': contract_sections,
         'sum_of_items': f"{sum_of_items:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'net_contract': f"{net_contract:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
@@ -1392,7 +1392,7 @@ def download_invoice(request, invoice_id):
     # Prepare the context for the template
     context = {
         'client_name': client.client_name if client else "Unknown",
-        'client_address': f"{client.street_address}, {client.city}, {client.postal_code}, {client.country.name}" if client else "Unknown",
+        'client_address': f"{client.street_address}\n{client.postal_code} {client.city} \n{client.country.name}",
         'created_at': timezone.localtime(invoice.created_at).strftime('%d.%m.%Y'),  # German format with time
         'project_no': project.project_no,
         'project_name': project.project_name,
@@ -1411,6 +1411,7 @@ def download_invoice(request, invoice_id):
         'invoice_type':invoice.invoice_type,
         'from_date': from_date.strftime('%d.%m.%Y') if from_date else None,
         'to_date': to_date.strftime('%d.%m.%Y') if to_date else None,
+        'client_firm':client.firm_name
     }
 
     if additional_fee_percentage > 0:
