@@ -559,10 +559,11 @@ def log_create_compact(request):
     form = Hiddenform(request.POST or None, user=request.user)
     if request.method == 'POST' and form.is_valid():
         log_project_name = form.cleaned_data['log_project_name']
-        log_contract_id = form.cleaned_data['log_contract']  # Use the contract ID
+        log_contract_id = form.cleaned_data['log_contract'].replace(",", "") # Use the contract ID
         log_tasks = form.cleaned_data['log_tasks']
-        log_section_id = form.cleaned_data['log_section']  # Use the section ID
-        log_item_id = form.cleaned_data['log_Item']  # Use the item ID
+        log_section_id = form.cleaned_data['log_section'].replace(",", "") # Use the section ID
+        print(f"log_section_id: {log_section_id}")  # Debugging line
+        log_item_id = form.cleaned_data['log_Item'].replace(",", "")  # Use the item ID
         log_time = form.cleaned_data['log_time']
         log_timestamps = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).strftime('%Y-%m-%d %H:%M:%S')
         
@@ -635,6 +636,7 @@ def log_create(request):
         log_contract = form.cleaned_data['log_contract']
         log_tasks = form.cleaned_data['log_tasks']
         log_section = form.cleaned_data['log_section']
+        print(f"log_section: {log_section}")  # Debugging line
         log_Item = form.cleaned_data['log_Item']
         log_time = form.cleaned_data['log_time']
 
@@ -687,6 +689,7 @@ def log_create(request):
         'hours_assigned_today': hours_assigned_today,
         'progress_percentage': progress_percentage,
         'projects': projects,
+        'date_override': employee.date_override,
     }
     return render(request, 'tracker/log_create.html', context)
 

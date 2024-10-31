@@ -172,12 +172,19 @@
         const maxDate = formatDate(today); // Today's date
         const minDate = formatDate(new Date(today.setDate(today.getDate() - 5))); // 5 days back
 
-        // Set the input attributes dynamically
-        $('#log-date').attr({
-            'max': maxDate,
-            'min': minDate,
-            'value': maxDate // Default to today's date
-        });
+        // Check if date_override is true from the context
+        const dateOverride = {{ date_override|yesno:"true,false" }};
+        
+        if (!dateOverride) {
+            $('#log-date').attr({
+                'max': maxDate,
+                'min': minDate,
+                'value': maxDate  // Default to today's date
+            });
+        } else {
+            // Allow unrestricted date selection if override is enabled
+            $('#log-date').attr('value', maxDate);
+        }
 
         // Ensure future dates are disabled by limiting the max attribute of the date picker
         $('#log-date').on('change', function () {

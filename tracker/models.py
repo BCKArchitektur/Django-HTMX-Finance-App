@@ -26,6 +26,7 @@ class Employee(models.Model):
     total_salary = models.FloatField(editable=False, default=0.0)
     starting_date = models.DateField(null=True, blank=True)
     holidays = models.IntegerField(default=0)
+    date_override = models.BooleanField(default=False, help_text="Allow unrestricted date selection in log entries.")
     def save(self, *args, **kwargs):
         self.total_salary = self.salary + (self.salary * (self.social_security_percentage / 100))
         super().save(*args, **kwargs)

@@ -18,12 +18,12 @@ class EmployeeAdmin(admin.ModelAdmin):
     list_display = (
         'user', 
         'monday', 'tuesday', 'wednesday', 'thursday', 'friday',
-        'starting_date', 'holidays'
+        'starting_date', 'date_override'
     )
     search_fields = ('user__username', 'user__email', 'salary')
 
     fieldsets = (
-        (None, {'fields': ('user',)}),
+        (None, {'fields': ('user','date_override')}),
         ('Work Schedule', {
             'fields': (
                 'hours_assigned_monday', 'hours_assigned_tuesday', 'hours_assigned_wednesday', 'hours_assigned_thursday', 'hours_assigned_friday'
@@ -165,6 +165,9 @@ class ItemAdminForm(forms.ModelForm):
 
 class ItemAdmin(admin.ModelAdmin):
     form = ItemAdminForm
+    list_display = ('Item_name', 'description')
+    search_fields = ('Item_name', 'description')
+
 
 
 # Section Admin

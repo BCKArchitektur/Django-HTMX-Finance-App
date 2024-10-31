@@ -1,9 +1,9 @@
 Starting the server:
 
-    Run the following 2 scripts to start the server 
+Run the following 2 commands in the terminal below to start the server 
 
-    venv\Scripts\activate.p1
-    python manage.py runserver 0.0.0.0:9000
+venv\Scripts\activate.ps1
+python manage.py runserver 0.0.0.0:9000
 
 
 
