@@ -229,6 +229,42 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
+
+
+    // Function to move a section up
+    window.moveSectionUp = function(button) {
+        const section = button.closest('.section-block');
+        const previousSection = section.previousElementSibling;
+
+        if (previousSection) {
+            section.parentNode.insertBefore(section, previousSection);
+            updateContractJSON(); // Update JSON after rearranging
+        }
+    };
+
+    // Function to move a section down
+    window.moveSectionDown = function(button) {
+        const section = button.closest('.section-block');
+        const nextSection = section.nextElementSibling;
+
+        if (nextSection) {
+            section.parentNode.insertBefore(nextSection, section);
+            updateContractJSON(); // Update JSON after rearranging
+        }
+    };
+
+    // Function to update contract JSON after rearranging
+    window.updateContractJSON = function() {
+        let contractJSON = buildContractJSON();
+        console.log("Updated Contract JSON:", contractJSON);
+
+        // Optionally, you can update a hidden input field to store the JSON
+        const jsonInput = document.querySelector('input[name="contract_json"]');
+        if (jsonInput) {
+            jsonInput.value = JSON.stringify(contractJSON);
+        }
+    };
+
     window.openEditContractModal = function(contractId) {
         document.getElementById('contractModalTitle').innerText = 'Edit Contract';
         document.getElementById('contract_id').value = contractId;
@@ -273,6 +309,22 @@ document.addEventListener("DOMContentLoaded", function() {
                                         ${isSectionEditable ? '' : 'readonly'}>
                                 </div>
                                 <div class="flex space-x-2">
+                                    <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionUp(this)">
+                                    <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" />
+                                        <line x1="12" y1="5" x2="12" y2="19" />
+                                        <line x1="18" y1="11" x2="12" y2="5" />
+                                        <line x1="6" y1="11" x2="12" y2="5" />
+                                    </svg>
+                                    </button>
+                                    <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionDown(this)">
+                                    <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" />
+                                        <line x1="12" y1="5" x2="12" y2="19" />
+                                        <line x1="18" y1="13" x2="12" y2="19" />
+                                        <line x1="6" y1="13" x2="12" y2="19" />
+                                    </svg>                                        
+                                    </button>
                                     <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this)" ${isSectionEditable ? '' : 'disabled'}>+ Item</button>
                                     <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove()" ${isSectionEditable ? '' : 'disabled'}>x</button>
                                 </div>
@@ -542,6 +594,22 @@ document.addEventListener("DOMContentLoaded", function() {
                             <input type="text" name="sections[${sectionId}][section_name]" value="${section.section_name}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
                         </div>
                         <div class="flex space-x-2">
+                            <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionUp(this)">
+                            <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" />
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="18" y1="11" x2="12" y2="5" />
+                                <line x1="6" y1="11" x2="12" y2="5" />
+                            </svg>
+                            </button>
+                            <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionDown(this)">
+                            <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" />
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="18" y1="13" x2="12" y2="19" />
+                                <line x1="6" y1="13" x2="12" y2="19" />
+                            </svg>                                        
+                            </button>
                             <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this, '${sectionId}')">+ Item</button>
                             <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove()">x</button>
                         </div>
@@ -676,6 +744,22 @@ document.addEventListener("DOMContentLoaded", function() {
                         <input type="text" name="sections[${sectionId}][section_name]" placeholder="Section Name" class="input input-sm input-bordered w-full m-2 p-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
                     </div>
                     <div class="flex space-x-2">
+                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionUp(this)">
+                        <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" />
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="18" y1="11" x2="12" y2="5" />
+                            <line x1="6" y1="11" x2="12" y2="5" />
+                        </svg>
+                        </button>
+                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionDown(this)">
+                        <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" />
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="18" y1="13" x2="12" y2="19" />
+                            <line x1="6" y1="13" x2="12" y2="19" />
+                        </svg>                                        
+                        </button>
                         <button type="button" class="btn btn-sm btn-accent m-1" onclick="addItem(this, '${sectionId}')">+ Item</button>
                         <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.parentNode.remove()">x</button>
                     </div>
@@ -735,6 +819,22 @@ document.addEventListener("DOMContentLoaded", function() {
                             <input type="text" name="sections[${newSectionId}][section_name]" value="${data.section_name}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${newSectionId}" hx-swap="innerHTML">
                         </div>
                         <div class="flex space-x-2">
+                            <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionUp(this)">
+                            <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" />
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="18" y1="11" x2="12" y2="5" />
+                                <line x1="6" y1="11" x2="12" y2="5" />
+                            </svg>
+                            </button>
+                            <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionDown(this)">
+                            <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" />
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="18" y1="13" x2="12" y2="19" />
+                                <line x1="6" y1="13" x2="12" y2="19" />
+                            </svg>                                        
+                            </button>
                             <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this, '${newSectionId}')">+ Item</button>
                             <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove()">x</button>
                         </div>
