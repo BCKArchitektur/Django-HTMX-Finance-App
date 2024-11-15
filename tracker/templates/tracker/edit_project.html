@@ -71,71 +71,71 @@
           </div>
           <div class="overflow-x-auto h-80">
               <table class="table" id="contract-table">
-                  <thead>
-                      <tr>
-                          <th></th>
-                          <th>Contract Name</th>
-                          <th>Users</th>
-                          <th>Budget</th>
-                          <th>Actions</th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                      {% for contract in contracts %}
-                      <tr class="hover">
-                          <td>
-                              <form method="post" action="{% url 'delete_contract' contract.id %}" style="display:inline;">
-                                  {% csrf_token %}
-                                  <button type="submit" class="btn btn-sm btn-error btn-outline p-1 m-1" onclick="return confirm('Are you sure you want to delete this contract?');">
-                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                      </svg>
-                                  </button>
-                              </form>
-                          </td>
-                          <td>
-                              <a href="javascript:void(0);" onclick="openEditContractModal({{ contract.id }})" class="font-semibold hover:text-secondary">
-                                  {{ contract.contract_name }}
-                              </a>
-                          </td>
-                          <td>
-                              {% for section in contract.section.all %}
-                                  <strong>{{ section.section_name }}</strong><br>
-                                  {% for item in section.Item.all %}
-                                      {{ item.Item_name }}:
-                                      {% for user in item.users.all %}
-                                          {{ user.username }}{% if not forloop.last %}, {% endif %}
-                                      {% endfor %}
-                                      <br>
-                                  {% endfor %}
-                              {% endfor %}
-                          </td>
-                          <td>
-                              {% for section in contract.section.all %}
-                                  <strong>{{ section.section_name }}</strong><br>
-                                  {% for item in section.Item.all %}
-                                      {{ item.Item_name }}: {{ item.budget }}<br>
-                                  {% endfor %}
-                              {% endfor %}
-                          </td>
-                          <td style="display: flexbox; align-items: center; gap: 2px;">
-                              <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openAddUsersModal({{ contract.id }})">
-                                  ✎ Users
-                              </button>
-                              <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openAddBudgetModal({{ contract.id }})">
-                                  ✎ Budget
-                              </button>
-                              <button class="btn btn-sm btn-primary btn-outline m-1" onclick="openTemplateModal({{ contract.id }})">
-                                  🖪 Estimate
-                              </button>
-                          </td>
-                      </tr>
-                      {% empty %}
-                      <tr>
-                          <td colspan="4" class="text-center">No contracts have been added yet.</td>
-                      </tr>
-                      {% endfor %}
-                  </tbody>
+                <thead>
+                    <tr>
+                        <th class="w-1/12"></th> <!-- First column for the delete button -->
+                        <th class="w-1/4">Contract Name</th>
+                        <th class="w-1/2">Users</th>
+                        <th class="w-1/2 justify-start">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contract in contracts %}
+                    <tr class="hover">
+                        <td class="w-1/12">
+                            <form method="post" action="{% url 'delete_contract' contract.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-error btn-outline p-1 m-1" onclick="return confirm('Are you sure you want to delete this contract?');">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </form>
+                        </td>
+                        <td class="w-1/4">
+                            <a href="javascript:void(0);" onclick="openEditContractModal({{ contract.id }})" class="font-semibold hover:text-secondary">
+                                {{ contract.contract_name }}
+                            </a>
+                        </td>
+                        <td class="w-1/2">
+                            <div class="max-h-36 overflow-y-auto">
+                                {% for section in contract.section.all %}
+                                <strong>{{ section.section_name }}</strong><br>
+                                {% for item in section.Item.all %}
+                                    {{ item.Item_name }}:
+                                    <div class="flex flex-wrap gap-2 ml-2 mt-1">
+                                        {% for user in item.users.all %}
+                                            <div class="avatar">
+                                                <div class="ring-primary ring-offset-base-100 w-6 rounded-full ring-1 ring-opacity-50">
+                                                    <span class="text-xs p-1">{{ user.username|slice:":2"|upper }}</span>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>                                    
+                                    <br>
+                                {% endfor %}
+                                {% endfor %}
+                            </div>                            
+                        </td>
+                        <td class="w-1/2 flex flex-col gap-0.5 items-center justify-center">
+                            <button class="btn btn-xs btn-primary btn-outline m-1 h-10" onclick="openAddUsersModal({{ contract.id }})">
+                                ✎ Users
+                            </button>
+                            <button class="btn btn-xs btn-primary btn-outline m-1 h-10" onclick="openAddBudgetModal({{ contract.id }})">
+                                ✎ Budget
+                            </button>
+                            <button class="btn btn-xs btn-secondary btn-outline m-1 h-10" onclick="openTemplateModal({{ contract.id }})">
+                                🖪 Estimate
+                            </button>
+                        </td>                        
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">No contracts have been added yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                            
               </table>
           </div>
         </div>
@@ -161,20 +161,24 @@
                     </thead>
                     <tbody>
                         {% for invoice in invoices %}
-                        <tr>
-                            <td>{{ invoice.title }}</td>
-                            <td>{{ invoice.contract.contract_name }}</td>
-                            <td>{{ invoice.created_at|date:"d M Y" }}</td>
-                            <td>{{ invoice.invoice_net|floatformat:2 }}</td>
-                            <td>{{ invoice.invoice_gross|floatformat:2 }}</td>
-                            <td>{{ invoice.amount_received }}</td> 
+                        <tr class="hover">
+
                             <td>
-                                <button class="btn btn-xs btn-primary btn-outline m-1" onclick="viewInvoice({{ invoice.id }})">View</button>
+                                <a href="javascript:void(0);" onclick="viewInvoice({{ invoice.id }})" class="font-semibold hover:text-secondary">
+                                    {{ invoice.title }}
+                                </a> 
+                            </td>
+                            <td>{{ invoice.contract.contract_name }}</td>
+                            <td>{{ invoice.created_at  }}</td>
+                            <td>{{ invoice.invoice_net }}</td>
+                            <td>{{ invoice.invoice_gross  }}</td>
+                            <td>{{ invoice.amount_received  }}</td> 
+                            <td>
                                 <form method="post" action="{% url 'delete_invoice' invoice.id %}" style="display:inline;">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-xs btn-error btn-outline m-1">Delete</button>
+                                    <button type="submit" class="btn btn-xs btn-error btn-outline m-1 p-1">Delete</button>
                                 </form>
-                                <a href="{% url 'download_invoice' invoice.id %}" class="btn btn-xs btn-secondary btn-outline m-1">🖪 Invoice</a>
+                                <a href="javascript:void(0);" onclick="openInvoiceTemplateModal({{ invoice.id }})" class="btn btn-xs btn-secondary btn-outline m-1 p-1">🖪 Invoice</a>
                                 <button class="btn btn-xs btn-primary btn-outline m-1" onclick="openRecordPaymentModal({{ invoice.id }})">Record Payment</button> <!-- New Button -->
                             </td>
                         </tr>
@@ -194,6 +198,8 @@
 <!-- Add/Edit Users Modal -->
 <div id="addUsersModal" class="modal">
     <div class="modal-box max-w-5xl">
+        <button class="btn btn-sm btn-circle btn-ghost position:absolute; top-0; right-0; " onclick="closeAddUsersModal()">✕</button>
+
         <h3 class="font-bold text-lg m-4">Add/Edit Users</h3>
         <form id="add-users-form" method="post" action="{% url 'add_users' %}">
             {% csrf_token %}
@@ -225,6 +231,8 @@
 <!-- Add/Edit Budget Modal -->
 <div id="addBudgetModal" class="modal">
     <div class="modal-box max-w-5xl">
+        <button class="btn btn-sm btn-circle btn-ghost position:absolute; top-0; right-0; " onclick="closeAddBudgetModal()">✕</button>
+
         <h3 class="font-bold text-lg m-4">Add/Edit Budget</h3>
         <form id="add-budget-form" method="post" action="{% url 'add_budget' %}">
             {% csrf_token %}
@@ -251,38 +259,42 @@
                 <table class="table w-full">
                     <tbody>
                         <tr>
-                            <td class="text-center font-thin w-1/6">Sum of Items €</td>
-                            <td><input type="text" id="sum_of_items" class="input input-bordered input-sm w-1/4" readonly></td>
+                            <td class="text-right font-thin w-1/6">Sum of Items €</td>
+                            <td><input type="text" id="sum_of_items" class="input  input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-center font-thin w-1/6">Additional Fee %</td>
-                            <td><input type="text" name="additional_fee_percentage" id="additional_fee_percentage" class="input input-bordered stroke-slate-950 input-sm w-1/4"></td>
+                            <td class="text-right font-thin w-1/6">Additional Fee(%)*</td>
+                            <td><input type="number" step="0.01" name="additional_fee_percentage" id="additional_fee_percentage" class="input input-bordered input-secondary input-sm w-1/4"></td>
                         </tr>
                         <tr>
-                            <td class="text-center font-thin w-1/6">Additional Fee €</td>
-                            <td><input type="text" id="additional_fee" class="input input-bordered input-sm w-1/4" readonly></td>
+                            <td class="text-right font-thin w-1/6">Additional Fee €</td>
+                            <td><input type="text" id="additional_fee" class="input  input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-center font-bold w-1/6">Net Contract €</td>
-                            <td><input type="text" id="net_contract" class="input input-bordered input-sm w-1/4" readonly></td>
+                            <td class="text-right font-bold w-1/6">Net Contract €</td>
+                            <td><input type="text" id="net_contract" class="input  input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-center font-thin w-1/6">
-                                <div class="flex items-center justify-center">
-                                    <input type="checkbox" id="vat_toggle" class="checkbox mr-2" checked="checked" />
-                                    <label for="vat_toggle" class="ml-1">VAT (%)</label>
-                                </div>
+                            <td class="text-right font-thin w-1/6">VAT (%)*</td>
+                            <td>
+                                <!-- Select field for VAT percentage -->
+                                <select id="vat_percentage_select" class="select select-bordered select-secondary input-sm w-1/4">
+                                    <option value="0.00">0%</option>
+                                    <option value="19.00">19%</option>
+                                </select>
+                            
+                                <!-- Hidden input field to store the selected VAT value -->
+                                <input type="number" id="id_vat_percentage" name="vat_percentage" class="input input-bordered input-sm hidden">
                             </td>
-                            <td><input type="number" id="id_vat_percentage" name="vat_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
-                        </tr>
+                        </tr>                     
                         
                         <tr>
-                            <td class="text-center font-thin w-1/6">VAT €</td>
-                            <td><input type="text" id="vat" class="input input-bordered input-sm w-1/4" readonly></td>
+                            <td class="text-right font-thin w-1/6">VAT €</td>
+                            <td><input type="text" id="vat" class="input  input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-center font-bold w-1/6">Gross Contract €</td>
-                            <td><input type="text" id="gross_contract" class="input input-bordered input-sm w-1/4" readonly></td>
+                            <td class="text-right font-bold w-1/6">Gross Contract €</td>
+                            <td><input type="text" id="gross_contract" class="input input-sm w-1/4" readonly></td>
                         </tr>
                     </tbody>
                 </table>
@@ -325,6 +337,38 @@
 </div>
 
 
+<!-- Modal to select the invoice template and date range -->
+<div id="selectInvoiceTemplateModal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg">Select Invoice Template and Date Range</h3>
+        <form id="invoice-template-form" method="get" action="{% url 'download_invoice' 0 %}">
+            <input type="hidden" name="invoice_id" id="invoice_id">
+            <div class="form-control m-2">
+                <label for="invoice_template_name" class="label">Template</label>
+                <select name="invoice_template_name" id="invoice_template_name" class="select select-bordered w-full">
+                    <option value="inv_BCK_De.docx">BCK De</option>
+                    <option value="inv_BCK_En.docx">BCK En</option>
+                    <option value="inv_Kost_De.docx">Kost De</option>
+                    <option value="inv_Kost_En.docx">Kost En</option>
+                </select>
+            </div>
+            <div class="form-control m-2">
+                <label for="from_date" class="label">From Date</label>
+                <input type="date" name="from_date" id="from_date" class="input input-bordered w-full">
+            </div>
+            <div class="form-control m-2">
+                <label for="to_date" class="label">To Date</label>
+                <input type="date" name="to_date" id="to_date" class="input input-bordered w-full">
+            </div>
+            <div class="modal-action">
+                <button type="submit" class="btn btn-primary">Download</button>
+                <a href="#" class="btn" onclick="closeInvoiceTemplateModal()">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+
 
 {% include 'tracker/view_invoice_modal.html' %}
 {% include 'tracker/record_payment_modal.html' %}
@@ -339,16 +383,40 @@
     function showContracts() {
         document.getElementById('contracts-content').style.display = 'block';
         document.getElementById('invoices-content').style.display = 'none';
-        document.getElementById('contracts-tab').classList.add('tab-active');
-        document.getElementById('invoices-tab').classList.remove('tab-active');
+        document.getElementById('contracts-tab').checked = true; // Ensure the Contracts tab is checked
+        document.getElementById('invoices-tab').checked = false; // Ensure the Invoices tab is unchecked
+        history.pushState(null, '', window.location.pathname + '?tab=contracts');
     }
 
     function showInvoices() {
         document.getElementById('contracts-content').style.display = 'none';
         document.getElementById('invoices-content').style.display = 'block';
-        document.getElementById('contracts-tab').classList.remove('tab-active');
-        document.getElementById('invoices-tab').classList.add('tab-active');
+        document.getElementById('contracts-tab').checked = false; // Ensure the Contracts tab is unchecked
+        document.getElementById('invoices-tab').checked = true; // Ensure the Invoices tab is checked
+        history.pushState(null, '', window.location.pathname + '?tab=invoices');
     }
+
+    document.getElementById('contracts-tab').addEventListener('click', showContracts);
+    document.getElementById('invoices-tab').addEventListener('click', showInvoices);
+
+
+    function initializeTab() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab');
+
+        if (tab === 'invoices') {
+            showInvoices();
+            document.getElementById('invoices-tab').checked = true;
+        } else {
+            showContracts();
+            document.getElementById('contracts-tab').checked = true;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeTab();
+    });
+    
     // Function to open the template modal
     function openTemplateModal(contractId) {
         document.getElementById('template_contract_id').value = contractId;
@@ -377,6 +445,39 @@
 
         // Close the modal
         closeTemplateModal();
+
+        // Allow form submission to proceed
+    });
+
+    // Function to open the invoice template modal
+    function openInvoiceTemplateModal(invoiceId) {
+        document.getElementById('invoice_id').value = invoiceId;
+        document.getElementById('selectInvoiceTemplateModal').classList.add('modal-open');
+    }
+
+    // Function to close the invoice template modal
+    function closeInvoiceTemplateModal() {
+        document.getElementById('selectInvoiceTemplateModal').classList.remove('modal-open');
+    }
+
+    document.getElementById('invoice-template-form').addEventListener('submit', function(event) {
+        const invoiceId = document.getElementById('invoice_id').value;
+        const templateName = document.getElementById('invoice_template_name').value;
+        const fromDate = document.getElementById('from_date').value;
+        const toDate = document.getElementById('to_date').value;
+
+        // Check if both date fields are provided
+        if (!fromDate || !toDate) {
+            alert('Please provide both From and To dates.');
+            event.preventDefault();  // Prevent form submission
+            return;
+        }
+
+        // Set the form action URL
+        this.action = `{% url 'download_invoice' 0 %}`.replace('0', invoiceId) + `?template_name=${templateName}&from_date=${fromDate}&to_date=${toDate}`;
+
+        // Close the modal
+        closeInvoiceTemplateModal();
 
         // Allow form submission to proceed
     });
@@ -445,45 +546,83 @@
         const rateInput = document.querySelector(`input[name="rate_${itemId}"]`);
         const totalField = document.getElementById(`total_${itemId}`);
 
-        const quantityValue = parseFloat(quantityInput.value) || 0;
-        const rateValue = parseFloat(rateInput.value) || 0;
+        // Parse the quantity and rate inputs
+        const quantityValue = parseGermanNumber(quantityInput.value) || 0;
+        const rateValue = parseGermanNumber(rateInput.value) || 0;
+
+        // Calculate the total
         const totalValue = quantityValue * rateValue;
 
-        totalField.textContent = totalValue.toFixed(2);
+        // Update the total field with the formatted result
+        totalField.textContent = formatNumberToGerman(totalValue);
 
-        // Update summary fields
+        // Update the summary fields
         updateSummaryFields();
     }
 
+    // Helper function to parse German-style number inputs
+    function parseGermanNumber(numberString) {
+        // Convert German formatted number (e.g., "1.234,56") to standard float (e.g., 1234.56)
+        return parseFloat(numberString.replace(/\./g, '').replace(',', '.'));
+    }
+
+    // Format the number into German format (e.g., "1.234,56")
+    function formatNumberToGerman(number) {
+        // Ensure the number is a valid float
+        const parsedNumber = parseFloat(number);
+        if (isNaN(parsedNumber)) return '0,00';  // return a default value if the number is invalid
+
+        // Convert the number to German format (e.g., '1.234,00')
+        return parsedNumber
+            .toFixed(2) // Ensure 2 decimal places
+            .replace('.', ',') // Replace the decimal point with a comma
+            .replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Add dots as thousand separators
+    }
+
+
     function updateSummaryFields() {
+        console.log('Updating summary fields...');
+
         const itemTotals = document.querySelectorAll('[id^="total_"]');
         let sumOfItems = 0;
+        
         itemTotals.forEach(totalField => {
-            sumOfItems += parseFloat(totalField.textContent) || 0;
+            // Parse the German formatted total field value
+            sumOfItems += parseGermanNumber(totalField.textContent) || 0;
         });
+
+        console.log('Sum of items:', sumOfItems);
 
         const additionalFeePercentageInput = document.getElementById('additional_fee_percentage');
         const additionalFeePercentage = parseFloat(additionalFeePercentageInput.value) || 0;
         const additionalFee = (sumOfItems * additionalFeePercentage) / 100;
 
+        console.log('Additional Fee Percentage:', additionalFeePercentage);
+        console.log('Additional Fee:', additionalFee);
+
         const netContract = sumOfItems + additionalFee;
 
-        const vatToggle = document.getElementById('vat_toggle');
-        const vatPercentage = vatToggle.checked ? 19 : 0;  // Set VAT to 19% if checked, otherwise 0%
+        const vatPercentageInput = document.getElementById('id_vat_percentage');
+        const vatPercentage = parseFloat(vatPercentageInput.value) || 0;
         const vat = (netContract * vatPercentage) / 100;
+
+        console.log('Net Contract:', netContract);
+        console.log('VAT Percentage:', vatPercentage);
+        console.log('VAT:', vat);
 
         const grossContract = netContract + vat;
 
-        document.getElementById('sum_of_items').value = sumOfItems.toFixed(2);
-        document.getElementById('additional_fee').value = additionalFee.toFixed(2);
-        document.getElementById('net_contract').value = netContract.toFixed(2);
-        document.getElementById('vat').value = vat.toFixed(2);
-        document.getElementById('gross_contract').value = grossContract.toFixed(2);
-        document.getElementById('id_vat_percentage').value = vatPercentage;  // Update the VAT percentage input field
+        // Apply the custom German number formatting
+        document.getElementById('sum_of_items').value = formatNumberToGerman(sumOfItems);
+        document.getElementById('additional_fee').value = formatNumberToGerman(additionalFee);
+        document.getElementById('net_contract').value = formatNumberToGerman(netContract);
+        document.getElementById('vat').value = formatNumberToGerman(vat);
+        document.getElementById('gross_contract').value = formatNumberToGerman(grossContract);
+
+        console.log('Gross Contract:', grossContract);
     }
 
-    // Event listener to dynamically change VAT percentage when checkbox is toggled
-    document.getElementById('vat_toggle').addEventListener('change', updateSummaryFields);
+
 
     // Add event listeners to recalculate values when VAT or Additional Fee percentage changes
     document.getElementById('id_vat_percentage').addEventListener('input', updateSummaryFields);
@@ -491,7 +630,11 @@
 
 
     function populateBudgetTable(contractId) {
+        console.log('Fetching contract data for contract ID:', contractId);
+
         fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
+            console.log('Contract data received:', data);
+
             const budgetTable = document.getElementById('budget-table');
             const thead = budgetTable.querySelector('thead tr');
             const tbody = budgetTable.querySelector('tbody');
@@ -499,52 +642,126 @@
             thead.innerHTML = '<th>NO.</th><th>SECTION</th><th>ITEM</th><th>QUANTITY</th><th>UNIT</th><th>RATE</th><th>TOTAL</th>';
             tbody.innerHTML = '';
 
+            let isContractInvoiced = false;
+
             data.sections.forEach((section, sectionIndex) => {
                 section.items.forEach((item, itemIndex) => {
+                    const itemInvoiced = item.quantity !== item.available_quantity;
+                    if (itemInvoiced) {
+                        isContractInvoiced = true;
+                    }
+
+                    const unitOptions = `
+                        <option value="Std." ${item.unit === 'Std' ? 'selected' : ''}>Std</option>
+                        <option value="Psch" ${item.unit === 'Psch' ? 'selected' : ''}>Psch</option>
+                        <option value="Stk" ${item.unit === 'Stk' ? 'selected' : ''}>Stk</option>
+                    `;
+
+                    const isPsch = item.unit === 'Psch';
+                    const quantityValue = isPsch ? '1' : (item.quantity || '');
+                    const formattedQuantityValue = formatNumberToGerman(quantityValue);
+
+                    const quantityInput = `
+                        <input type="text" name="quantity_${item.id}" value="${formattedQuantityValue}" 
+                            class="input input-bordered w-full" 
+                            ${itemInvoiced ? 'disabled' : (isPsch ? 'readonly' : '')} 
+                            onchange="updateTotal(${item.id})">
+                        <input type="hidden" name="original_quantity_${item.id}" value="${quantityValue}">
+                    `;
+
+                    const formattedRate = formatNumberToGerman(item.rate || 0);
+
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${sectionIndex + 1},${itemIndex + 1}</td>
-                        <td>${section.section_name}</td>
-                        <td>${item.Item_name}</td>
-                        <td><input type="text" name="quantity_${item.id}" value="${item.quantity || ''}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" /></td>
+                        <td><input type="text" value="${section.section_name}" class="input input-bordered w-full readonly" ${itemInvoiced ? 'disabled' : ''}></td>
+                        <td><input type="text" value="${item.Item_name}" class="input input-bordered w-full" ${itemInvoiced ? 'disabled' : ''}></td>
+                        <td>${quantityInput}</td>
                         <td>
-                            <select name="unit_${item.id}" class="select select-bordered w-full">
-                                <option value="Std." ${item.unit === 'Std' ? 'selected' : ''}>Std</option>
-                                <option value="Psch" ${item.unit === 'Psch' ? 'selected' : ''}>Psch</option>
-                                <option value="Stk" ${item.unit === 'Stk' ? 'selected' : ''}>Stk</option>
+                            <select name="unit_${item.id}" class="select select-bordered w-full" ${itemInvoiced ? 'disabled' : ''} onchange="handleUnitChange(this, ${item.id})">
+                                ${unitOptions}
                             </select>
                         </td>
-                        <td><input type="text" name="rate_${item.id}" value="${item.rate || ''}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" /></td>
-                        <td id="total_${item.id}">${item.total || 0}</td>
+                        <td><input type="text" name="rate_${item.id}" value="${formattedRate}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" ${itemInvoiced ? 'disabled' : ''}></td>
+                        <td id="total_${item.id}">${formatNumberToGerman(item.total || 0)}</td>
                     `;
                     tbody.appendChild(tr);
                 });
             });
 
-            // Populate additional fee percentage
+            // Populate additional fee percentage and disable if any item is invoiced
             const additionalFeePercentageInput = document.getElementById('additional_fee_percentage');
             additionalFeePercentageInput.value = data.additional_fee_percentage || 0;
+            if (isContractInvoiced) {
+                additionalFeePercentageInput.disabled = true;
+            }
 
-            // Populate VAT percentage and set the toggle
+            // Populate VAT percentage and sync select field with hidden input
             const vatPercentageInput = document.getElementById('id_vat_percentage');
-            const vatToggle = document.getElementById('vat_toggle');
+            const vatPercentageSelect = document.getElementById('vat_percentage_select');
+            
             vatPercentageInput.value = data.vat_percentage || 0;
+            vatPercentageSelect.value = vatPercentageInput.value; // Sync select input with hidden field
 
-            if (data.invoices_exist) {
-                vatToggle.disabled = true;  // Disable the toggle if invoices exist
-                vatToggle.checked = true;
-                vatPercentageInput.value = 19;
-            } else {
-                vatToggle.disabled = false;  // Enable the toggle if no invoices exist
-                vatToggle.addEventListener('change', function() {
-                    vatPercentageInput.value = vatToggle.checked ? 19 : 0;
-                });
+            console.log('VAT percentage after setting values:', {
+                select: vatPercentageSelect.value,
+                hiddenInput: vatPercentageInput.value
+            });
+
+            if (isContractInvoiced) {
+                vatPercentageSelect.disabled = true;
             }
 
             // Initialize the summary fields
             updateSummaryFields();
         });
     }
+
+    function handleUnitChange(selectElement, itemId) {
+        const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
+        const originalQuantityInput = document.querySelector(`input[name="original_quantity_${itemId}"]`);
+
+        if (selectElement.value === 'Psch') {
+            quantityInput.value = '1';
+            quantityInput.readOnly = true;
+        } else {
+            quantityInput.value = originalQuantityInput.value;
+            quantityInput.readOnly = false;
+        }
+
+        updateTotal(itemId);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const vatPercentageSelect = document.getElementById('vat_percentage_select');
+        const vatPercentageInput = document.getElementById('id_vat_percentage');
+
+        // Function to sync the select and hidden input field
+        function syncVatPercentage() {
+            console.log('Syncing VAT percentage...');
+            // Update the hidden input value to match the select field value
+            vatPercentageInput.value = vatPercentageSelect.value;
+            // Log the updated hidden input value
+            console.log('Hidden input VAT percentage after sync:', vatPercentageInput.value);
+
+            // Recalculate the summary fields based on the new VAT value
+            updateSummaryFields();
+        }
+
+        // Initialize the select field based on the current value of the hidden input
+        function initializeVatPercentage() {
+            console.log('Initializing VAT percentage...');
+            console.log('Initial hidden input value:', vatPercentageInput.value);
+            vatPercentageSelect.value = vatPercentageInput.value || '0';
+            console.log('Select field value after initialization:', vatPercentageSelect.value);
+        }
+
+        // Ensure the hidden input reflects the select field value upon page load
+        initializeVatPercentage();
+
+        // Add event listener to update the hidden input and recalculate when the select value changes
+        vatPercentageSelect.addEventListener('change', syncVatPercentage);
+    });
 
     
     function populateUsersTable(contractId, projectUsers) {
@@ -604,6 +821,7 @@
     function handleFormSubmission(event, form, url) {
         event.preventDefault();
         const formData = new FormData(form);
+        console.log(formData)
 
         fetch(url, {
             method: 'POST',
@@ -674,6 +892,23 @@
 
     window.closeAddBudgetModal = function() {
         document.getElementById('addBudgetModal').classList.remove('modal-open');
+        
+        // Clear the budget table
+        const budgetTableBody = document.getElementById('budget-table').querySelector('tbody');
+        budgetTableBody.innerHTML = '';
+
+        // Reset the summary fields
+        document.getElementById('sum_of_items').value = '';
+        document.getElementById('additional_fee').value = '';
+        document.getElementById('net_contract').value = '';
+        document.getElementById('vat').value = '';
+        document.getElementById('gross_contract').value = '';
+
+        // Optionally, reset the form itself
+        document.getElementById('add-budget-form').reset();
     }
+
+
+
 </script>
 {% endblock %}

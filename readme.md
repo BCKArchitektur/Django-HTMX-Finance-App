@@ -1,11 +1,22 @@
-../venv-djhtmx/Scripts/activate.ps1
+Starting the server:
+
+Run the following 2 commands in the terminal below to start the server 
+
+venv\Scripts\activate.ps1
+python manage.py runserver 0.0.0.0:9000
 
 
-pip install requirements
 
 
 
-PS C:\Users\jsskr\Documents\GitHub\Django-HTMX-Finance-App\jstoolchain> npm run tailwind-watch
+
+
+
+Starting tailwind server:
+
+    npm run tailwind-watch
+
+
 
 
 step 1 - create a venv 
@@ -27,3 +38,5 @@ npm install daisyui
 
 
 npm run tailwind-watch
+
+

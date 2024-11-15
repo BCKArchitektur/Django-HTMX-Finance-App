@@ -143,8 +143,8 @@ def projects(request):
                 return redirect('projects')
 
     context = {
-        'projects': projects,
-        'clients': clients,
+        'projects': projects.order_by('-project_no'),
+        'clients': clients.order_by('-firm_name'),
         'project_form': project_form,
         'client_form': client_form,
     }
@@ -172,45 +172,13 @@ def delete_client(request, client_id):
 
 
 
-
-# @login_required
-# def edit_project(request, project_id):
-#     project = get_object_or_404(Project, id=project_id)
-#     contracts = project.contract.all()
-#     clients = Client.objects.all()
-#     users = User.objects.all()
-#     contract_form = ContractForm()
-#     section_library = SectionLibrary.objects.all()  # Add this line to fetch all sections from the library
-#     invoices = Invoice.objects.filter(project=project)
-
-#     if request.method == 'POST':
-#         if 'project_name' in request.POST:
-#             return handle_project_form(request, project)
-#         elif 'contract_name' in request.POST and not request.POST.get('contract_id'):
-#             return handle_new_contract_form(request, project)
-#         elif request.POST.get('contract_id'):
-#             return handle_existing_contract_form(request, project)
-#         elif 'user' in request.POST:
-#             updated_users = request.POST.getlist('user')
-#             handle_user_updates(project, updated_users)
-#     else:
-#         form = ProjectForm(instance=project)
-
-#     context = {
-#         'form': form,
-#         'project': project,
-#         'contracts': contracts,
-#         'contract_form': contract_form,
-#         'clients': clients,
-#         'users': users,
-#         'section_library': section_library, 
-#         'invoices': invoices
-#     }
-#     return render(request, 'tracker/edit_project.html', context)
-
 @login_required
 def edit_project(request, project_id):
     project = get_object_or_404(Project, id=project_id)
+
+    # Fetch all projects to pass to the context
+    all_projects = Project.objects.all()
+
     contracts = project.contract.all()
     clients = Client.objects.all()
     users = User.objects.all()
@@ -242,8 +210,9 @@ def edit_project(request, project_id):
         'clients': clients,
         'users': users,
         'section_library': section_library, 
-        'invoices': invoices,
+        'invoices': invoices.order_by('-created_at'),
         'vat_percentages': vat_percentages,  # Pass VAT percentages to the template
+        'all_projects': all_projects
     }
     return render(request, 'tracker/edit_project.html', context)
 
@@ -306,6 +275,8 @@ def handle_project_form(request, project):
     return redirect('edit_project', project_id=project.id)
 
 
+
+
 def handle_existing_contract_form(request, project):
     print("Request received for handling existing contract form.")
     
@@ -335,7 +306,7 @@ def handle_existing_contract_form(request, project):
                     section_name = section_data['section_name']
                     section_billed_hourly = section_data.get('section_billed_hourly', False)
                     
-                    # Create a new section
+                    # Create or retrieve a section
                     section = Section.objects.create(
                         section_name=section_name,
                         section_billed_hourly=section_billed_hourly
@@ -346,17 +317,43 @@ def handle_existing_contract_form(request, project):
                     items_to_keep = []
 
                     for item_data in section_data['items']:
-                        Item_name = item_data['Item_name']
+                        item_id = item_data.get('id')  # Use the item ID from the data
+                        print(f"Processing item with ID: {item_id}")
+                        
                         description = item_data.get('description', '')  # Handle description
                         
-                        # Create a new item
-                        item = Item.objects.create(
-                            Item_name=Item_name,
-                            description=description
-                        )
+                        # Initialize item
+                        item = None
+                        
+                        if item_id:
+                            # Retrieve the existing item by ID
+                            item = Item.objects.filter(id=item_id).first()
+                            
+                            if item:
+                                print(f"Existing item found with ID: {item_id}. Updating item.")
+                                # Update the existing item
+                                item.Item_name = item_data['Item_name']  # Update the item name if it has changed
+                                item.description = description
+                                item.quantity = item_data.get('quantity', item.quantity)
+                                item.unit = item_data.get('unit', item.unit)
+                                item.rate = item_data.get('rate', item.rate)
+                                item.save()
+                            else:
+                                print(f"No existing item found with ID: {item_id}. Creating new item.")
+                        
+                        if not item:
+                            # Create a new item if no existing item found or if item_id is None
+                            item = Item.objects.create(
+                                Item_name=item_data['Item_name'],
+                                description=description,
+                                quantity=item_data.get('quantity', 0),
+                                unit=item_data.get('unit', 'Std'),
+                                rate=item_data.get('rate', 0.0)
+                            )
+                        
                         items_to_keep.append(item)
 
-                        # Preserve users for the new item
+                        # Preserve users for the new or existing item
                         existing_users = set(item.users.all())
                         for user in existing_users:
                             item.users.add(user)
@@ -395,6 +392,8 @@ def handle_existing_contract_form(request, project):
         messages.error(request, f"Error updating contract: {contract_form.errors}")
 
     return redirect('edit_project', project_id=project.id)
+
+
 
 
 
@@ -560,23 +559,25 @@ def log_create_compact(request):
     form = Hiddenform(request.POST or None, user=request.user)
     if request.method == 'POST' and form.is_valid():
         log_project_name = form.cleaned_data['log_project_name']
-        log_contract_name = form.cleaned_data['log_contract']
+        log_contract_id = form.cleaned_data['log_contract'].replace(",", "") # Use the contract ID
         log_tasks = form.cleaned_data['log_tasks']
-        log_section = form.cleaned_data['log_section']
-        log_Item = form.cleaned_data['log_Item']
+        log_section_id = form.cleaned_data['log_section'].replace(",", "") # Use the section ID
+        print(f"log_section_id: {log_section_id}")  # Debugging line
+        log_item_id = form.cleaned_data['log_Item'].replace(",", "")  # Use the item ID
         log_time = form.cleaned_data['log_time']
         log_timestamps = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).strftime('%Y-%m-%d %H:%M:%S')
         
+        # Fetch by ID
         log_project = get_object_or_404(Project, project_name=log_project_name)
-        log_contract = get_object_or_404(Contract, contract_name=log_contract_name)
-        log_section = get_object_or_404(Section, section_name=log_section)
-        log_Item = get_object_or_404(Item, Item_name=log_Item)
+        log_contract = get_object_or_404(Contract, id=log_contract_id)  # Fetch by ID instead of name
+        log_section = get_object_or_404(Section, id=log_section_id)  # Fetch by ID instead of name
+        log_item = get_object_or_404(Item, id=log_item_id)  # Fetch by ID instead of name
 
         log_entry = Logs.objects.create(
             log_project_name=log_project_name,
             log_contract=log_contract,
             log_section=log_section,
-            log_Item=log_Item,
+            log_Item=log_item,
             log_time=log_time,
             log_timestamps=log_timestamps,
             log_tasks=log_tasks,
@@ -596,6 +597,7 @@ def log_create_compact(request):
         'employee': employee,
     }
     return render(request, 'tracker/log_create_compact.html', context)
+
 
 
 @login_required
@@ -634,10 +636,16 @@ def log_create(request):
         log_contract = form.cleaned_data['log_contract']
         log_tasks = form.cleaned_data['log_tasks']
         log_section = form.cleaned_data['log_section']
+        print(f"log_section: {log_section}")  # Debugging line
         log_Item = form.cleaned_data['log_Item']
         log_time = form.cleaned_data['log_time']
-        log_timestamps = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).strftime('%Y-%m-%d %H:%M:%S')
 
+
+        # Get the submitted date and keep the current time
+        submitted_date = form.cleaned_data['log_date'] or today  # Fallback to today's date if empty
+        current_time = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).strftime('%H:%M:%S')
+        log_timestamps = f"{submitted_date} {current_time}"
+        
         # Create the log entry
         log_entry = Logs.objects.create(
             log_project_name=log_project_name,
@@ -662,13 +670,24 @@ def log_create(request):
             oldest_preset = user_presets.order_by('id').first()
             oldest_preset.delete()
 
-        ProjectPreset.objects.create(
+        # Check if an existing preset with the same values already exists
+        existing_preset = ProjectPreset.objects.filter(
             user=request.user,
             project=project,
             default_contract=default_contract,
             default_section=default_section,
-            default_Item=default_Item,
-        )
+            default_Item=default_Item
+        ).exists()
+
+        # Only create a new preset if no existing one is found
+        if not existing_preset:
+            ProjectPreset.objects.create(
+                user=request.user,
+                project=project,
+                default_contract=default_contract,
+                default_section=default_section,
+                default_Item=default_Item,
+            )
 
         return redirect('log_create')
     else:
@@ -680,7 +699,8 @@ def log_create(request):
         'total_hours_today': total_hours_today,
         'hours_assigned_today': hours_assigned_today,
         'progress_percentage': progress_percentage,
-        'projects': projects,
+        'projects': projects.order_by('-project_no'),
+        'date_override': employee.date_override,
     }
     return render(request, 'tracker/log_create.html', context)
 
@@ -732,92 +752,6 @@ def add_project(request):
 
 
 
-# def load_contract_data(request):
-#     contract_id = request.GET.get('contract_id')
-#     contract = get_object_or_404(Contract, id=contract_id)
-
-#     users = list(User.objects.all().values('id', 'username'))
-#     sections = contract.section.all()
-#     section_data = []
-
-#     for section in sections:
-#         items = section.Item.all()
-#         item_data = [{
-#             'id': item.id,
-#             'Item_name': item.Item_name,
-#             'description': item.description,
-#             'quantity': item.quantity,
-#             'unit': item.unit,
-#             'rate': item.rate,
-#             'total': item.total,
-#             'users': list(item.users.values_list('id', flat=True)),
-#             'tasks': list(item.tasks.values('id', 'task_name'))
-#         } for item in items]
-#         section_data.append({
-#             'section_name': section.section_name,
-#             'section_billed_hourly': section.section_billed_hourly,
-#             'items': item_data
-#         })
-
-#     contract_data = {
-#         'contract_name': contract.contract_name,
-#         'users': users,
-#         'sections': section_data,
-#         'additional_fee_percentage': contract.additional_fee_percentage  # Include additional_fee_percentage
-#     }
-
-#     return JsonResponse(contract_data)
-
-# def load_contract_data(request):
-#     contract_id = request.GET.get('contract_id')
-#     contract = get_object_or_404(Contract, id=contract_id)
-#     project_id = contract.project_set.first().id  # Assuming a contract belongs to at least one project
-
-#     # Fetch all previous invoices for this project
-#     previous_invoices = Invoice.objects.filter(project_id=project_id)
-
-#     users = list(User.objects.all().values('id', 'username'))
-#     sections = contract.section.all()
-#     section_data = []
-
-#     for section in sections:
-#         items = section.Item.all()
-#         item_data = []
-
-#         for item in items:
-#             # Calculate the total provided quantity from previous invoices
-#             total_provided_quantity = sum(
-#                 invoice.provided_quantities.get(str(item.id), {}).get('quantity', 0)
-#                 for invoice in previous_invoices
-#             )
-#             available_quantity = item.quantity - total_provided_quantity
-#             item_data.append({
-#                 'id': item.id,
-#                 'Item_name': item.Item_name,
-#                 'description': item.description,
-#                 'quantity': item.quantity,
-#                 'available_quantity': available_quantity,
-#                 'unit': item.unit,
-#                 'rate': item.rate,
-#                 'total': item.total,
-#                 'users': list(item.users.values_list('id', flat=True)),
-#                 'tasks': list(item.tasks.values('id', 'task_name'))
-#             })
-        
-#         section_data.append({
-#             'section_name': section.section_name,
-#             'section_billed_hourly': section.section_billed_hourly,
-#             'items': item_data
-#         })
-
-#     contract_data = {
-#         'contract_name': contract.contract_name,
-#         'users': users,
-#         'sections': section_data,
-#         'additional_fee_percentage': contract.additional_fee_percentage
-#     }
-
-#     return JsonResponse(contract_data)
 
 
 def load_contract_data(request):
@@ -954,44 +888,6 @@ def add_users(request):
 
 
 
-# @csrf_exempt
-# @login_required
-# def add_budget(request):
-#     if request.method == 'POST':
-#         contract_id = request.POST.get('contract_id')
-#         if not contract_id:
-#             return JsonResponse({'error': 'Missing contract ID'}, status=400)
-
-#         contract = get_object_or_404(Contract, id=contract_id)
-
-#         additional_fee_percentage = request.POST.get('additional_fee_percentage')
-#         try:
-#             contract.additional_fee_percentage = float(additional_fee_percentage)
-#         except (ValueError, TypeError):
-#             contract.additional_fee_percentage = 0.0
-
-#         for section in contract.section.all():
-#             for item in section.Item.all():
-#                 quantity_key = f'quantity_{item.id}'
-#                 unit_key = f'unit_{item.id}'
-#                 rate_key = f'rate_{item.id}'
-#                 if quantity_key in request.POST and rate_key in request.POST:
-#                     try:
-#                         quantity = float(request.POST[quantity_key])
-#                         unit = request.POST[unit_key]
-#                         rate = float(request.POST[rate_key])
-#                         item.quantity = quantity
-#                         item.unit = unit
-#                         item.rate = rate
-#                         item.total = quantity * rate
-#                         item.save()
-#                     except (ValueError, Item.DoesNotExist):
-#                         continue
-
-#         contract.save()
-#         return JsonResponse({'status': 'success'})
-
-#     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 @csrf_exempt
 @login_required
@@ -1025,14 +921,15 @@ def add_budget(request):
                 rate_key = f'rate_{item.id}'
                 if quantity_key in request.POST and rate_key in request.POST:
                     try:
-                        quantity = float(request.POST[quantity_key])
+                        quantity = parse_german_number((request.POST[quantity_key]))
                         unit = request.POST[unit_key]
-                        rate = float(request.POST[rate_key])
+                        rate = parse_german_number((request.POST[rate_key]))
                         item.quantity = quantity
                         item.unit = unit
                         item.rate = rate
                         item.total = quantity * rate
                         item.save()
+                        print(f"Received item details: quantity={quantity}, unit={unit}, rate={rate}")  # Debug line
                     except (ValueError, Item.DoesNotExist):
                         continue
 
@@ -1044,6 +941,12 @@ def add_budget(request):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
+def parse_german_number(number_string):
+    try:
+        # Convert German-style number (1.000,50) to Python float (1000.50)
+        return float(number_string.replace('.', '').replace(',', '.'))
+    except ValueError:
+        return 0.0
 
 
 
@@ -1098,8 +1001,6 @@ def delete_contract(request, contract_id):
 
 
 
-
-
 def generate_word_document(request, contract_id):
     template_name = request.GET.get('template_name', 'Kost_De.docx')
     valid_until = request.GET.get('valid_until')
@@ -1112,7 +1013,7 @@ def generate_word_document(request, contract_id):
     client = project.client_name  # Assuming client_name is a related model, not just a field
 
     # Construct the template path using the template name from the URL parameter
-    template_path = os.path.join(settings.BASE_DIR, 'tracker', 'templates', 'tracker', 'invoice_templates', template_name)
+    template_path = os.path.join(r'Z:\02_Zubehör\3_Vorlagen\BCK App Templates', template_name)
     if not os.path.exists(template_path):
         raise FileNotFoundError(f"Template not found at {template_path}")
 
@@ -1126,59 +1027,97 @@ def generate_word_document(request, contract_id):
     postal_code = getattr(client, 'postal_code', 'Unknown')
     country = getattr(client.country, 'name', 'Unknown') if hasattr(client, 'country') else 'Unknown'
 
-    # Calculate contract details
+    # Calculate contract details with serial numbers
     contract_sections = []
-    sum_of_items = 0
+    sum_of_items = Decimal(0)  # Ensure this is a Decimal for accurate calculations
+
+    # Initialize section counter
+    section_counter = 1
+
+    # Flag for checking if the template is in English
+    is_english_template = template_name in ['BCK_En.docx', 'Kost_En.docx']
 
     for section in contract.section.all():
-        section_total = 0
+        section_total = Decimal(0)  # Initialize as Decimal
         items = []
+
+        # Initialize item counter for the current section
+        item_counter = 1
+
         for item in section.Item.all():
-            item_total = item.quantity * item.rate
+            item_total = Decimal(item.quantity) * Decimal(item.rate)  # Convert to Decimal
+
+            # Check if template is in English and replace units if needed
+            unit = item.unit
+            if is_english_template:
+                if unit == 'Psch':
+                    unit = 'Lumpsum'
+                elif unit == 'Stk':
+                    unit = 'Piece'
+                elif unit == 'Std.':
+                    unit = 'Hour'
+
             item_data = {
+                'Item_serial': f"{section_counter}.{item_counter}",  # Serial number for item
                 'Item_name': item.Item_name,
                 'quantity': item.quantity,
-                'unit': item.unit,
-                'rate': f"{item.rate:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                'unit': unit,  # Use the modified unit value
+                'rate': f"{Decimal(item.rate):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
                 'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
             }
             if item.description:
                 item_data['description'] = item.description
             items.append(item_data)
             section_total += item_total
+
+            # Increment item counter
+            item_counter += 1
         
         contract_sections.append({
+            'section_serial': section_counter,  # Serial number for section
             'section_name': section.section_name,
             'net_section': f"{section_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
             'Item': items
         })
         sum_of_items += section_total
 
-    additional_fee_percentage = contract.additional_fee_percentage
-    additional_fee_value = (sum_of_items * additional_fee_percentage) / 100
+        # Increment section counter
+        section_counter += 1
+
+    additional_fee_percentage = Decimal(contract.additional_fee_percentage)
+    additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
     net_contract = sum_of_items + additional_fee_value
-    tax_rate = 0.19  # 19% tax
-    tax = net_contract * tax_rate
-    gross_contract = net_contract + tax
+
+    # Convert vat_percentage to float
+    vat_percentage = float(contract.vat_percentage) / 100
+    tax = float(net_contract) * vat_percentage
+    gross_contract = net_contract + Decimal(tax)
 
     # Context for template
     context = {
+        # other context data
         'contract_name': contract.contract_name,
         'project_name': project.project_name,
         'project_no': project.project_no,
         'client_name': client_name,
         'client_firm': firm_name,
-        'client_address': f"{street_address},\n{city}, {postal_code},\n{country}",
+        'client_address': f"{street_address}\n{postal_code} {city} \n{country}",
         'contract_sections': contract_sections,
         'sum_of_items': f"{sum_of_items:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        'additional_fee_percentage': f"{additional_fee_percentage:.2f}",
-        'additional_fee_value': f"{additional_fee_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'net_contract': f"{net_contract:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        'tax': f"{tax:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'tax': f"{Decimal(tax):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'gross_contract': f"{gross_contract:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'today_date': date.today().strftime('%d.%m.%Y'),
-        'valid_until': valid_until if not valid_until else date.fromisoformat(valid_until).strftime('%d.%m.%Y')  # Add valid until date to context
+        'valid_until': valid_until if not valid_until else date.fromisoformat(valid_until).strftime('%d.%m.%Y'),
+        'vat_percentage': f"{vat_percentage * 100:.2f}",  # Pass VAT percentage to the template if needed
     }
+
+    # Only add the additional fee to the context if it's greater than 0
+    if additional_fee_percentage > 0:
+        context.update({
+            'additional_fee_percentage': f"{additional_fee_percentage:.2f}",
+            'additional_fee_value': f"{additional_fee_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        })
 
     # Print the context for debugging
     import pprint
@@ -1189,47 +1128,29 @@ def generate_word_document(request, contract_id):
 
     # Create HTTP response
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-    response['Content-Disposition'] = f'attachment; filename=project_estimate_{project.project_no}.docx'
+    if is_english_template and template_name in ['Kost_En.docx']:
+        response['Content-Disposition'] = f'attachment; filename=Kost_Quote_{project.project_no}_{project.project_name}.docx'
+    elif is_english_template and template_name in ['BCK_En.docx']:
+        response['Content-Disposition'] = f'attachment; filename=BCK_Quote_{project.project_no}_{project.project_name}.docx'
+    elif is_english_template =='False' and template_name in ['BCK_De.docx']:
+        response['Content-Disposition'] = f'attachment; filename=BCK_Angebot_{project.project_no}_{project.project_name}.docx'
+    else:
+        response['Content-Disposition'] = f'attachment; filename=Kost_Angebot_{project.project_no}_{project.project_name}.docx'
     doc.save(response)
 
     return response
 
 
-# @login_required
-# def create_invoice(request, project_id):
-#     project = get_object_or_404(Project, id=project_id)
-#     contracts = project.contract.all()
-    
-#     # Assuming the user will select a contract, and you'll fetch the first contract as a default
-#     selected_contract = contracts.first() if contracts else None
-#     additional_fee_percentage = selected_contract.additional_fee_percentage if selected_contract else 0
 
-#     if request.method == 'POST':
-#         form = InvoiceForm(request.POST, project=project)
-#         if form.is_valid():
-#             invoice = form.save(commit=False)
-#             invoice.project = project
-#             invoice.provided_quantities = json.loads(request.POST.get('provided_quantities'))
-#             invoice.save()
-#             # Redirect to the edit project page with the invoice tab open
-#             return HttpResponseRedirect(reverse('edit_project', args=[project_id]) + '?tab=invoices')
-#         else:
-#             return JsonResponse({'status': 'error', 'errors': form.errors})
-#     else:
-#         form = InvoiceForm(project=project)
-    
-#     return render(request, 'tracker/create_invoice.html', {
-#         'form': form, 
-#         'project': project, 
-#         'contracts': contracts, 
-#         'additional_fee_percentage': additional_fee_percentage
-#     })
+
+
+from django.contrib import messages
 
 @login_required
 def create_invoice(request, project_id):
     project = get_object_or_404(Project, id=project_id)
     contracts = project.contract.all()
-    
+
     # Assuming the user will select a contract, and you'll fetch the first contract as a default
     selected_contract = contracts.first() if contracts else None
     additional_fee_percentage = selected_contract.additional_fee_percentage if selected_contract else 0
@@ -1242,20 +1163,25 @@ def create_invoice(request, project_id):
             invoice.project = project
             invoice.provided_quantities = json.loads(request.POST.get('provided_quantities'))
             invoice.save()
-            # Redirect to the edit project page with the invoice tab open
+
+            # Add a success message
+            messages.success(request, 'Invoice created successfully.')
+
+            # Redirect to the edit project page with the invoices tab open
             return HttpResponseRedirect(reverse('edit_project', args=[project_id]) + '?tab=invoices')
         else:
             return JsonResponse({'status': 'error', 'errors': form.errors})
     else:
         form = InvoiceForm(project=project)
-    
+
     return render(request, 'tracker/create_invoice.html', {
-        'form': form, 
-        'project': project, 
-        'contracts': contracts, 
+        'form': form,
+        'project': project,
+        'contracts': contracts,
         'additional_fee_percentage': additional_fee_percentage,
         'vat_percentage': vat_percentage  # Pass VAT percentage to the template
     })
+
 
 
 
@@ -1274,111 +1200,9 @@ def delete_invoice(request, invoice_id):
     invoice = get_object_or_404(Invoice, id=invoice_id)
     project_id = invoice.project.id  # Assuming an invoice belongs to a project
     invoice.delete()
-    return redirect('edit_project', project_id=project_id)
 
-# # View for getting invoice details
-# @login_required
-# def view_invoice(request, invoice_id):
-#     invoice = get_object_or_404(Invoice, id=invoice_id)
-#     project = invoice.project
-#     contract = invoice.contract
-#     provided_quantities = [
-#         {
-#             'name': item_name,
-#             'quantity': details['quantity'],
-#             'rate': details['rate'],
-#             'unit': 'unit'  # Replace 'unit' with actual unit if available
-#         }
-#         for item_name, details in invoice.provided_quantities.items()
-#     ]
-
-#     data = {
-#         'project_name': project.project_name,
-#         'contract_name': contract.contract_name,
-#         'invoice_net': invoice.invoice_net,
-#         'amount_received': invoice.amount_received,
-#         'provided_quantities': provided_quantities
-#     }
-#     return JsonResponse(data)
-
-
-
-# @login_required
-# def view_invoice(request, invoice_id):
-#     try:
-#         invoice = get_object_or_404(Invoice, id=invoice_id)
-#         project = invoice.project
-#         contract = invoice.contract
-
-#         # Assume provided_quantities is a JSON string field in the Invoice model
-#         try:
-#             provided_quantities_data = invoice.provided_quantities
-#         except ValueError as e:
-#             print(f"Error parsing provided_quantities: {e}")
-#             return JsonResponse({'error': 'Invalid data format for provided quantities'}, status=400)
-
-#         provided_quantities = []
-#         sum_of_items = 0
-#         for item_id, details in provided_quantities_data.items():
-#             try:
-#                 # Fetch the item using the item ID
-#                 item = Item.objects.get(id=item_id)
-                
-#                 # Find the section to which this item belongs within the contract
-#                 section = Section.objects.filter(Item=item, contract=contract).first()
-#                 section_name = section.section_name if section else "Unknown Section"
-
-#                 total = details['rate'] * details['quantity']
-#                 sum_of_items += total
-
-#                 provided_quantities.append({
-#                     'section_name': section_name,
-#                     'item_name': item.Item_name,
-#                     'unit': item.unit,
-#                     'rate': details['rate'],
-#                     'quantity': details['quantity'],
-#                     'total': total,
-#                 })
-#             except Item.DoesNotExist:
-#                 print(f"Item with id {item_id} does not exist.")
-#                 total = details['rate'] * details['quantity']
-#                 sum_of_items += total
-
-#                 provided_quantities.append({
-#                     'section_name': 'Unknown Section',
-#                     'item_name': f'Unknown Item (ID: {item_id})',
-#                     'unit': 'Unknown Unit',
-#                     'rate': details['rate'],
-#                     'quantity': details['quantity'],
-#                     'total': total,
-#                 })
-
-#         # Calculate the additional fee, invoice net, VAT, and gross invoice values
-#         additional_fee_percentage = contract.additional_fee_percentage or 0
-#         additional_fee_value = (sum_of_items * additional_fee_percentage) / 100
-#         invoice_net = sum_of_items + additional_fee_value
-#         tax_value = invoice_net * 0.19  # Assuming VAT is 19%
-#         invoice_gross = invoice_net + tax_value
-
-#         data = {
-#             'project_name': project.project_name,
-#             'contract_name': contract.contract_name,
-#             'additional_fee_percentage': additional_fee_percentage,
-#             'provided_quantities': provided_quantities,
-#             'invoice_net': invoice_net,
-#             'tax_value': tax_value,
-#             'invoice_gross': invoice_gross,
-#         }
-
-#         return JsonResponse(data)
-
-#     except Http404 as e:
-#         print(f"Invoice or related data not found: {e}")
-#         return JsonResponse({'error': 'Invoice not found'}, status=404)
-
-#     except Exception as e:
-#         print(f"An unexpected error occurred: {e}")
-#         return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+    # Redirect to the edit project page with the invoices tab open
+    return redirect(reverse('edit_project', args=[project_id]) + '?tab=invoices')
 
 
 
@@ -1454,6 +1278,7 @@ def view_invoice(request, invoice_id):
             'tax_value': str(tax_value),
             'invoice_gross': str(invoice_gross),
             'vat_percentage': str(vat_percentage),  # Include VAT percentage in the response
+            'amount_received':invoice.amount_received
         }
 
         return JsonResponse(data)
@@ -1467,6 +1292,7 @@ def view_invoice(request, invoice_id):
         return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
 
 
+from django.utils.dateparse import parse_date
 
 def download_invoice(request, invoice_id):
     # Fetch the invoice, project, and contract
@@ -1475,70 +1301,140 @@ def download_invoice(request, invoice_id):
     contract = invoice.contract
     client = project.client_name
 
+    # Get the template name and date range from the request
+    template_name = request.GET.get('invoice_template_name', 'inv_BCK_De.docx')
+    print(f"Template name from modal: {template_name}")
+    
+    from_date_str = request.GET.get('from_date')
+    to_date_str = request.GET.get('to_date')
+
+    # Parse the date strings into date objects
+    from_date = parse_date(from_date_str) if from_date_str else None
+    to_date = parse_date(to_date_str) if to_date_str else None
+
+
+    # Initialize the sections dictionary and sum_of_items
+    sections = {}
+    sum_of_items = Decimal('0.00')
+
+    # Section counter
+    section_counter = 1
+
     # Fetch provided quantities and related items and sections
     provided_quantities = invoice.provided_quantities  # Assuming this is a dictionary
-    items = []
-    sum_of_items = 0
-    section_totals = {}
-    
     for item_id, details in provided_quantities.items():
         item = get_object_or_404(Item, id=item_id)
         section = item.section_set.first()  # Assuming each item belongs to one section
         section_name = section.section_name if section else "Unknown Section"
-        item_total = details['quantity'] * details['rate']
-        
-        items.append({
-            'section_name': section_name,
+        item_total = Decimal(details['quantity']) * Decimal(details['rate'])
+
+        if section_name not in sections:
+            sections[section_name] = {
+                'section_number': section_counter,
+                'items': []
+            }
+            section_counter += 1
+
+        # Calculate item number (e.g., 1.1, 1.2, 2.1, etc.)
+        item_number = f"{sections[section_name]['section_number']}.{len(sections[section_name]['items']) + 1}"
+
+        sections[section_name]['items'].append({
+            'item_number': item_number,
             'item_name': item.Item_name,
             'unit': item.unit,
-            'rate': details['rate'],
+            'rate': f"{Decimal(details['rate']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
             'quantity': details['quantity'],
-            'total': item_total,
+            'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'description': item.description if item.description else None,
         })
-        
-        sum_of_items += item_total
-        section_totals[section_name] = section_totals.get(section_name, 0) + item_total
 
-    additional_fee_percentage = contract.additional_fee_percentage
-    additional_fee_value = (sum_of_items * additional_fee_percentage) / 100
+        sum_of_items += item_total
+
+    # Calculate additional fee and taxes
+    additional_fee_percentage = Decimal(contract.additional_fee_percentage)
+    additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
     invoice_net = sum_of_items + additional_fee_value
-    tax_value = invoice_net * 0.19  # Assuming 19% VAT
+    vat_percentage = Decimal(contract.vat_percentage) / Decimal(100)  # Use VAT from contract
+    tax_value = invoice_net * vat_percentage
     invoice_gross = invoice_net + tax_value
 
-    # Fetch all previous invoices for the same project
-    previous_invoices = Invoice.objects.filter(project=project).exclude(id=invoice_id)
-    previous_invoices_data = [
-        {
-            'invoice_number': inv.title,
-            'invoice_net': inv.invoice_net,
-            'invoice_gross': inv.invoice_net + (inv.invoice_net * 0.19),  # Assuming 19% VAT
-            'amount_paid': inv.amount_received,
-        }
-        for inv in previous_invoices
-    ]
+    # Fetch all previous invoices for the same project, based on created_at comparison
+    previous_invoices = Invoice.objects.filter(
+        project=project,
+        created_at__lt=invoice.created_at  # Only include invoices created before the current invoice
+    ).order_by('created_at')
+
+    # Prepare previous invoices data and calculate totals
+    total_invoice_gross = Decimal('0.00')
+    total_amount_paid = Decimal('0.00')
+
+    previous_invoices_data = []
+
+    for inv in previous_invoices:
+        inv_gross = Decimal(inv.invoice_net) * (1 + vat_percentage)
+        inv_paid = Decimal(inv.amount_received)
+
+        total_invoice_gross += inv_gross
+        total_amount_paid += inv_paid
+
+        previous_invoices_data.append({
+            'invoice_title': inv.title,
+            'created_at': timezone.localtime(inv.created_at).strftime('%d.%m.%Y'),  # German format with time
+            'invoice_net': f"{Decimal(inv.invoice_net):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'invoice_tax%': vat_percentage,
+            'invoice_tax': f"{(Decimal(inv.invoice_net) * vat_percentage):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'invoice_gross': f"{inv_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'amount_paid': f"{inv_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        })
+
+    # Add the current invoice's gross to the total
+    total_invoice_gross += invoice_gross
+
+    # Calculate the amount to be paid (excluding the current invoice's amount received)
+    invoice_tobepaid = total_invoice_gross - total_amount_paid
 
     # Prepare the context for the template
     context = {
         'client_name': client.client_name if client else "Unknown",
-        'client_address': f"{client.street_address}, {client.city}, {client.postal_code}, {client.country.name}" if client else "Unknown",
-        'created_at': invoice.created_at.strftime('%d %B %Y'),
+        'client_address': f"{client.street_address}\n{client.postal_code} {client.city} \n{client.country.name}",
+        'created_at': timezone.localtime(invoice.created_at).strftime('%d.%m.%Y'),  # German format with time
         'project_no': project.project_no,
         'project_name': project.project_name,
         'invoice_title': invoice.title,
         'contract_name': contract.contract_name,
-        'items': items,
+        'sections': sections,  # Organized by section
         'sum_of_items': f"{sum_of_items:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        'additional_fee_percentage': f"{additional_fee_percentage:.2f}",
-        'additional_fee_value': f"{additional_fee_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'invoice_net': f"{invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        'tax_value': f"{tax_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'vat_percentage': vat_percentage,  # Pass this to template to multiply by 100
+        'tax': f"{tax_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'invoice_gross': f"{invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        'previous_invoices': previous_invoices_data,  # Table of previous invoices
+        'previous_invoices': previous_invoices_data,  # Ensure this is always a list
+        'total_invoice_gross': f"{total_invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'total_amount_paid': f"{total_amount_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'invoice_tobepaid': f"{invoice_tobepaid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'invoice_type':invoice.invoice_type,
+        'from_date': from_date.strftime('%d.%m.%Y') if from_date else None,
+        'to_date': to_date.strftime('%d.%m.%Y') if to_date else None,
+        'client_firm':client.firm_name
     }
 
+    if additional_fee_percentage > 0:
+        context.update({
+            'additional_fee_percentage': f"{additional_fee_percentage:.2f}",
+            'additional_fee_value': f"{additional_fee_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        })
+
+    # Print context for debugging
+    import pprint
+    pprint.pprint(context)
+
     # Path to the invoice template
-    template_path = os.path.join(settings.BASE_DIR, 'tracker', 'templates', 'tracker', 'invoice_templates', 'Invoice_Template.docx')
-    
+    # template_path = r'Z:\02_Zubehör\3_Vorlagen\BCK App Templates\Invoice_Template.docx'
+
+    # Construct the template path using the selected template name from the request
+    template_path = os.path.join(r'Z:\02_Zubehör\3_Vorlagen\BCK App Templates', template_name)
+
+
     # Load the template
     doc = DocxTemplate(template_path)
 
@@ -1547,7 +1443,7 @@ def download_invoice(request, invoice_id):
 
     # Create the HTTP response with the rendered document
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-    response['Content-Disposition'] = f'attachment; filename=invoice_{invoice.id}.docx'
+    response['Content-Disposition'] = f'attachment; filename=invoice_{invoice.title}_{invoice.project}.docx'
     
     # Save the document to the response
     doc.save(response)
@@ -1555,11 +1451,21 @@ def download_invoice(request, invoice_id):
     return response
 
 
+
+
+
 def record_payment(request, invoice_id):
     invoice = get_object_or_404(Invoice, id=invoice_id)
 
     if request.method == 'POST':
         amount_received = float(request.POST.get('amount_received'))
-        invoice.amount_received += amount_received
+        invoice.amount_received = amount_received
         invoice.save()
-        return redirect('edit_project', project_id=invoice.project.id)
+
+        # Add a success message
+        messages.success(request, 'Payment recorded successfully.')
+
+        # Redirect to the project page with the invoices tab active
+        return redirect(reverse('edit_project', args=[invoice.project.id]) + '?tab=invoices')
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)

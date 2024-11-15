@@ -3,6 +3,25 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Enable localization
+USE_L10N = True
+USE_I18N = True
+
+# Set the default locale (German in this case)
+LANGUAGE_CODE = 'de'
+
+# Set the time zone
+TIME_ZONE = 'Europe/Berlin'
+
+
+# Enable localization for formats
+USE_THOUSAND_SEPARATOR = True
+
+# Set decimal and thousand separators for German format
+DECIMAL_SEPARATOR = ','
+THOUSAND_SEPARATOR = '.'
+NUMBER_GROUPING = 3  # Group digits into thousands
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/

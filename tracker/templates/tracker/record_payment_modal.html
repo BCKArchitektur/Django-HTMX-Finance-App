@@ -1,5 +1,6 @@
 <div id="recordPaymentModal" class="modal">
     <div class="modal-box max-w-5xl">
+        
         <h3 class="font-bold text-lg m-4">Record Payment</h3>
         <form id="record-payment-form" method="post" action="{% url 'record_payment' 0 %}">
             {% csrf_token %}
@@ -8,7 +9,7 @@
                 <input type="text" id="payment_invoice_net" class="input input-bordered w-full" readonly>
             </div>
             <div class="form-control">
-                <label class="label">VAT (19%) (€)</label>
+                <label class="label">VAT (%) (€)</label>
                 <input type="text" id="payment_vat" class="input input-bordered w-full" readonly>
             </div>
             <div class="form-control">
@@ -17,7 +18,10 @@
             </div>
             <div class="form-control">
                 <label class="label">Amount Received (€)</label>
-                <input type="number" step="0.01" name="amount_received" id="amount_received" class="input input-bordered w-full" required>
+                <div class="flex">
+                    <input type="number" step="0.01" name="amount_received" id="amount_received" class="input input-bordered w-full" required>
+                    <button type="button" class="btn btn-secondary btn-outline ml-2" onclick="copyGrossInvoice()">Copy from Invoice Gross</button>
+                </div>
             </div>
             <div class="modal-action">
                 <button type="submit" class="btn btn-primary">Save Payment</button>
@@ -44,8 +48,9 @@
             .then(data => {
                 console.log(`Fetched data:`, data);
     
+                const vatPercentage = parseFloat(data.vat_percentage) || 0;
                 const invoiceNet = parseFloat(data.invoice_net) || 0;
-                const taxValue = invoiceNet * 0.19;  // VAT is 19%
+                const taxValue = invoiceNet * vatPercentage / 100;
                 const invoiceGross = invoiceNet + taxValue;
     
                 console.log(`Calculated Values - Net: ${invoiceNet}, VAT: ${taxValue}, Gross: ${invoiceGross}`);
@@ -53,6 +58,9 @@
                 document.getElementById('payment_invoice_net').value = invoiceNet.toFixed(2);
                 document.getElementById('payment_vat').value = taxValue.toFixed(2);
                 document.getElementById('payment_invoice_gross').value = invoiceGross.toFixed(2);
+                
+                // Populate the existing amount received in the modal
+                document.getElementById('amount_received').value = parseFloat(data.amount_received).toFixed(2);
     
                 const form = document.getElementById('record-payment-form');
                 form.action = `{% url 'record_payment' 0 %}`.replace('0', invoiceId);
@@ -73,5 +81,19 @@
     function closeRecordPaymentModal() {
         console.log(`Closing Record Payment Modal`);
         document.getElementById('recordPaymentModal').classList.remove('modal-open');
+        showInvoices();  // Switch to the Invoices tab after closing the modal
+    }
+
+    function showInvoices() {
+        document.getElementById('contracts-content').style.display = 'none';
+        document.getElementById('invoices-content').style.display = 'block';
+        document.getElementById('contracts-tab').classList.remove('tab-active');
+        document.getElementById('invoices-tab').classList.add('tab-active');
+    }
+
+    function copyGrossInvoice() {
+        // Copy the value from the Invoice Gross field to the Amount Received field
+        const invoiceGross = document.getElementById('payment_invoice_gross').value;
+        document.getElementById('amount_received').value = invoiceGross;
     }
 </script>

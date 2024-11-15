@@ -18,12 +18,12 @@ class EmployeeAdmin(admin.ModelAdmin):
     list_display = (
         'user', 
         'monday', 'tuesday', 'wednesday', 'thursday', 'friday',
-        'starting_date', 'holidays'
+        'starting_date', 'date_override'
     )
     search_fields = ('user__username', 'user__email', 'salary')
 
     fieldsets = (
-        (None, {'fields': ('user',)}),
+        (None, {'fields': ('user','date_override')}),
         ('Work Schedule', {
             'fields': (
                 'hours_assigned_monday', 'hours_assigned_tuesday', 'hours_assigned_wednesday', 'hours_assigned_thursday', 'hours_assigned_friday'
@@ -74,16 +74,31 @@ class ClientAdmin(admin.ModelAdmin):
     list_display = ('client_name', 'client_mail', 'firm_name', 'street_address', 'postal_code', 'city', 'country')
     search_fields = ('client_name', 'client_mail', 'firm_name', 'city', 'country')
 
+
 # Export to Excel Function
 def export_to_excel(modeladmin, request, queryset):
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename="logs.xlsx"'
+    
     wb = Workbook()
     ws = wb.active
     ws.title = 'Logs'
-    columns = ['Project Name', 'Contract', 'Section', 'Item', 'Task', 'Time Spent', 'Timestamp', 'User']
+    
+    # Define the columns, including separate Date and Time columns
+    columns = ['Project Name', 'Contract', 'Section', 'Item', 'Task', 'Time Spent', 'Date', 'Time', 'User']
     ws.append(columns)
+    
     for obj in queryset:
+        # Split log_timestamps string into date and time
+        log_timestamp = obj.log_timestamps
+        if log_timestamp:
+            try:
+                log_date, log_time = log_timestamp.split(' ')
+            except ValueError:
+                log_date = log_time = ""
+        else:
+            log_date = log_time = ""
+
         row = [
             obj.log_project_name,
             obj.log_contract.contract_name if obj.log_contract else "",
@@ -91,10 +106,12 @@ def export_to_excel(modeladmin, request, queryset):
             obj.log_Item.Item_name if obj.log_Item else "",
             obj.log_tasks if obj.log_tasks else "",
             str(obj.log_time),
-            obj.log_timestamps if obj.log_timestamps else "",
+            log_date,
+            log_time,
             obj.user.username if obj.user else '',
         ]
         ws.append(row)
+    
     wb.save(response)
     return response
 export_to_excel.short_description = "Export Selected to Excel"
@@ -148,6 +165,9 @@ class ItemAdminForm(forms.ModelForm):
 
 class ItemAdmin(admin.ModelAdmin):
     form = ItemAdminForm
+    list_display = ('Item_name', 'description')
+    search_fields = ('Item_name', 'description')
+
 
 
 # Section Admin
@@ -167,7 +187,7 @@ class SectionAdmin(admin.ModelAdmin):
     list_display = ('section_name', 'section_billed_hourly')
     search_fields = ('section_name', 'section_billed_hourly')
 
-# admin.site.register(Section, SectionAdmin)
+admin.site.register(Section, SectionAdmin)
 
 # Contract Admin
 class ContractAdminForm(forms.ModelForm):
@@ -259,7 +279,7 @@ class TaskLibraryAdmin(admin.ModelAdmin):
 
 
 
-# admin.site.register(Item, ItemAdmin)
+admin.site.register(Item, ItemAdmin)
 
 
 
