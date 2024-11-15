@@ -118,10 +118,11 @@ class ProjectForm(forms.ModelForm):
 class ClientForm(forms.ModelForm):
     class Meta:
         model = Client
-        fields = ['client_name', 'client_mail', 'firm_name', 'street_address', 'postal_code', 'city', 'country']
+        fields = ['client_name', 'client_mail', 'client_phone', 'firm_name', 'street_address', 'postal_code', 'city', 'country']
         widgets = {
             'client_name': forms.TextInput(attrs={'class': 'input input-bordered w-full max-w-xs m-2', 'placeholder': 'Client Name'}),
             'client_mail': forms.EmailInput(attrs={'class': 'input input-bordered w-full max-w-xs m-2', 'placeholder': 'Client Email'}),
+            'client_phone': forms.TextInput(attrs={'class': 'input input-bordered w-full max-w-xs m-2', 'placeholder': 'Phone Number'}),  
             'firm_name': forms.TextInput(attrs={'class': 'input input-bordered w-full max-w-xs m-2', 'placeholder': 'Firm Name'}),
             'street_address': forms.TextInput(attrs={'class': 'input input-bordered w-full max-w-xs m-2', 'placeholder': 'Street Address'}),
             'postal_code': forms.TextInput(attrs={'class': 'input input-bordered w-full max-w-xs m-2', 'placeholder': 'Postal Code'}),
