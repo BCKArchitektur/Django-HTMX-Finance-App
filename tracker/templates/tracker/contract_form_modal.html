@@ -156,15 +156,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 
-    // Function to add hidden input to the form
-    function addHiddenInputToForm() {
-        let contractJSON = buildContractJSON();
-        let jsonInput = document.createElement('input');
-        jsonInput.type = 'hidden';
-        jsonInput.name = 'contract_json';
-        jsonInput.value = JSON.stringify(contractJSON);
-        document.getElementById('contract-form').appendChild(jsonInput);
-    }
 
     // Function to validate the contract form
     function validateContractForm() {
@@ -708,14 +699,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
 
-    // Event listener for form submission
-    document.getElementById('contract-form').addEventListener('submit', function(event) {
-        if (!validateContractForm()) {
-            event.preventDefault();
-            return false;
-        }
-        addHiddenInputToForm();
-    });
 
     // Function to add hidden input to the form
     function addHiddenInputToForm() {

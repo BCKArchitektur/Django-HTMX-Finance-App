@@ -630,28 +630,97 @@
 
 
 
-    function moveSectionUp(button) {
+    function moveSectionUp_budget(button) {
         const sectionContainer = button.closest('.section-container');
         const previousSection = sectionContainer.previousElementSibling;
 
         if (previousSection) {
             sectionContainer.parentNode.insertBefore(sectionContainer, previousSection);
+            updateContractJSON_budget(); // Update JSON after rearranging
+
         }
     }
 
-    function moveSectionDown(button) {
+    function moveSectionDown_budget(button) {
         const sectionContainer = button.closest('.section-container');
         const nextSection = sectionContainer.nextElementSibling;
 
         if (nextSection) {
             sectionContainer.parentNode.insertBefore(nextSection, sectionContainer);
+            updateContractJSON_budget(); // Update JSON after rearranging
+
         }
     }
 
 
-
+    // Function to add hidden input to the form
+    function addHiddenInputToForm() {
+        let contractJSON = buildContractJSON();
+        let jsonInput = document.createElement('input');
+        jsonInput.type = 'hidden';
+        jsonInput.name = 'contract_json';
+        jsonInput.value = JSON.stringify(contractJSON);
+        document.getElementById('contract-form').appendChild(jsonInput);
+        document.getElementById('contract-form').appendChild(jsonInput);
+    }
 
     function updateContractJSON() {
+        // Define a new contract JSON structure
+        const newContractJSON = {
+            contract_name: document.getElementById('id_contract_name').value,
+            sections: []
+        };
+
+        // Select all rows from the budget table
+        const rows = document.querySelectorAll('#budget-table tbody tr');
+
+        let currentSection = null;
+
+        rows.forEach((row) => {
+            const sectionName = row.children[1].querySelector('input').value;
+            const itemName = row.children[2].querySelector('input').value;
+            const quantity = row.querySelector(`input[name^="quantity"]`).value;
+            const unit = row.querySelector(`select[name^="unit"]`).value;
+            const rate = row.querySelector(`input[name^="rate"]`).value;
+
+            // If this row starts a new section, push the previous section to the JSON
+            if (!currentSection || currentSection.section_name !== sectionName) {
+                if (currentSection) {
+                    newContractJSON.sections.push(currentSection);
+                }
+
+                currentSection = {
+                    section_name: sectionName,
+                    section_billed_hourly: false, // Set as needed
+                    items: []
+                };
+            }
+
+            // Add the item to the current section
+            currentSection.items.push({
+                Item_name: itemName,
+                quantity: quantity,
+                unit: unit,
+                rate: rate,
+                tasks: [] // Add tasks as needed, or collect from additional fields
+            });
+        });
+
+        // Push the last section if it exists
+        if (currentSection) {
+            newContractJSON.sections.push(currentSection);
+        }
+
+        console.log("Updated Contract JSON:", JSON.stringify(newContractJSON, null, 2));
+
+        // Update the hidden contract JSON input field if used for submission
+        const jsonInput = document.querySelector('input[name="contract_json"]');
+        if (jsonInput) {
+            jsonInput.value = JSON.stringify(newContractJSON);
+        }
+    }
+
+    function updateContractJSON_budget() {
         // Define a new contract JSON structure
         const newContractJSON = {
             contract_name: document.getElementById('id_contract_name').value,
@@ -730,8 +799,22 @@
                 sectionHeader.innerHTML = `
                     <div class="section-name font-semibold">${section.section_name}</div>
                     <div>
-                        <button type="button" class="btn btn-xs btn-outline" onclick="moveSectionUp(this)">⬆</button>
-                        <button type="button" class="btn btn-xs btn-outline" onclick="moveSectionDown(this)">⬇</button>
+                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionUp_budget(this)">
+                        <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" />
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="18" y1="11" x2="12" y2="5" />
+                            <line x1="6" y1="11" x2="12" y2="5" />
+                        </svg>
+                        </button>
+                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionDown_budget(this)">
+                        <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" />
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="18" y1="13" x2="12" y2="19" />
+                            <line x1="6" y1="13" x2="12" y2="19" />
+                        </svg>                                        
+                        </button>
                     </div>
                 `;
                 sectionContainer.appendChild(sectionHeader);
