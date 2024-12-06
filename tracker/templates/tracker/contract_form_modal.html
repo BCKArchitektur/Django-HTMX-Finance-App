@@ -154,9 +154,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
 
-
-
-
     // Function to validate the contract form
     function validateContractForm() {
         let isValid = true;
@@ -224,7 +221,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Function to highlight an element temporarily
     function highlightElement(element) {
         // Add Tailwind utility classes for highlighting
-        element.classList.add('bg-neutral-200', 'transition', 'duration-200');
+        element.classList.add('bg-neutral-200', 'transition', 'duration-100');
         // Remove the highlight after 1 second
         setTimeout(() => {
             element.classList.remove('bg-neutral-200');
@@ -854,6 +851,10 @@ document.addEventListener("DOMContentLoaded", function() {
                                 <line x1="19" y1="12" x2="12" y2="19" />
                             </svg>
                         </button>
+                        
+                        <!-- Add Task Button -->
+                        <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this)">+ Task</button>
+
                         <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
                     </div>
                 </div>
