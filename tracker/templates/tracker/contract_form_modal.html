@@ -221,48 +221,64 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
 
+    // Function to highlight an element temporarily
+    function highlightElement(element) {
+        // Add Tailwind utility classes for highlighting
+        element.classList.add('bg-neutral-200', 'transition', 'duration-200');
+        // Remove the highlight after 1 second
+        setTimeout(() => {
+            element.classList.remove('bg-neutral-200');
+        }, 600); // Highlight for 1 second
+    }
 
-    // Function to move a section up
-    window.moveSectionUp = function(button) {
+    // Move Section Up
+    window.moveSectionUp = function (button) {
         const section = button.closest('.section-block');
         const previousSection = section.previousElementSibling;
 
         if (previousSection) {
             section.parentNode.insertBefore(section, previousSection);
+            highlightElement(section); // Highlight the moved section
             updateContractJSON(); // Update JSON after rearranging
         }
     };
 
-    // Function to move a section down
-    window.moveSectionDown = function(button) {
+    // Move Section Down
+    window.moveSectionDown = function (button) {
         const section = button.closest('.section-block');
         const nextSection = section.nextElementSibling;
 
         if (nextSection) {
             section.parentNode.insertBefore(nextSection, section);
+            highlightElement(section); // Highlight the moved section
             updateContractJSON(); // Update JSON after rearranging
         }
     };
 
-    window.moveItemUp = function(button) {
+    // Move Item Up
+    window.moveItemUp = function (button) {
         const item = button.closest('.item-block');
         const previousItem = item.previousElementSibling;
 
         if (previousItem) {
             item.parentNode.insertBefore(item, previousItem);
+            highlightElement(item); // Highlight the moved item
             updateContractJSON(); // Update the contract JSON if necessary
         }
     };
 
-    window.moveItemDown = function(button) {
+    // Move Item Down
+    window.moveItemDown = function (button) {
         const item = button.closest('.item-block');
         const nextItem = item.nextElementSibling;
 
         if (nextItem) {
             item.parentNode.insertBefore(nextItem, item);
+            highlightElement(item); // Highlight the moved item
             updateContractJSON(); // Update the contract JSON if necessary
         }
     };
+
 
     // Function to update contract JSON after rearranging
     window.updateContractJSON = function() {
