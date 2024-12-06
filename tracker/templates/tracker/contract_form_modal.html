@@ -244,6 +244,26 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     };
 
+    window.moveItemUp = function(button) {
+        const item = button.closest('.item-block');
+        const previousItem = item.previousElementSibling;
+
+        if (previousItem) {
+            item.parentNode.insertBefore(item, previousItem);
+            updateContractJSON(); // Update the contract JSON if necessary
+        }
+    };
+
+    window.moveItemDown = function(button) {
+        const item = button.closest('.item-block');
+        const nextItem = item.nextElementSibling;
+
+        if (nextItem) {
+            item.parentNode.insertBefore(nextItem, item);
+            updateContractJSON(); // Update the contract JSON if necessary
+        }
+    };
+
     // Function to update contract JSON after rearranging
     window.updateContractJSON = function() {
         let contractJSON = buildContractJSON();
@@ -341,18 +361,56 @@ document.addEventListener("DOMContentLoaded", function() {
                                     }).join('') : '';
 
                                     const itemTemplate = `
-                                        <div class="item-block form-control w-full m-2 p-2"  data-item-id="${item.id}">
+                                        <div class="item-block form-control w-full m-2 p-2" data-item-id="${item.id}">
                                             <div class="flex justify-between items-center">
-                                                <input type="text" name="Item_name" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name ${isItemEditable ? '' : 'input-error'} "  ${isItemEditable ? '' : 'readonly'}>
-                                                <textarea name="description" placeholder="Description" class="textarea textarea-bordered w-full m-2 item-description ${isItemEditable ? '' : 'textarea-ghost'}" ${isItemEditable ? '' : ''}>${item.description}</textarea>
-                                                <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this)">+ Task</button>
-                                                <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()" ${isItemEditable ? '' : 'disabled'}>x</button>
+                                                <!-- Item Name Input -->
+                                                <input type="text" name="Item_name" value="${item.Item_name}" 
+                                                    class="input input-sm input-bordered w-full m-2 item-name ${isItemEditable ? '' : 'input-error'}" 
+                                                    ${isItemEditable ? '' : 'readonly'}>
+                                                
+                                                <!-- Description Textarea -->
+                                                <textarea name="description" placeholder="Description" 
+                                                        class="textarea textarea-bordered w-full m-2 item-description ${isItemEditable ? '' : 'textarea-ghost'}" 
+                                                        ${isItemEditable ? '' : 'readonly'}>${item.description}</textarea>
+                                                
+                                                <!-- Item Actions -->
+                                                <div class="flex space-x-1">
+                                                    <!-- Move Up Button -->
+                                                    <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveItemUp(this)">
+                                                        <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path stroke="none" d="M0 0h24v24H0z" />
+                                                            <line x1="12" y1="19" x2="12" y2="5" />
+                                                            <line x1="5" y1="12" x2="12" y2="5" />
+                                                            <line x1="19" y1="12" x2="12" y2="5" />
+                                                        </svg>
+                                                    </button>
+
+                                                    <!-- Move Down Button -->
+                                                    <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveItemDown(this)">
+                                                        <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path stroke="none" d="M0 0h24v24H0z" />
+                                                            <line x1="12" y1="5" x2="12" y2="19" />
+                                                            <line x1="5" y1="12" x2="12" y2="19" />
+                                                            <line x1="19" y1="12" x2="12" y2="19" />
+                                                        </svg>
+                                                    </button>
+
+                                                    <!-- Add Task Button -->
+                                                    <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this)">+ Task</button>
+
+                                                    <!-- Delete Item Button -->
+                                                    <button type="button" class="btn btn-sm btn-danger m-1" 
+                                                            onclick="this.parentNode.parentNode.remove()" ${isItemEditable ? '' : 'disabled'}>x</button>
+                                                </div>
                                             </div>
+
+                                            <!-- Task Container -->
                                             <div class="tasks-container">
                                                 ${tasksHTML}
                                             </div>
                                         </div>
                                     `;
+
                                     return itemTemplate;
                                 }).join('') : ''}
                             </div>
@@ -755,20 +813,39 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Function to add a new item
     window.addItem = function(button, sectionId) {
-        const itemId = Math.random().toString(36).substr(2, 9);
-        const itemTemplate = `
-            <div class="item-block form-control w-full m-2 p-2"  data-item-id="{{ item.id }}">
+    const itemId = Math.random().toString(36).substr(2, 9);
+    const itemTemplate = `
+            <div class="item-block form-control w-full m-2 p-2" data-item-id="${itemId}">
                 <div class="flex justify-between items-center">
-                    <input type="text" name="sections[${sectionId}][items][${itemId}][Item_name]" placeholder="Item Name" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
-                    <textarea name="sections[${sectionId}][items][${itemId}][description]" placeholder="Description" class="textarea textarea-bordered w-full m-2 item-description"></textarea>
-                    <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this, '${sectionId}', '${itemId}')">+ Task</button>
-                    <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
+                    <input type="text" name="sections[${sectionId}][items][${itemId}][Item_name]" placeholder="Item Name" 
+                        class="input input-sm input-bordered w-full m-2 item-name">
+                    <textarea name="sections[${sectionId}][items][${itemId}][description]" placeholder="Description" 
+                            class="textarea textarea-bordered w-full m-2 item-description"></textarea>
+                    <div class="flex space-x-1">
+                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveItemUp(this)">
+                            <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" />
+                                <line x1="12" y1="19" x2="12" y2="5" />
+                                <line x1="5" y1="12" x2="12" y2="5" />
+                                <line x1="19" y1="12" x2="12" y2="5" />
+                            </svg>
+                        </button>
+                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveItemDown(this)">
+                            <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" />
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="12" y2="19" />
+                                <line x1="19" y1="12" x2="12" y2="19" />
+                            </svg>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
+                    </div>
                 </div>
-                <div id="item-name-error-${itemId}" class="text-red-500 text-sm m-1"></div>
                 <div class="tasks-container"></div>
             </div>`;
         button.closest('.section-block').querySelector('.items-container').insertAdjacentHTML('beforeend', itemTemplate);
-    }
+    };
+
 
     // Function to add a new task
     window.addTask = function(button, sectionId, itemId) {
@@ -786,78 +863,94 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Function to add a section from the library
     window.addSectionFromLibrary = function(sectionId) {
-        console.log("Fetching section from library with ID:", sectionId); // Debugging line
-        fetchData(`/ajax/get-library-section/${sectionId}/`, data => {
-            const newSectionId = Math.random().toString(36).substr(2, 9);
-            const sectionTemplate = `
-                <div class="section-block form-control w-full m-2 p-4">
-                    <div class="flex justify-between items-center">
-                        <div class="form-control flex items-center max-w-xs m-0">
-                            <label class="cursor-pointer label m-0 p-0">
-                                <span class="label-text mr-1 font-bold">€</span>
-                                <input type="checkbox" name="sections[${newSectionId}][billable]" class="checkbox checkbox-accent section-billable" ${data.section_billed_hourly ? 'checked' : ''} />
-                            </label>
-                        </div>
-                        <div class="w-full">
-                            <input type="text" name="sections[${newSectionId}][section_name]" value="${data.section_name}" class="input input-sm input-bordered w-full m-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${newSectionId}" hx-swap="innerHTML">
-                        </div>
-                        <div class="flex space-x-2">
-                            <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionUp(this)">
-                            <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" />
-                                <line x1="12" y1="5" x2="12" y2="19" />
-                                <line x1="18" y1="11" x2="12" y2="5" />
-                                <line x1="6" y1="11" x2="12" y2="5" />
-                            </svg>
-                            </button>
-                            <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionDown(this)">
-                            <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" />
-                                <line x1="12" y1="5" x2="12" y2="19" />
-                                <line x1="18" y1="13" x2="12" y2="19" />
-                                <line x1="6" y1="13" x2="12" y2="19" />
-                            </svg>                                        
-                            </button>
-                            <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this, '${newSectionId}')">+ Item</button>
-                            <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove()">x</button>
-                        </div>
+    console.log("Fetching section from library with ID:", sectionId); // Debugging line
+    fetchData(`/ajax/get-library-section/${sectionId}/`, data => {
+        const newSectionId = Math.random().toString(36).substr(2, 9);
+        const sectionTemplate = `
+            <div class="section-block form-control w-full m-2 p-4">
+                <div class="flex justify-between items-center">
+                    <div class="form-control flex items-center max-w-xs m-0">
+                        <label class="cursor-pointer label m-0 p-0">
+                            <span class="label-text mr-1 font-bold">€</span>
+                            <input type="checkbox" name="sections[${newSectionId}][billable]" class="checkbox checkbox-accent section-billable" ${data.section_billed_hourly ? 'checked' : ''} />
+                        </label>
                     </div>
-                    <div id="section-name-error-${newSectionId}" class="text-red-500 text-sm mb-2"></div>
-                    <div class="items-container">
-                        ${data.items.map(item => {
-                            const itemId = Math.random().toString(36).substr(2, 9);
-                            return `
-                                <div class="item-block form-control w-full m-2 p-2" data-item-id="{{ item.id }}">
-                                    <div class="flex justify-between items-center">
-                                        <input type="text" name="sections[${newSectionId}][items][${itemId}][Item_name]" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name" hx-get="{% url 'check_Item_name' %}" hx-trigger="blur" hx-target="#item-name-error-${itemId}" hx-swap="innerHTML">
-                                        <textarea name="sections[${newSectionId}][items][${itemId}][description]" class="textarea textarea-bordered w-full m-2 item-description">${item.description}</textarea>
-                                        <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this, '${newSectionId}', '${itemId}')">+ Task</button>
-                                        <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
-                                    </div>
-                                    <div id="item-name-error-${itemId}" class="text-red-500 text-sm m-1"></div>
-                                    <div class="tasks-container">
-                                        ${item.tasks.map(task => {
-                                            const taskId = Math.random().toString(36).substr(2, 9);
-                                            return `
-                                                <div class="task-block form-control w-full max-w-xs m-2">
-                                                    <div class="flex justify-between items-center">
-                                                        <input type="text" name="sections[${newSectionId}][items][${itemId}][tasks][${taskId}][task_name]" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" hx-get="{% url 'check_task_name' %}" hx-trigger="blur" hx-target="#task-name-error-${taskId}" hx-swap="innerHTML">
-                                                        <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
-                                                    </div>
-                                                    <div id="task-name-error-${taskId}" class="text-red-500 text-sm mb-2"></div>
-                                                </div>
-                                            `;
-                                        }).join('')}
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
+                    <div class="w-full">
+                        <input type="text" name="sections[${newSectionId}][section_name]" value="${data.section_name}" class="input input-sm input-bordered w-full m-2 section-name">
+                    </div>
+                    <div class="flex space-x-2">
+                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionUp(this)">
+                        <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" />
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="18" y1="11" x2="12" y2="5" />
+                            <line x1="6" y1="11" x2="12" y2="5" />
+                        </svg>
+                        </button>
+                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionDown(this)">
+                        <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" />
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="18" y1="13" x2="12" y2="19" />
+                            <line x1="6" y1="13" x2="12" y2="19" />
+                        </svg>                                        
+                        </button>
+                        <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this, '${newSectionId}')">+ Item</button>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove()">x</button>
                     </div>
                 </div>
-            `;
-            document.getElementById('sections-container').insertAdjacentHTML('beforeend', sectionTemplate);
-        });
-    }
+                <div id="section-name-error-${newSectionId}" class="text-red-500 text-sm mb-2"></div>
+                <div class="items-container">
+                    ${data.items.map(item => {
+                        const itemId = Math.random().toString(36).substr(2, 9);
+                        return `
+                            <div class="item-block form-control w-full m-2 p-2" data-item-id="${itemId}">
+                                <div class="flex justify-between items-center">
+                                    <input type="text" name="sections[${newSectionId}][items][${itemId}][Item_name]" value="${item.Item_name}" class="input input-sm input-bordered w-full m-2 item-name">
+                                    <textarea name="sections[${newSectionId}][items][${itemId}][description]" class="textarea textarea-bordered w-full m-2 item-description">${item.description}</textarea>
+                                    <div class="flex space-x-1">
+                                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveItemUp(this)">
+                                            <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" />
+                                                <line x1="12" y1="19" x2="12" y2="5" />
+                                                <line x1="5" y1="12" x2="12" y2="5" />
+                                                <line x1="19" y1="12" x2="12" y2="5" />
+                                            </svg>
+                                        </button>
+                                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveItemDown(this)">
+                                            <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" />
+                                                <line x1="12" y1="5" x2="12" y2="19" />
+                                                <line x1="5" y1="12" x2="12" y2="19" />
+                                                <line x1="19" y1="12" x2="12" y2="19" />
+                                            </svg>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
+                                    </div>
+                                </div>
+                                <div class="tasks-container">
+                                    ${item.tasks.map(task => {
+                                        const taskId = Math.random().toString(36).substr(2, 9);
+                                        return `
+                                            <div class="task-block form-control w-full max-w-xs m-2">
+                                                <div class="flex justify-between items-center">
+                                                    <input type="text" name="sections[${newSectionId}][items][${itemId}][tasks][${taskId}][task_name]" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name">
+                                                    <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+        document.getElementById('sections-container').insertAdjacentHTML('beforeend', sectionTemplate);
+    });
+};
+
 
     // Event listener for form submission
     document.getElementById('contract-form').addEventListener('submit', function(event) {

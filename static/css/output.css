@@ -5069,6 +5069,12 @@ details.collapse summary::-webkit-details-marker {
   gap: 1.5rem;
 }
 
+.space-x-1 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 0;
+  margin-right: calc(0.25rem * var(--tw-space-x-reverse));
+  margin-left: calc(0.25rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
 .space-x-2 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-x-reverse: 0;
   margin-right: calc(0.5rem * var(--tw-space-x-reverse));
@@ -5121,10 +5127,6 @@ details.collapse summary::-webkit-details-marker {
 
 .border-t-4 {
   border-top-width: 4px;
-}
-
-.border-t {
-  border-top-width: 1px;
 }
 
 .border-blue-600 {
