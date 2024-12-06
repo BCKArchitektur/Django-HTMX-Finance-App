@@ -721,36 +721,32 @@
     }
 
     function updateContractJSON_budget() {
-        // Define a new contract JSON structure
-        const newContractJSON = {
-            contract_name: document.getElementById('id_contract_name').value,
-            sections: []
+    // Define a new contract JSON structure
+    const newContractJSON = {
+        contract_name: document.getElementById('id_contract_name') ? document.getElementById('id_contract_name').value : '',
+        sections: []
+    };
+
+    // Select all section containers from the budget table
+    const sectionContainers = document.querySelectorAll('#budget-table .section-container');
+
+    sectionContainers.forEach((sectionContainer) => {
+        const sectionName = sectionContainer.querySelector('.section-name').textContent.trim();
+
+        // Initialize the current section
+        const currentSection = {
+            section_name: sectionName,
+            section_billed_hourly: false, // Set as needed
+            items: []
         };
 
-        // Select all rows from the budget table
-        const rows = document.querySelectorAll('#budget-table tbody tr');
-
-        let currentSection = null;
-
-        rows.forEach((row) => {
-            const sectionName = row.children[1].querySelector('input').value;
-            const itemName = row.children[2].querySelector('input').value;
-            const quantity = row.querySelector(`input[name^="quantity"]`).value;
+        // Select all item rows within the current section
+        const itemRows = sectionContainer.querySelectorAll('.items-table tbody tr');
+        itemRows.forEach((row) => {
+            const itemName = row.children[1].querySelector('input').value.trim();
+            const quantity = row.querySelector(`input[name^="quantity"]`).value.trim();
             const unit = row.querySelector(`select[name^="unit"]`).value;
-            const rate = row.querySelector(`input[name^="rate"]`).value;
-
-            // If this row starts a new section, push the previous section to the JSON
-            if (!currentSection || currentSection.section_name !== sectionName) {
-                if (currentSection) {
-                    newContractJSON.sections.push(currentSection);
-                }
-
-                currentSection = {
-                    section_name: sectionName,
-                    section_billed_hourly: false, // Set as needed
-                    items: []
-                };
-            }
+            const rate = row.querySelector(`input[name^="rate"]`).value.trim();
 
             // Add the item to the current section
             currentSection.items.push({
@@ -762,28 +758,38 @@
             });
         });
 
-        // Push the last section if it exists
-        if (currentSection) {
-            newContractJSON.sections.push(currentSection);
-        }
+        // Push the current section to the contract JSON
+        newContractJSON.sections.push(currentSection);
+    });
 
-        console.log("Updated Contract JSON:", JSON.stringify(newContractJSON, null, 2));
+    console.log("Updated Contract JSON:", newContractJSON);
 
-        // Update the hidden contract JSON input field if used for submission
-        const jsonInput = document.querySelector('input[name="contract_json"]');
-        if (jsonInput) {
-            jsonInput.value = JSON.stringify(newContractJSON);
-        }
+    // Update the hidden contract JSON input field if used for submission
+    const jsonInput = document.querySelector('input[name="contract_json"]');
+    if (jsonInput) {
+        jsonInput.value = JSON.stringify(newContractJSON);
     }
+}
+
 
     function populateBudgetTable(contractId) {
-    console.log('Fetching contract data for contract ID:', contractId);
+        console.log('Fetching contract data for contract ID:', contractId);
 
         fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
             console.log('Contract data received:', data);
 
             const budgetTable = document.getElementById('budget-table');
             budgetTable.innerHTML = ''; // Clear existing content
+
+            // Dynamically add or update the hidden input for contract JSON
+            const form = document.getElementById('add-budget-form');
+            let jsonInput = form.querySelector('input[name="contract_json"]');
+            if (!jsonInput) {
+                jsonInput = document.createElement('input');
+                jsonInput.type = 'hidden';
+                jsonInput.name = 'contract_json';
+                form.appendChild(jsonInput);
+            }
 
             let isContractInvoiced = false;
 
