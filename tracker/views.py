@@ -1087,15 +1087,15 @@ def generate_word_document(request, contract_id):
     # Flag for checking if the template is in English
     is_english_template = template_name in ['BCK_En.docx', 'Kost_En.docx']
 
-    for section in contract.section.all():
-        section_total = Decimal(0)  # Initialize as Decimal
+    for section in sorted(contract.section.all(), key=lambda s: getattr(s, 'order', 0)):  # Sort sections by 'order'
+        section_total = Decimal(0)
         items = []
 
         # Initialize item counter for the current section
         item_counter = 1
 
-        for item in section.Item.all():
-            item_total = Decimal(item.quantity) * Decimal(item.rate)  # Convert to Decimal
+        for item in sorted(section.Item.all(), key=lambda i: getattr(i, 'order', 0)):  # Sort items by 'order'
+            item_total = Decimal(item.quantity) * Decimal(item.rate)
 
             # Check if template is in English and replace units if needed
             unit = item.unit
@@ -1108,11 +1108,11 @@ def generate_word_document(request, contract_id):
                     unit = 'Hour'
 
             item_data = {
-                'Item_serial': f"{section_counter}.{item_counter}",  # Serial number for item
+                'Item_serial': f"{section_counter}.{item_counter}",
                 'Item_name': item.Item_name,
                 'quantity': item.quantity,
-                'unit': unit,  # Use the modified unit value
-                'rate': f"{Decimal(item.rate):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
+                'unit': unit,
+                'rate': f"{Decimal(item.rate):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
             }
             if item.description:
@@ -1122,9 +1122,9 @@ def generate_word_document(request, contract_id):
 
             # Increment item counter
             item_counter += 1
-        
+
         contract_sections.append({
-            'section_serial': section_counter,  # Serial number for section
+            'section_serial': section_counter,
             'section_name': section.section_name,
             'net_section': f"{section_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
             'Item': items
@@ -1133,6 +1133,7 @@ def generate_word_document(request, contract_id):
 
         # Increment section counter
         section_counter += 1
+
 
     additional_fee_percentage = Decimal(contract.additional_fee_percentage)
     additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)

@@ -628,6 +628,16 @@
     document.getElementById('id_vat_percentage').addEventListener('input', updateSummaryFields);
     document.getElementById('additional_fee_percentage').addEventListener('input', updateSummaryFields);
 
+    // Function to update the section order input field dynamically
+    function updateSectionOrderInput() {
+        const sectionContainers = document.querySelectorAll('#budget-table .section-container');
+        const sectionOrder = Array.from(sectionContainers).map((container, index) => ({
+            id: container.dataset.sectionId, // Assuming section ID is stored in a data attribute
+            order: index // The index represents the new order
+        }));
+        sectionOrderInput.value = JSON.stringify(sectionOrder);
+    }
+
 
 
     function moveSectionUp_budget(button) {
@@ -636,8 +646,7 @@
 
         if (previousSection) {
             sectionContainer.parentNode.insertBefore(sectionContainer, previousSection);
-            updateContractJSON_budget(); // Update JSON after rearranging
-
+            updateSectionOrderInput();
         }
     }
 
@@ -647,8 +656,7 @@
 
         if (nextSection) {
             sectionContainer.parentNode.insertBefore(nextSection, sectionContainer);
-            updateContractJSON_budget(); // Update JSON after rearranging
-
+            updateSectionOrderInput();
         }
     }
 
@@ -798,6 +806,15 @@
             }
 
             let isContractInvoiced = false;
+
+            let sectionOrderInput = form.querySelector('input[name="section_order"]');
+            if (!window.sectionOrderInput) {
+                window.sectionOrderInput = document.createElement('input');
+                window.sectionOrderInput.type = 'hidden';
+                window.sectionOrderInput.name = 'section_order';
+                form.appendChild(window.sectionOrderInput);
+            }
+
 
             data.sections.forEach((section, sectionIndex) => {
                 // Create a container for each section
