@@ -721,55 +721,61 @@
     }
 
     function updateContractJSON_budget() {
-    // Define a new contract JSON structure
-    const newContractJSON = {
-        contract_name: document.getElementById('id_contract_name') ? document.getElementById('id_contract_name').value : '',
-        sections: []
-    };
-
-    // Select all section containers from the budget table
-    const sectionContainers = document.querySelectorAll('#budget-table .section-container');
-
-    sectionContainers.forEach((sectionContainer) => {
-        const sectionName = sectionContainer.querySelector('.section-name').textContent.trim();
-
-        // Initialize the current section
-        const currentSection = {
-            section_name: sectionName,
-            section_billed_hourly: false, // Set as needed
-            items: []
+        // Define a new contract JSON structure
+        const newContractJSON = {
+            contract_name: document.getElementById('id_contract_name') ? document.getElementById('id_contract_name').value : '',
+            sections: []
         };
 
-        // Select all item rows within the current section
-        const itemRows = sectionContainer.querySelectorAll('.items-table tbody tr');
-        itemRows.forEach((row) => {
-            const itemName = row.children[1].querySelector('input').value.trim();
-            const quantity = row.querySelector(`input[name^="quantity"]`).value.trim();
-            const unit = row.querySelector(`select[name^="unit"]`).value;
-            const rate = row.querySelector(`input[name^="rate"]`).value.trim();
+        // Select all section containers from the budget table
+        const sectionContainers = document.querySelectorAll('#budget-table .section-container');
 
-            // Add the item to the current section
-            currentSection.items.push({
-                Item_name: itemName,
-                quantity: quantity,
-                unit: unit,
-                rate: rate,
-                tasks: [] // Add tasks as needed, or collect from additional fields
+        // Loop through section containers and assign proper order
+        sectionContainers.forEach((sectionContainer, sectionIndex) => {
+            const sectionName = sectionContainer.querySelector('.section-name').textContent.trim();
+
+            // Initialize the current section
+            const currentSection = {
+                id: sectionContainer.dataset.sectionId || null, // Assuming a data attribute for section ID
+                order: sectionIndex, // Set the order property based on its current position
+                section_name: sectionName,
+                section_billed_hourly: false, // Set as needed
+                items: []
+            };
+
+            // Select all item rows within the current section
+            const itemRows = sectionContainer.querySelectorAll('.items-table tbody tr');
+            itemRows.forEach((row, itemIndex) => {
+                const itemName = row.children[1].querySelector('input').value.trim();
+                const quantity = row.querySelector(`input[name^="quantity"]`).value.trim();
+                const unit = row.querySelector(`select[name^="unit"]`).value;
+                const rate = row.querySelector(`input[name^="rate"]`).value.trim();
+
+                // Add the item to the current section with its updated order
+                currentSection.items.push({
+                    id: row.dataset.itemId || null, // Assuming a data attribute for item ID
+                    order: itemIndex, // Set the order property based on its current position
+                    Item_name: itemName,
+                    quantity: quantity,
+                    unit: unit,
+                    rate: rate,
+                    tasks: [] // Add tasks as needed, or collect from additional fields
+                });
             });
+
+            // Push the current section to the contract JSON
+            newContractJSON.sections.push(currentSection);
         });
 
-        // Push the current section to the contract JSON
-        newContractJSON.sections.push(currentSection);
-    });
+        console.log("Updated Contract JSON:", newContractJSON);
 
-    console.log("Updated Contract JSON:", newContractJSON);
-
-    // Update the hidden contract JSON input field if used for submission
-    const jsonInput = document.querySelector('input[name="contract_json"]');
-    if (jsonInput) {
-        jsonInput.value = JSON.stringify(newContractJSON);
+        // Update the hidden contract JSON input field if used for submission
+        const jsonInput = document.querySelector('input[name="contract_json"]');
+        if (jsonInput) {
+            jsonInput.value = JSON.stringify(newContractJSON);
+        }
     }
-}
+
 
 
     function populateBudgetTable(contractId) {
