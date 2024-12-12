@@ -123,23 +123,45 @@ document.addEventListener("DOMContentLoaded", function() {
         };
 
         document.querySelectorAll('.section-block').forEach(sectionBlock => {
+            const sectionNameInput = sectionBlock.querySelector('.section-name');
+            const sectionBillableInput = sectionBlock.querySelector('.section-billable');
+
+            if (!sectionNameInput || !sectionBillableInput) {
+                console.warn("Skipping a section block because inputs are missing.");
+                return; // Skip this section if inputs are missing
+            }
+
             let section = {
-                section_name: sectionBlock.querySelector('.section-name').value,
-                section_billed_hourly: sectionBlock.querySelector('.section-billable').checked,
+                section_name: sectionNameInput.value,
+                section_billed_hourly: sectionBillableInput.checked,
                 items: []
             };
 
             sectionBlock.querySelectorAll('.item-block').forEach(itemBlock => {
+                const itemNameInput = itemBlock.querySelector('.item-name');
+                const itemDescriptionInput = itemBlock.querySelector('.item-description');
+
+                if (!itemNameInput || !itemDescriptionInput) {
+                    console.warn("Skipping an item block because inputs are missing.");
+                    return; // Skip this item if inputs are missing
+                }
+
                 let item = {
                     id: itemBlock.getAttribute('data-item-id') || null,  // Include item id if it exists
-                    Item_name: itemBlock.querySelector('.item-name').value,
-                    description: itemBlock.querySelector('.item-description').value,
+                    Item_name: itemNameInput.value,
+                    description: itemDescriptionInput.value,
                     tasks: []
                 };
 
                 itemBlock.querySelectorAll('.task-block').forEach(taskBlock => {
+                    const taskNameInput = taskBlock.querySelector('.task-name');
+                    if (!taskNameInput) {
+                        console.warn("Skipping a task block because the input is missing.");
+                        return; // Skip this task if the input is missing
+                    }
+
                     let task = {
-                        task_name: taskBlock.querySelector('.task-name').value
+                        task_name: taskNameInput.value
                     };
                     item.tasks.push(task);
                 });
@@ -282,12 +304,17 @@ document.addEventListener("DOMContentLoaded", function() {
         let contractJSON = buildContractJSON();
         console.log("Updated Contract JSON:", contractJSON);
 
-        // Optionally, you can update a hidden input field to store the JSON
-        const jsonInput = document.querySelector('input[name="contract_json"]');
-        if (jsonInput) {
-            jsonInput.value = JSON.stringify(contractJSON);
+        // Update or create the hidden input field for contract_json
+        let jsonInput = document.querySelector('input[name="contract_json"]');
+        if (!jsonInput) {
+            jsonInput = document.createElement('input');
+            jsonInput.type = 'hidden';
+            jsonInput.name = 'contract_json';
+            document.getElementById('contract-form').appendChild(jsonInput);
         }
+        jsonInput.value = JSON.stringify(contractJSON);
     };
+
 
     window.openEditContractModal = function(contractId) {
         document.getElementById('contractModalTitle').innerText = 'Edit Contract';
@@ -313,7 +340,8 @@ document.addEventListener("DOMContentLoaded", function() {
             sectionsContainer.innerHTML = '';
             if (data.sections) {
                 data.sections.forEach((section, sectionIndex) => {
-                    const sectionId = Math.random().toString(36).substr(2, 9);
+                    const sectionId = section.id || `new-${Math.random().toString(36).substr(2, 9)}`;
+
 
                     // Check if all items in the section are invoiced
                     const isSectionEditable = section.items.every(item => item.quantity === item.available_quantity);
@@ -350,12 +378,13 @@ document.addEventListener("DOMContentLoaded", function() {
                                     </svg>                                        
                                     </button>
                                     <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this)" ${isSectionEditable ? '' : 'disabled'}>+ Item</button>
-                                    <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove()" ${isSectionEditable ? '' : 'disabled'}>x</button>
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove(); updateContractJSON();" ${isSectionEditable ? '' : 'disabled'}>x</button>
                                 </div>
                             </div>
                             <div class="items-container">
                                 ${section.items ? section.items.map(item => {
-                                    const itemId = Math.random().toString(36).substr(2, 9);
+                                    const itemId = item.id || `new-${Math.random().toString(36).substr(2, 9)}`;
+
 
                                     // Check if item is invoiced by comparing quantity and available_quantity
                                     const isItemEditable = item.quantity === item.available_quantity;
@@ -366,7 +395,13 @@ document.addEventListener("DOMContentLoaded", function() {
                                             <div class="task-block form-control w-full max-w-xs m-1">
                                                 <div class="flex justify-between items-center">
                                                     <input type="text" name="task_name" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" ${isItemEditable ? '' : 'readonly'}>
-                                                    <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()" ${isItemEditable ? '' : 'disabled'}>x</button>
+                                                    <button 
+                                                        type="button" 
+                                                        class="btn btn-sm btn-danger" 
+                                                        onclick="this.parentNode.parentNode.parentNode.remove(); updateContractJSON();" 
+                                                        ${isSectionEditable ? '' : 'disabled'}>
+                                                        x
+                                                    </button>
                                                 </div>
                                             </div>
                                         `;
@@ -412,8 +447,13 @@ document.addEventListener("DOMContentLoaded", function() {
                                                     <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this)">+ Task</button>
 
                                                     <!-- Delete Item Button -->
-                                                    <button type="button" class="btn btn-sm btn-danger m-1" 
-                                                            onclick="this.parentNode.parentNode.remove()" ${isItemEditable ? '' : 'disabled'}>x</button>
+                                                    <button 
+                                                        type="button" 
+                                                        class="btn btn-sm btn-danger m-1" 
+                                                        onclick="if (${isItemEditable}) { this.parentNode.parentNode.remove(); updateContractJSON(); }" 
+                                                        ${isItemEditable ? '' : 'disabled'}>
+                                                        x
+                                                    </button>
                                                 </div>
                                             </div>
 
@@ -826,7 +866,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Function to add a new item
     window.addItem = function(button, sectionId) {
-    const itemId = Math.random().toString(36).substr(2, 9);
+    const itemId = `new-${Math.random().toString(36).substr(2, 9)}`; // Prefix for new items
     const itemTemplate = `
             <div class="item-block form-control w-full m-2 p-2" data-item-id="${itemId}">
                 <div class="flex justify-between items-center">
@@ -880,11 +920,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Function to add a section from the library
     window.addSectionFromLibrary = function(sectionId) {
+    const newSectionId = Math.random().toString(36).substr(2, 9); // Generate a new unique ID
     console.log("Fetching section from library with ID:", sectionId); // Debugging line
     fetchData(`/ajax/get-library-section/${sectionId}/`, data => {
-        const newSectionId = Math.random().toString(36).substr(2, 9);
         const sectionTemplate = `
-            <div class="section-block form-control w-full m-2 p-4">
+            <div class="section-block form-control w-full m-2 p-4" data-section-id="${newSectionId}">
                 <div class="flex justify-between items-center">
                     <div class="form-control flex items-center max-w-xs m-0">
                         <label class="cursor-pointer label m-0 p-0">
@@ -919,7 +959,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 <div id="section-name-error-${newSectionId}" class="text-red-500 text-sm mb-2"></div>
                 <div class="items-container">
                     ${data.items.map(item => {
-                        const itemId = Math.random().toString(36).substr(2, 9);
+                        const itemId = item.id || `new-${Math.random().toString(36).substr(2, 9)}`;
                         return `
                             <div class="item-block form-control w-full m-2 p-2" data-item-id="${itemId}">
                                 <div class="flex justify-between items-center">
@@ -967,6 +1007,7 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('sections-container').insertAdjacentHTML('beforeend', sectionTemplate);
     });
 };
+
 
 
     // Event listener for form submission

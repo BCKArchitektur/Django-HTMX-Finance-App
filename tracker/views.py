@@ -279,118 +279,129 @@ def handle_project_form(request, project):
 
 def handle_existing_contract_form(request, project):
     print("Request received for handling existing contract form.")
-    
-    contract_id = request.POST['contract_id']
-    print(f"Contract ID: {contract_id}")
 
-    contract = get_object_or_404(Contract, id=contract_id)
-    print(f"Contract found: {contract}")
+    # Retrieve contract ID
+    contract_id = request.POST.get('contract_id')
+    if not contract_id:
+        print("No contract ID provided.")
+        messages.error(request, "Contract ID is missing.")
+        return redirect('edit_project', project_id=project.id)
 
+    try:
+        contract = Contract.objects.get(id=contract_id)
+        print(f"Contract found: {contract}")
+    except Contract.DoesNotExist:
+        print(f"Contract with ID {contract_id} does not exist.")
+        messages.error(request, "Contract not found.")
+        return redirect('edit_project', project_id=project.id)
+
+    # Validate contract form
     contract_form = ContractForm(request.POST, instance=contract)
-
-    if contract_form.is_valid():
-        print("Contract form is valid.")
-        contract_form.save()
-        contract_json = request.POST.get('contract_json')
-        print(f"Contract JSON: {contract_json}")
-
-        if contract_json:
-            try:
-                contract_data = json.loads(contract_json)
-                print(f"Contract data: {contract_data}")
-
-                # Track sections to keep
-                sections_to_keep = []
-
-                for section_data in contract_data['sections']:
-                    section_name = section_data['section_name']
-                    section_billed_hourly = section_data.get('section_billed_hourly', False)
-                    
-                    # Create or retrieve a section
-                    section = Section.objects.create(
-                        section_name=section_name,
-                        section_billed_hourly=section_billed_hourly
-                    )
-                    sections_to_keep.append(section)
-
-                    # Track items to keep
-                    items_to_keep = []
-
-                    for item_data in section_data['items']:
-                        item_id = item_data.get('id')  # Use the item ID from the data
-                        print(f"Processing item with ID: {item_id}")
-                        
-                        description = item_data.get('description', '')  # Handle description
-                        
-                        # Initialize item
-                        item = None
-                        
-                        if item_id:
-                            # Retrieve the existing item by ID
-                            item = Item.objects.filter(id=item_id).first()
-                            
-                            if item:
-                                print(f"Existing item found with ID: {item_id}. Updating item.")
-                                # Update the existing item
-                                item.Item_name = item_data['Item_name']  # Update the item name if it has changed
-                                item.description = description
-                                item.quantity = item_data.get('quantity', item.quantity)
-                                item.unit = item_data.get('unit', item.unit)
-                                item.rate = item_data.get('rate', item.rate)
-                                item.save()
-                            else:
-                                print(f"No existing item found with ID: {item_id}. Creating new item.")
-                        
-                        if not item:
-                            # Create a new item if no existing item found or if item_id is None
-                            item = Item.objects.create(
-                                Item_name=item_data['Item_name'],
-                                description=description,
-                                quantity=item_data.get('quantity', 0),
-                                unit=item_data.get('unit', 'Std'),
-                                rate=item_data.get('rate', 0.0)
-                            )
-                        
-                        items_to_keep.append(item)
-
-                        # Preserve users for the new or existing item
-                        existing_users = set(item.users.all())
-                        for user in existing_users:
-                            item.users.add(user)
-
-                        # Track tasks to keep
-                        tasks_to_keep = []
-
-                        for task_data in item_data['tasks']:
-                            task_name = task_data['task_name']
-                            task = Task.objects.create(task_name=task_name)
-                            tasks_to_keep.append(task)
-                            item.tasks.add(task)
-
-                        item.tasks.set(tasks_to_keep)
-                        section.Item.add(item)
-
-                    section.Item.set(items_to_keep)
-                    contract.section.add(section)
-
-                contract.section.set(sections_to_keep)
-                contract.save()
-
-                project.contract.add(contract)
-                project.save()
-                print("Project updated with contract.")
-
-                messages.success(request, "Contract updated successfully.")
-            except json.JSONDecodeError as e:
-                print(f"JSON decode error: {e}")
-                messages.error(request, "Error decoding the contract JSON data.")
-        else:
-            print("No contract JSON data provided.")
-            messages.error(request, "No contract JSON data provided.")
-    else:
+    if not contract_form.is_valid():
         print(f"Contract form errors: {contract_form.errors}")
         messages.error(request, f"Error updating contract: {contract_form.errors}")
+        return redirect('edit_project', project_id=project.id)
 
+    # Save the contract form
+    contract = contract_form.save()
+    print("Contract form saved.")
+
+    # Parse contract JSON
+    contract_json = request.POST.get('contract_json')
+    if not contract_json:
+        print("No contract JSON data provided.")
+        messages.error(request, "No contract JSON data provided.")
+        return redirect('edit_project', project_id=project.id)
+
+    try:
+        contract_data = json.loads(contract_json)
+        print(f"Parsed contract data: {contract_data}")
+    except json.JSONDecodeError as e:
+        print(f"JSON decode error: {e}")
+        messages.error(request, "Error decoding the contract JSON data.")
+        return redirect('edit_project', project_id=project.id)
+
+    # Process sections
+    sections_to_keep = []
+    for section_data in contract_data.get('sections', []):
+        section_id = section_data.get('id')
+        section_name = section_data['section_name']
+        section_billed_hourly = section_data.get('section_billed_hourly', False)
+
+        # Retrieve or create section
+        section = None
+        if section_id and not str(section_id).startswith('new-'):
+            section = Section.objects.filter(id=section_id).first()
+            if section:
+                print(f"Updating existing section: {section}")
+                section.section_name = section_name
+                section.section_billed_hourly = section_billed_hourly
+                section.save()
+            else:
+                print(f"Section with ID {section_id} not found. Creating new section.")
+        if not section:
+            section = Section.objects.create(
+                section_name=section_name,
+                section_billed_hourly=section_billed_hourly
+            )
+
+        sections_to_keep.append(section)
+
+        # Process items in the section
+        items_to_keep = []
+        for item_data in section_data.get('items', []):
+            item_id = item_data.get('id')
+            item_name = item_data['Item_name']
+            description = item_data.get('description', '')
+
+            # Retrieve or create item
+            item = None
+            if item_id and not str(item_id).startswith('new-'):
+                item = Item.objects.filter(id=item_id).first()
+                if item:
+                    print(f"Updating existing item: {item}")
+                    item.Item_name = item_name
+                    item.description = description
+                    item.quantity = item_data.get('quantity', item.quantity)
+                    item.unit = item_data.get('unit', item.unit)
+                    item.rate = item_data.get('rate', item.rate)
+                    item.save()
+                else:
+                    print(f"Item with ID {item_id} not found. Creating new item.")
+            if not item:
+                item = Item.objects.create(
+                    Item_name=item_name,
+                    description=description,
+                    quantity=item_data.get('quantity', 0),
+                    unit=item_data.get('unit', 'Std'),
+                    rate=item_data.get('rate', 0.0)
+                )
+
+            items_to_keep.append(item)
+
+            # Process tasks for the item
+            tasks_to_keep = []
+            for task_data in item_data.get('tasks', []):
+                task_name = task_data['task_name']
+
+                # Create task (no ID means tasks are always new)
+                task = Task.objects.create(task_name=task_name)
+                tasks_to_keep.append(task)
+
+            item.tasks.set(tasks_to_keep)  # Set all tasks for the item
+            section.Item.add(item)  # Associate the item with the section
+
+        section.Item.set(items_to_keep)  # Set all items for the section
+
+    contract.section.set(sections_to_keep)  # Set all sections for the contract
+    contract.save()
+
+    # Associate contract with project
+    project.contract.add(contract)
+    project.save()
+
+    print("Contract and project updated successfully.")
+    messages.success(request, "Contract updated successfully.")
     return redirect('edit_project', project_id=project.id)
 
 
