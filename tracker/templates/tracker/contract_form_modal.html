@@ -122,7 +122,7 @@ document.addEventListener("DOMContentLoaded", function() {
             sections: []
         };
 
-        document.querySelectorAll('.section-block').forEach(sectionBlock => {
+        document.querySelectorAll('.section-block').forEach((sectionBlock, sectionIndex) => {
             const sectionNameInput = sectionBlock.querySelector('.section-name');
             const sectionBillableInput = sectionBlock.querySelector('.section-billable');
 
@@ -132,12 +132,13 @@ document.addEventListener("DOMContentLoaded", function() {
             }
 
             let section = {
+                order: sectionIndex, // Add order for the section
                 section_name: sectionNameInput.value,
                 section_billed_hourly: sectionBillableInput.checked,
                 items: []
             };
 
-            sectionBlock.querySelectorAll('.item-block').forEach(itemBlock => {
+            sectionBlock.querySelectorAll('.item-block').forEach((itemBlock, itemIndex) => {
                 const itemNameInput = itemBlock.querySelector('.item-name');
                 const itemDescriptionInput = itemBlock.querySelector('.item-description');
 
@@ -147,6 +148,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
 
                 let item = {
+                    order: itemIndex, // Add order for the item
                     id: itemBlock.getAttribute('data-item-id') || null,  // Include item id if it exists
                     Item_name: itemNameInput.value,
                     description: itemDescriptionInput.value,
@@ -174,6 +176,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         return contract;
     }
+
 
 
     // Function to validate the contract form
@@ -316,165 +319,178 @@ document.addEventListener("DOMContentLoaded", function() {
     };
 
 
-    window.openEditContractModal = function(contractId) {
+    window.openEditContractModal = function (contractId) {
         document.getElementById('contractModalTitle').innerText = 'Edit Contract';
         document.getElementById('contract_id').value = contractId;
-        fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
+
+        fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, (data) => {
             console.log('Fetched Data:', data);
 
-           // Determine if any section or item is not editable
+            // Determine if any section or item is not editable
             let isContractEditable = true;
 
-            data.sections.forEach(section => {
-                const isSectionEditable = section.items.every(item => item.quantity === item.available_quantity);
+            data.sections.forEach((section) => {
+                const isSectionEditable = section.items.every(
+                    (item) => item.quantity === item.available_quantity
+                );
                 if (!isSectionEditable) {
                     isContractEditable = false;
                 }
             });
 
-            document.getElementById('id_contract_name').value = data.contract_name;
-            document.getElementById('id_contract_name').readonly = !isContractEditable;
-
-            
-            const sectionsContainer = document.getElementById('sections-container');
-            sectionsContainer.innerHTML = '';
+            // Ensure sections have an 'order' property
             if (data.sections) {
                 data.sections.forEach((section, sectionIndex) => {
-                    const sectionId = section.id || `new-${Math.random().toString(36).substr(2, 9)}`;
-
-
-                    // Check if all items in the section are invoiced
-                    const isSectionEditable = section.items.every(item => item.quantity === item.available_quantity);
-
-                    const sectionTemplate = `
-                        <div class="section-block form-control w-full m-1 p-2" data-section-id="{{ section.id }}">
-                            <div class="flex items-center space-x-2">
-                                <div class="form-control flex items-center max-w-xs m-0">
-                                    <label class="cursor-pointer label m-0 p-0">
-                                        <span class="label-text m-1 mb-2 font-extralight ">⧗</span>
-                                        <input type="checkbox" name="sections[${sectionId}][billable]" class="checkbox checkbox-accent checkbox-sm section-billable" ${section.section_billed_hourly ? 'checked' : ''} ${isSectionEditable ? '' : ''}>
-                                    </label>
-                                </div>
-                                <div class="w-full">
-                                    <input type="text" name="section_name" value="${section.section_name}" 
-                                        class="input input-sm input-bordered w-full m-2 section-name ${isSectionEditable ? '' : 'input-error'}" 
-                                        ${isSectionEditable ? '' : 'readonly'}>
-                                </div>
-                                <div class="flex space-x-2">
-                                    <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionUp(this)">
-                                    <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" />
-                                        <line x1="12" y1="5" x2="12" y2="19" />
-                                        <line x1="18" y1="11" x2="12" y2="5" />
-                                        <line x1="6" y1="11" x2="12" y2="5" />
-                                    </svg>
-                                    </button>
-                                    <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionDown(this)">
-                                    <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" />
-                                        <line x1="12" y1="5" x2="12" y2="19" />
-                                        <line x1="18" y1="13" x2="12" y2="19" />
-                                        <line x1="6" y1="13" x2="12" y2="19" />
-                                    </svg>                                        
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this)" ${isSectionEditable ? '' : 'disabled'}>+ Item</button>
-                                    <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove(); updateContractJSON();" ${isSectionEditable ? '' : 'disabled'}>x</button>
-                                </div>
-                            </div>
-                            <div class="items-container">
-                                ${section.items ? section.items.map(item => {
-                                    const itemId = item.id || `new-${Math.random().toString(36).substr(2, 9)}`;
-
-
-                                    // Check if item is invoiced by comparing quantity and available_quantity
-                                    const isItemEditable = item.quantity === item.available_quantity;
-
-                                    const tasksHTML = item.tasks ? item.tasks.map(task => {
-                                        const taskId = Math.random().toString(36).substr(2, 9);
-                                        const taskTemplate = `
-                                            <div class="task-block form-control w-full max-w-xs m-1">
-                                                <div class="flex justify-between items-center">
-                                                    <input type="text" name="task_name" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" ${isItemEditable ? '' : 'readonly'}>
-                                                    <button 
-                                                        type="button" 
-                                                        class="btn btn-sm btn-danger" 
-                                                        onclick="this.parentNode.parentNode.parentNode.remove(); updateContractJSON();" 
-                                                        ${isSectionEditable ? '' : 'disabled'}>
-                                                        x
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        `;
-                                        return taskTemplate;
-                                    }).join('') : '';
-
-                                    const itemTemplate = `
-                                        <div class="item-block form-control w-full m-2 p-2" data-item-id="${item.id}">
-                                            <div class="flex justify-between items-center">
-                                                <!-- Item Name Input -->
-                                                <input type="text" name="Item_name" value="${item.Item_name}" 
-                                                    class="input input-sm input-bordered w-full m-2 item-name ${isItemEditable ? '' : 'input-error'}" 
-                                                    ${isItemEditable ? '' : 'readonly'}>
-                                                
-                                                <!-- Description Textarea -->
-                                                <textarea name="description" placeholder="Description" 
-                                                        class="textarea textarea-bordered w-full m-2 item-description ${isItemEditable ? '' : 'textarea-ghost'}" 
-                                                        ${isItemEditable ? '' : 'readonly'}>${item.description}</textarea>
-                                                
-                                                <!-- Item Actions -->
-                                                <div class="flex space-x-1">
-                                                    <!-- Move Up Button -->
-                                                    <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveItemUp(this)">
-                                                        <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                            <path stroke="none" d="M0 0h24v24H0z" />
-                                                            <line x1="12" y1="19" x2="12" y2="5" />
-                                                            <line x1="5" y1="12" x2="12" y2="5" />
-                                                            <line x1="19" y1="12" x2="12" y2="5" />
-                                                        </svg>
-                                                    </button>
-
-                                                    <!-- Move Down Button -->
-                                                    <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveItemDown(this)">
-                                                        <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                            <path stroke="none" d="M0 0h24v24H0z" />
-                                                            <line x1="12" y1="5" x2="12" y2="19" />
-                                                            <line x1="5" y1="12" x2="12" y2="19" />
-                                                            <line x1="19" y1="12" x2="12" y2="19" />
-                                                        </svg>
-                                                    </button>
-
-                                                    <!-- Add Task Button -->
-                                                    <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this)">+ Task</button>
-
-                                                    <!-- Delete Item Button -->
-                                                    <button 
-                                                        type="button" 
-                                                        class="btn btn-sm btn-danger m-1" 
-                                                        onclick="if (${isItemEditable}) { this.parentNode.parentNode.remove(); updateContractJSON(); }" 
-                                                        ${isItemEditable ? '' : 'disabled'}>
-                                                        x
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            <!-- Task Container -->
-                                            <div class="tasks-container">
-                                                ${tasksHTML}
-                                            </div>
-                                        </div>
-                                    `;
-
-                                    return itemTemplate;
-                                }).join('') : ''}
-                            </div>
-                        </div>
-                    `;
-                    sectionsContainer.insertAdjacentHTML('beforeend', sectionTemplate);
+                    if (section.order === undefined) {
+                        section.order = sectionIndex; // Assign order dynamically
+                    }
+                    if (section.items) {
+                        section.items.forEach((item, itemIndex) => {
+                            if (item.order === undefined) {
+                                item.order = itemIndex; // Assign order dynamically for items
+                            }
+                        });
+                    }
                 });
             }
+
+            console.log('Updated Data with Order:', data);
+
+            // Update contract name and readonly state
+            const contractNameInput = document.getElementById('id_contract_name');
+            contractNameInput.value = data.contract_name;
+            contractNameInput.readOnly = !isContractEditable;
+
+            // Clear existing sections and populate the container
+            const sectionsContainer = document.getElementById('sections-container');
+            sectionsContainer.innerHTML = '';
+
+            if (data.sections) {
+                // Sort sections based on the 'order' field
+                data.sections
+                    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                    .forEach((section) => {
+                        const sectionId = section.id || `new-${Math.random().toString(36).substr(2, 9)}`;
+                        const isSectionEditable = section.items.every(
+                            (item) => item.quantity === item.available_quantity
+                        );
+
+                        const sectionTemplate = `
+                            <div class="section-block form-control w-full m-1 p-2" data-section-id="${sectionId}">
+                                <div class="flex items-center space-x-2">
+                                    <div class="form-control flex items-center max-w-xs m-0">
+                                        <label class="cursor-pointer label m-0 p-0">
+                                            <span class="label-text m-1 mb-2 font-extralight ">⧗</span>
+                                            <input type="checkbox" name="sections[${sectionId}][billable]" class="checkbox checkbox-accent checkbox-sm section-billable" ${section.section_billed_hourly ? 'checked' : ''} ${isSectionEditable ? '' : ''}>
+                                        </label>
+                                    </div>
+                                    <div class="w-full">
+                                        <input type="text" name="section_name" value="${section.section_name}" 
+                                            class="input input-sm input-bordered w-full m-2 section-name ${isSectionEditable ? '' : 'input-error'}" 
+                                            ${isSectionEditable ? '' : 'readonly'}>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionUp(this)">
+                                            <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" />
+                                                <line x1="12" y1="5" x2="12" y2="19" />
+                                                <line x1="18" y1="11" x2="12" y2="5" />
+                                                <line x1="6" y1="11" x2="12" y2="5" />
+                                            </svg>
+                                        </button>
+                                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionDown(this)">
+                                            <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" />
+                                                <line x1="12" y1="5" x2="12" y2="19" />
+                                                <line x1="18" y1="13" x2="12" y2="19" />
+                                                <line x1="6" y1="13" x2="12" y2="19" />
+                                            </svg>                                        
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-accent" onclick="addItem(this)" ${isSectionEditable ? '' : 'disabled'}>+ Item</button>
+                                        <button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.parentNode.parentNode.remove(); updateContractJSON();" ${isSectionEditable ? '' : 'disabled'}>x</button>
+                                    </div>
+                                </div>
+                                <div class="items-container">
+                                    ${section.items
+                                        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) // Sort items within each section
+                                        .map((item) => {
+                                            const itemId = item.id || `new-${Math.random().toString(36).substr(2, 9)}`;
+                                            const isItemEditable = item.quantity === item.available_quantity;
+
+                                            const tasksHTML = item.tasks
+                                                .map((task) => {
+                                                    const taskId = Math.random().toString(36).substr(2, 9);
+                                                    return `
+                                                        <div class="task-block form-control w-full max-w-xs m-1">
+                                                            <div class="flex justify-between items-center">
+                                                                <input type="text" name="task_name" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name" ${isItemEditable ? '' : 'readonly'}>
+                                                                <button 
+                                                                    type="button" 
+                                                                    class="btn btn-sm btn-danger" 
+                                                                    onclick="this.parentNode.parentNode.remove(); updateContractJSON();" 
+                                                                    ${isItemEditable ? '' : 'disabled'}>
+                                                                    x
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    `;
+                                                })
+                                                .join('');
+
+                                            const itemTemplate = `
+                                                <div class="item-block form-control w-full m-2 p-2" data-item-id="${itemId}">
+                                                    <div class="flex justify-between items-center">
+                                                        <input type="text" name="Item_name" value="${item.Item_name}" 
+                                                            class="input input-sm input-bordered w-full m-2 item-name ${isItemEditable ? '' : 'input-error'}" 
+                                                            ${isItemEditable ? '' : 'readonly'}>
+                                                        <textarea name="description" placeholder="Description" 
+                                                            class="textarea textarea-bordered w-full m-2 item-description ${isItemEditable ? '' : 'textarea-ghost'}" 
+                                                            ${isItemEditable ? '' : 'readonly'}>${item.description}</textarea>
+                                                        <div class="flex space-x-1">
+                                                            <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveItemUp(this)">
+                                                                <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                                    <path stroke="none" d="M0 0h24v24H0z" />
+                                                                    <line x1="12" y1="19" x2="12" y2="5" />
+                                                                    <line x1="5" y1="12" x2="12" y2="5" />
+                                                                    <line x1="19" y1="12" x2="12" y2="5" />
+                                                                </svg>
+                                                            </button>
+                                                            <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveItemDown(this)">
+                                                                <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                                    <path stroke="none" d="M0 0h24v24H0z" />
+                                                                    <line x1="12" y1="5" x2="12" y2="19" />
+                                                                    <line x1="5" y1="12" x2="12" y2="19" />
+                                                                    <line x1="19" y1="12" x2="12" y2="19" />
+                                                                </svg>
+                                                            </button>
+                                                            <button type="button" class="btn btn-sm btn-accent m-1" onclick="addTask(this)">+ Task</button>
+                                                            <button 
+                                                                type="button" 
+                                                                class="btn btn-sm btn-danger m-1" 
+                                                                onclick="this.parentNode.parentNode.remove(); updateContractJSON();" 
+                                                                ${isItemEditable ? '' : 'disabled'}>
+                                                                x
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="tasks-container">
+                                                        ${tasksHTML}
+                                                    </div>
+                                                </div>
+                                            `;
+                                            return itemTemplate;
+                                        })
+                                        .join('')}
+                                </div>
+                            </div>
+                        `;
+                        sectionsContainer.insertAdjacentHTML('beforeend', sectionTemplate);
+                    });
+            }
         });
+
         document.getElementById('contractModal').classList.add('modal-open');
-    }
+    };
 
     // Function to handle file upload
     window.handleFileUpload = function(event) {

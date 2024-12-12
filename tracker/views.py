@@ -277,6 +277,12 @@ def handle_project_form(request, project):
 
 
 
+import json
+from django.shortcuts import redirect
+from django.contrib import messages
+from .models import Contract, Section, Item, Task
+
+
 def handle_existing_contract_form(request, project):
     print("Request received for handling existing contract form.")
 
@@ -323,39 +329,46 @@ def handle_existing_contract_form(request, project):
 
     # Process sections
     sections_to_keep = []
-    for section_data in contract_data.get('sections', []):
+    for section_data in sorted(contract_data.get('sections', []), key=lambda x: x.get('order', 0)):  # Sort sections by order
         section_id = section_data.get('id')
         section_name = section_data['section_name']
         section_billed_hourly = section_data.get('section_billed_hourly', False)
+        section_order = section_data.get('order', 0)  # Get section order
 
         # Retrieve or create section
-        section = None
         if section_id and not str(section_id).startswith('new-'):
             section = Section.objects.filter(id=section_id).first()
             if section:
                 print(f"Updating existing section: {section}")
                 section.section_name = section_name
                 section.section_billed_hourly = section_billed_hourly
+                section.order = section_order  # Save section order
                 section.save()
             else:
                 print(f"Section with ID {section_id} not found. Creating new section.")
-        if not section:
+                section = Section.objects.create(
+                    section_name=section_name,
+                    section_billed_hourly=section_billed_hourly,
+                    order=section_order
+                )
+        else:
             section = Section.objects.create(
                 section_name=section_name,
-                section_billed_hourly=section_billed_hourly
+                section_billed_hourly=section_billed_hourly,
+                order=section_order
             )
 
         sections_to_keep.append(section)
 
         # Process items in the section
         items_to_keep = []
-        for item_data in section_data.get('items', []):
+        for item_data in sorted(section_data.get('items', []), key=lambda x: x.get('order', 0)):  # Sort items by order
             item_id = item_data.get('id')
             item_name = item_data['Item_name']
             description = item_data.get('description', '')
+            item_order = item_data.get('order', 0)  # Get item order
 
             # Retrieve or create item
-            item = None
             if item_id and not str(item_id).startswith('new-'):
                 item = Item.objects.filter(id=item_id).first()
                 if item:
@@ -365,16 +378,26 @@ def handle_existing_contract_form(request, project):
                     item.quantity = item_data.get('quantity', item.quantity)
                     item.unit = item_data.get('unit', item.unit)
                     item.rate = item_data.get('rate', item.rate)
+                    item.order = item_order  # Save item order
                     item.save()
                 else:
                     print(f"Item with ID {item_id} not found. Creating new item.")
-            if not item:
+                    item = Item.objects.create(
+                        Item_name=item_name,
+                        description=description,
+                        quantity=item_data.get('quantity', 0),
+                        unit=item_data.get('unit', 'Std'),
+                        rate=item_data.get('rate', 0.0),
+                        order=item_order
+                    )
+            else:
                 item = Item.objects.create(
                     Item_name=item_name,
                     description=description,
                     quantity=item_data.get('quantity', 0),
                     unit=item_data.get('unit', 'Std'),
-                    rate=item_data.get('rate', 0.0)
+                    rate=item_data.get('rate', 0.0),
+                    order=item_order
                 )
 
             items_to_keep.append(item)
@@ -403,6 +426,7 @@ def handle_existing_contract_form(request, project):
     print("Contract and project updated successfully.")
     messages.success(request, "Contract updated successfully.")
     return redirect('edit_project', project_id=project.id)
+
 
 
 
@@ -765,30 +789,41 @@ def add_project(request):
 
 
 
+
 def load_contract_data(request):
     contract_id = request.GET.get('contract_id')
     contract = get_object_or_404(Contract, id=contract_id)
-    project_id = contract.project_set.first().id  # Assuming a contract belongs to at least one project
+    
+    # Ensure the contract belongs to at least one project
+    project_id = contract.project_set.first().id if contract.project_set.exists() else None
+    if not project_id:
+        return JsonResponse({'error': 'Contract does not belong to any project'}, status=400)
 
     # Fetch all previous invoices for this project
     previous_invoices = Invoice.objects.filter(project_id=project_id)
 
     users = list(User.objects.all().values('id', 'username'))
-    sections = contract.section.all()
+
+    # Retrieve and sort sections by their 'order' attribute (default to 0 if missing)
+    sections = sorted(contract.section.all(), key=lambda s: getattr(s, 'order', 0))
+
     section_data = []
 
     for section in sections:
-        items = section.Item.all()
-        item_data = []
+        # Retrieve and sort items within each section by their 'order' attribute (default to 0 if missing)
+        items = sorted(section.Item.all(), key=lambda i: getattr(i, 'order', 0))
 
+        item_data = []
         for item in items:
-            # Calculate the total provided quantity from previous invoices
+            # Calculate the total provided quantity for this item from previous invoices
             total_provided_quantity = sum(
                 invoice.provided_quantities.get(str(item.id), {}).get('quantity', 0)
                 for invoice in previous_invoices
             )
             available_quantity = item.quantity - total_provided_quantity
+
             item_data.append({
+                'order': getattr(item, 'order', 0),  # Get the 'order' attribute, default to 0
                 'id': item.id,
                 'Item_name': item.Item_name,
                 'description': item.description,
@@ -797,14 +832,16 @@ def load_contract_data(request):
                 'unit': item.unit,
                 'rate': item.rate,
                 'total': item.total,
-                'users': list(item.users.values_list('id', flat=True)),
-                'tasks': list(item.tasks.values('id', 'task_name'))
+                'users': list(item.users.values_list('id', flat=True)),  # Get associated users
+                'tasks': list(item.tasks.values('id', 'task_name')),  # Get associated tasks
             })
-        
+
         section_data.append({
+            'order': getattr(section, 'order', 0),  # Get the 'order' attribute, default to 0
+            'id': section.id,  # Include the section ID
             'section_name': section.section_name,
             'section_billed_hourly': section.section_billed_hourly,
-            'items': item_data
+            'items': item_data,
         })
 
     contract_data = {
@@ -816,6 +853,8 @@ def load_contract_data(request):
     }
 
     return JsonResponse(contract_data)
+
+
 
 
 def check_task_name(request):

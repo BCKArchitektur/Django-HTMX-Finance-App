@@ -74,6 +74,7 @@ class Item(models.Model):
     unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default='Std')
     rate = models.FloatField(default=0.0)
     total = models.FloatField(default=0.0, editable=False)
+    order = models.IntegerField(default=0) 
 
     def __str__(self):
         return self.Item_name
@@ -98,6 +99,7 @@ class Section(models.Model):
     allocated_budget = models.FloatField(default='0')
     Item = models.ManyToManyField(Item)
     section_billed_hourly = models.BooleanField(default='False')
+    order = models.IntegerField(default=0) 
 
     def __str__(self):
         return self.section_name
