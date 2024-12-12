@@ -34,17 +34,22 @@ class Employee(models.Model):
         return self.user.username
 
 
-#Creating Client model
+from phonenumber_field.modelfields import PhoneNumberField  # Use this if you want validation
+
+# Creating Client model
 class Client(models.Model):
-    client_name = models.CharField(max_length=255, unique=True,default='Unknown Name')
+    client_name = models.CharField(max_length=255, unique=True, default='Unknown Name')
     client_mail = models.EmailField(max_length=255, unique=True, blank=True, null=True)  # Make email optional
+    client_phone = PhoneNumberField(blank=True, null=True)  # Add phone number field, optional
     firm_name = models.CharField(max_length=255, unique=True, blank=True, null=True)  # Make firm name optional
-    street_address = models.CharField(max_length=255,default='Unknown')
-    postal_code = models.CharField(max_length=20,default='Unknown')
-    city = models.CharField(max_length=100,default='Unknown')
+    street_address = models.CharField(max_length=255, default='Unknown')
+    postal_code = models.CharField(max_length=20, default='Unknown')
+    city = models.CharField(max_length=100, default='Unknown')
     country = CountryField()  # Using django-countries for country field
+
     def __str__(self):
-        return self.firm_name
+        return self.firm_name or self.client_name
+
 
 
 #Creating Task model
@@ -69,6 +74,7 @@ class Item(models.Model):
     unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default='Std')
     rate = models.FloatField(default=0.0)
     total = models.FloatField(default=0.0, editable=False)
+    order = models.IntegerField(default=0) 
 
     def __str__(self):
         return self.Item_name
@@ -93,6 +99,7 @@ class Section(models.Model):
     allocated_budget = models.FloatField(default='0')
     Item = models.ManyToManyField(Item)
     section_billed_hourly = models.BooleanField(default='False')
+    order = models.IntegerField(default=0) 
 
     def __str__(self):
         return self.section_name

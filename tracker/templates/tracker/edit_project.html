@@ -629,6 +629,149 @@
     document.getElementById('additional_fee_percentage').addEventListener('input', updateSummaryFields);
 
 
+
+    function moveSectionUp_budget(button) {
+        const sectionContainer = button.closest('.section-container');
+        const previousSection = sectionContainer.previousElementSibling;
+
+        if (previousSection) {
+            sectionContainer.parentNode.insertBefore(sectionContainer, previousSection);
+            updateContractJSON_budget(); // Update JSON after rearranging
+
+        }
+    }
+
+    function moveSectionDown_budget(button) {
+        const sectionContainer = button.closest('.section-container');
+        const nextSection = sectionContainer.nextElementSibling;
+
+        if (nextSection) {
+            sectionContainer.parentNode.insertBefore(nextSection, sectionContainer);
+            updateContractJSON_budget(); // Update JSON after rearranging
+
+        }
+    }
+
+
+    // Function to add hidden input to the form
+    function addHiddenInputToForm() {
+        let contractJSON = buildContractJSON();
+        let jsonInput = document.createElement('input');
+        jsonInput.type = 'hidden';
+        jsonInput.name = 'contract_json';
+        jsonInput.value = JSON.stringify(contractJSON);
+        document.getElementById('contract-form').appendChild(jsonInput);
+        document.getElementById('contract-form').appendChild(jsonInput);
+    }
+
+    function updateContractJSON() {
+        // Define a new contract JSON structure
+        const newContractJSON = {
+            contract_name: document.getElementById('id_contract_name').value,
+            sections: []
+        };
+
+        // Select all rows from the budget table
+        const rows = document.querySelectorAll('#budget-table tbody tr');
+
+        let currentSection = null;
+
+        rows.forEach((row) => {
+            const sectionName = row.children[1].querySelector('input').value;
+            const itemName = row.children[2].querySelector('input').value;
+            const quantity = row.querySelector(`input[name^="quantity"]`).value;
+            const unit = row.querySelector(`select[name^="unit"]`).value;
+            const rate = row.querySelector(`input[name^="rate"]`).value;
+
+            // If this row starts a new section, push the previous section to the JSON
+            if (!currentSection || currentSection.section_name !== sectionName) {
+                if (currentSection) {
+                    newContractJSON.sections.push(currentSection);
+                }
+
+                currentSection = {
+                    section_name: sectionName,
+                    section_billed_hourly: false, // Set as needed
+                    items: []
+                };
+            }
+
+            // Add the item to the current section
+            currentSection.items.push({
+                Item_name: itemName,
+                quantity: quantity,
+                unit: unit,
+                rate: rate,
+                tasks: [] // Add tasks as needed, or collect from additional fields
+            });
+        });
+
+        // Push the last section if it exists
+        if (currentSection) {
+            newContractJSON.sections.push(currentSection);
+        }
+
+        console.log("Updated Contract JSON:", JSON.stringify(newContractJSON, null, 2));
+
+        // Update the hidden contract JSON input field if used for submission
+        const jsonInput = document.querySelector('input[name="contract_json"]');
+        if (jsonInput) {
+            jsonInput.value = JSON.stringify(newContractJSON);
+        }
+    }
+
+    function updateContractJSON_budget() {
+    // Define a new contract JSON structure
+    const newContractJSON = {
+        contract_name: document.getElementById('id_contract_name') ? document.getElementById('id_contract_name').value : '',
+        sections: []
+    };
+
+    // Select all section containers from the budget table
+    const sectionContainers = document.querySelectorAll('#budget-table .section-container');
+
+    sectionContainers.forEach((sectionContainer) => {
+        const sectionName = sectionContainer.querySelector('.section-name').textContent.trim();
+
+        // Initialize the current section
+        const currentSection = {
+            section_name: sectionName,
+            section_billed_hourly: false, // Set as needed
+            items: []
+        };
+
+        // Select all item rows within the current section
+        const itemRows = sectionContainer.querySelectorAll('.items-table tbody tr');
+        itemRows.forEach((row) => {
+            const itemName = row.children[1].querySelector('input').value.trim();
+            const quantity = row.querySelector(`input[name^="quantity"]`).value.trim();
+            const unit = row.querySelector(`select[name^="unit"]`).value;
+            const rate = row.querySelector(`input[name^="rate"]`).value.trim();
+
+            // Add the item to the current section
+            currentSection.items.push({
+                Item_name: itemName,
+                quantity: quantity,
+                unit: unit,
+                rate: rate,
+                tasks: [] // Add tasks as needed, or collect from additional fields
+            });
+        });
+
+        // Push the current section to the contract JSON
+        newContractJSON.sections.push(currentSection);
+    });
+
+    console.log("Updated Contract JSON:", newContractJSON);
+
+    // Update the hidden contract JSON input field if used for submission
+    const jsonInput = document.querySelector('input[name="contract_json"]');
+    if (jsonInput) {
+        jsonInput.value = JSON.stringify(newContractJSON);
+    }
+}
+
+
     function populateBudgetTable(contractId) {
         console.log('Fetching contract data for contract ID:', contractId);
 
@@ -636,15 +779,71 @@
             console.log('Contract data received:', data);
 
             const budgetTable = document.getElementById('budget-table');
-            const thead = budgetTable.querySelector('thead tr');
-            const tbody = budgetTable.querySelector('tbody');
+            budgetTable.innerHTML = ''; // Clear existing content
 
-            thead.innerHTML = '<th>NO.</th><th>SECTION</th><th>ITEM</th><th>QUANTITY</th><th>UNIT</th><th>RATE</th><th>TOTAL</th>';
-            tbody.innerHTML = '';
+            // Dynamically add or update the hidden input for contract JSON
+            const form = document.getElementById('add-budget-form');
+            let jsonInput = form.querySelector('input[name="contract_json"]');
+            if (!jsonInput) {
+                jsonInput = document.createElement('input');
+                jsonInput.type = 'hidden';
+                jsonInput.name = 'contract_json';
+                form.appendChild(jsonInput);
+            }
 
             let isContractInvoiced = false;
 
             data.sections.forEach((section, sectionIndex) => {
+                // Create a container for each section
+                const sectionContainer = document.createElement('div');
+                sectionContainer.classList.add('section-container', 'my-4', 'p-2', 'border', 'border-gray-300', 'rounded');
+                sectionContainer.setAttribute('data-section-index', sectionIndex);
+
+                // Add a header for the section with move buttons
+                const sectionHeader = document.createElement('div');
+                sectionHeader.classList.add('section-header', 'flex', 'justify-between', 'items-center', 'mb-2');
+                sectionHeader.innerHTML = `
+                    <div class="section-name font-semibold">${section.section_name}</div>
+                    <div>
+                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionUp_budget(this)">
+                        <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" />
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="18" y1="11" x2="12" y2="5" />
+                            <line x1="6" y1="11" x2="12" y2="5" />
+                        </svg>
+                        </button>
+                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionDown_budget(this)">
+                        <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" />
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="18" y1="13" x2="12" y2="19" />
+                            <line x1="6" y1="13" x2="12" y2="19" />
+                        </svg>                                        
+                        </button>
+                    </div>
+                `;
+                sectionContainer.appendChild(sectionHeader);
+
+                // Create a table for the items within this section
+                const itemsTable = document.createElement('table');
+                itemsTable.classList.add('items-table', 'table', 'w-full');
+                itemsTable.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>NO.</th>
+                            <th>ITEM</th>
+                            <th>QUANTITY</th>
+                            <th>UNIT</th>
+                            <th>RATE</th>
+                            <th>TOTAL</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                `;
+
+                // Add items to the itemsTable
+                const itemsTableBody = itemsTable.querySelector('tbody');
                 section.items.forEach((item, itemIndex) => {
                     const itemInvoiced = item.quantity !== item.available_quantity;
                     if (itemInvoiced) {
@@ -660,23 +859,19 @@
                     const isPsch = item.unit === 'Psch';
                     const quantityValue = isPsch ? '1' : (item.quantity || '');
                     const formattedQuantityValue = formatNumberToGerman(quantityValue);
-
-                    const quantityInput = `
-                        <input type="text" name="quantity_${item.id}" value="${formattedQuantityValue}" 
-                            class="input input-bordered w-full" 
-                            ${itemInvoiced ? 'disabled' : (isPsch ? 'readonly' : '')} 
-                            onchange="updateTotal(${item.id})">
-                        <input type="hidden" name="original_quantity_${item.id}" value="${quantityValue}">
-                    `;
-
                     const formattedRate = formatNumberToGerman(item.rate || 0);
 
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
+                    const itemRow = document.createElement('tr');
+                    itemRow.innerHTML = `
                         <td>${sectionIndex + 1},${itemIndex + 1}</td>
-                        <td><input type="text" value="${section.section_name}" class="input input-bordered w-full readonly" ${itemInvoiced ? 'disabled' : ''}></td>
                         <td><input type="text" value="${item.Item_name}" class="input input-bordered w-full" ${itemInvoiced ? 'disabled' : ''}></td>
-                        <td>${quantityInput}</td>
+                        <td>
+                            <input type="text" name="quantity_${item.id}" value="${formattedQuantityValue}" 
+                                class="input input-bordered w-full" 
+                                ${itemInvoiced ? 'disabled' : (isPsch ? 'readonly' : '')} 
+                                onchange="updateTotal(${item.id})">
+                            <input type="hidden" name="original_quantity_${item.id}" value="${quantityValue}">
+                        </td>
                         <td>
                             <select name="unit_${item.id}" class="select select-bordered w-full" ${itemInvoiced ? 'disabled' : ''} onchange="handleUnitChange(this, ${item.id})">
                                 ${unitOptions}
@@ -685,8 +880,12 @@
                         <td><input type="text" name="rate_${item.id}" value="${formattedRate}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" ${itemInvoiced ? 'disabled' : ''}></td>
                         <td id="total_${item.id}">${formatNumberToGerman(item.total || 0)}</td>
                     `;
-                    tbody.appendChild(tr);
+
+                    itemsTableBody.appendChild(itemRow);
                 });
+
+                sectionContainer.appendChild(itemsTable); // Append itemsTable to sectionContainer
+                budgetTable.appendChild(sectionContainer); // Append sectionContainer to budgetTable
             });
 
             // Populate additional fee percentage and disable if any item is invoiced
@@ -716,6 +915,7 @@
             updateSummaryFields();
         });
     }
+
 
     function handleUnitChange(selectElement, itemId) {
         const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
