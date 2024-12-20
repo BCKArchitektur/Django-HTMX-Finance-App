@@ -1063,7 +1063,7 @@ def generate_word_document(request, contract_id):
     client = project.client_name  # Assuming client_name is a related model, not just a field
 
     # Construct the template path using the template name from the URL parameter
-    template_path = os.path.join(r'Z:\02_Zubehör\3_Vorlagen\BCK App Templates', template_name)
+    template_path = os.path.join(r'C:\Users\BCK-CustomApp\Documents\GitHub\Django-HTMX-Finance-App\BCK App Templates', template_name)
     if not os.path.exists(template_path):
         raise FileNotFoundError(f"Template not found at {template_path}")
 
@@ -1483,7 +1483,7 @@ def download_invoice(request, invoice_id):
     # template_path = r'Z:\02_Zubehör\3_Vorlagen\BCK App Templates\Invoice_Template.docx'
 
     # Construct the template path using the selected template name from the request
-    template_path = os.path.join(r'Z:\02_Zubehör\3_Vorlagen\BCK App Templates', template_name)
+    template_path = os.path.join(r'C:\Users\BCK-CustomApp\Documents\GitHub\Django-HTMX-Finance-App\BCK App Templates', template_name)
 
 
     # Load the template

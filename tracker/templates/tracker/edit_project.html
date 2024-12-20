@@ -170,14 +170,15 @@
                             </td>
                             <td>{{ invoice.contract.contract_name }}</td>
                             <td>{{ invoice.created_at  }}</td>
-                            <td>{{ invoice.invoice_net }}</td>
-                            <td>{{ invoice.invoice_gross  }}</td>
-                            <td>{{ invoice.amount_received  }}</td> 
+                            <td data-value="{{ invoice.invoice_net }}">{{ invoice.invoice_net }}</td>
+                            <td data-value="{{ invoice.invoice_gross }}">{{ invoice.invoice_gross }}</td>
+                            <td data-value="{{ invoice.amount_received }}">{{ invoice.amount_received }}</td>
                             <td>
-                                <form method="post" action="{% url 'delete_invoice' invoice.id %}" style="display:inline;">
+                                <form method="post" action="{% url 'delete_invoice' invoice.id %}" style="display:inline;" onsubmit="return confirmDelete();">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-xs btn-error btn-outline m-1 p-1">Delete</button>
                                 </form>
+                                
                                 <a href="javascript:void(0);" onclick="openInvoiceTemplateModal({{ invoice.id }})" class="btn btn-xs btn-secondary btn-outline m-1 p-1">🖪 Invoice</a>
                                 <button class="btn btn-xs btn-primary btn-outline m-1" onclick="openRecordPaymentModal({{ invoice.id }})">Record Payment</button> <!-- New Button -->
                             </td>
@@ -566,10 +567,13 @@
         return parseFloat(numberString.replace(/\./g, '').replace(',', '.'));
     }
 
+
+
     // Format the number into German format (e.g., "1.234,56")
     function formatNumberToGerman(number) {
         // Ensure the number is a valid float
         const parsedNumber = parseFloat(number);
+
         if (isNaN(parsedNumber)) return '0,00';  // return a default value if the number is invalid
 
         // Convert the number to German format (e.g., '1.234,00')
@@ -1131,7 +1135,23 @@
         document.getElementById('add-budget-form').reset();
     }
 
+    function confirmDelete() {
+            return confirm("Are you sure you want to delete this invoice?");
+        }
+    
 
 
+    // document.addEventListener('DOMContentLoaded', () => {
+    //     const amountCells = document.querySelectorAll('td[data-value]');
+    //     amountCells.forEach(cell => {
+    //         const rawValue = cell.getAttribute('data-value');
+    //         console.log(rawValue)
+    //         const parsedValue = parseGermanNumber_2(rawValue);
+    //         console.log(parsedValue)
+    //         const formattedValue = formatNumberToGerman(parsedValue);
+    //         console.log(formattedValue)
+    //         cell.textContent = formattedValue;
+    //     });
+    // });
 </script>
 {% endblock %}

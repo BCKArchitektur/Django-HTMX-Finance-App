@@ -170,39 +170,3 @@ AUTH_USER_MODEL = 'tracker.User'
 LOGIN_REDIRECT_URL = 'log_create_compact'
 
 
-LOG_DIR = os.path.join(BASE_DIR, 'logs')
-if not os.path.exists(LOG_DIR):
-    os.makedirs(LOG_DIR)
-
-
-LOGGING = {
-    'version': 1,  # Required key for logging configuration
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'rotating_file': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
-            'maxBytes': 1024 * 1024 * 5,  # 5 MB
-            'backupCount': 5,  # Keep up to 5 rotated files
-            'formatter': 'verbose',
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['rotating_file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-}
