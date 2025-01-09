@@ -289,3 +289,27 @@ class InvoiceAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)
 
 admin.site.register(Invoice, InvoiceAdmin)
+
+
+
+from django.contrib import admin
+from .models import EstimateInvoiceSettings, TermsAndConditionsFile
+
+class TermsAndConditionsFileInline(admin.TabularInline):
+    model = TermsAndConditionsFile
+    extra = 1
+
+@admin.register(EstimateInvoiceSettings)
+class EstimateInvoiceSettingsAdmin(admin.ModelAdmin):
+    inlines = [TermsAndConditionsFileInline]
+    fieldsets = (
+        (None, {
+            'fields': ('consecutive_start_no',)
+        }),
+        ('Estimate Templates', {
+            'fields': ('bck_eng_template', 'bck_de_template', 'kost_eng_template', 'kost_de_template')
+        }),
+        ('Invoice Templates', {
+            'fields': ('inv_bck_eng_template', 'inv_bck_de_template', 'inv_kost_eng_template', 'inv_kost_de_template')
+        }),
+    )

@@ -6,6 +6,7 @@ from django.db.models import UniqueConstraint
 from datetime import date
 from django.utils import timezone
 from decimal import Decimal
+import os
 
 #Creating custom user model
 class User(AbstractUser):
@@ -259,3 +260,58 @@ class Invoice(models.Model):
 
     def __str__(self):
         return self.title
+
+
+
+
+class EstimateInvoiceSettings(models.Model):
+    consecutive_start_no = models.IntegerField(default=1, help_text="Starting number for consecutive numbering.")
+
+    # Estimate Templates
+    bck_eng_template = models.FileField(upload_to='templates/estimates/', null=True, blank=True)
+    bck_de_template = models.FileField(upload_to='templates/estimates/', null=True, blank=True)
+    kost_eng_template = models.FileField(upload_to='templates/estimates/', null=True, blank=True)
+    kost_de_template = models.FileField(upload_to='templates/estimates/', null=True, blank=True)
+
+    # Invoice Templates
+    inv_bck_eng_template = models.FileField(upload_to='templates/invoices/', null=True, blank=True)
+    inv_bck_de_template = models.FileField(upload_to='templates/invoices/', null=True, blank=True)
+    inv_kost_eng_template = models.FileField(upload_to='templates/invoices/', null=True, blank=True)
+    inv_kost_de_template = models.FileField(upload_to='templates/invoices/', null=True, blank=True)
+
+def save(self, *args, **kwargs):
+    if self.pk:
+        fields_to_check = [
+            'bck_eng_template',
+            'bck_de_template',
+            'kost_eng_template',
+            'kost_de_template',
+            'inv_bck_eng_template',
+            'inv_bck_de_template',
+            'inv_kost_eng_template',
+            'inv_kost_de_template',
+        ]
+
+        for field in fields_to_check:
+            old_file = getattr(EstimateInvoiceSettings.objects.get(pk=self.pk), field)
+            new_file = getattr(self, field)
+            if old_file and old_file != new_file:
+                if old_file and os.path.isfile(old_file.path):
+                    os.remove(old_file.path)
+
+    super().save(*args, **kwargs)
+
+    def __str__(self):
+        return "Global Settings"
+
+
+class TermsAndConditionsFile(models.Model):
+    settings = models.ForeignKey(
+        EstimateInvoiceSettings,
+        related_name='terms_and_conditions_files',
+        on_delete=models.CASCADE
+    )
+    file = models.FileField(upload_to='terms_and_conditions/')
+
+    def __str__(self):
+        return f"Terms File ({self.file.name})"
