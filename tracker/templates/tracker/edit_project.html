@@ -67,13 +67,14 @@
         <div role="tabpanel" class="tab-content p-10" id="contracts-content">
           <div class="flex justify-between items-center mb-4">
               <h2 class="text-xl font-semibold">Manage Contracts</h2>
-              <button class="btn btn-sm btn-accent" onclick="openContractModal()">+ New Contract</button>
+              <button class="btn btn-sm btn-accent" onclick="openContractModal({{ project.id }})">+ New Contract</button>
           </div>
           <div class="overflow-x-auto h-80">
               <table class="table" id="contract-table">
                 <thead>
                     <tr>
                         <th class="w-1/12"></th> <!-- First column for the delete button -->
+                        <th class="w-1/4">Contract No</th>
                         <th class="w-1/4">Contract Name</th>
                         <th class="w-1/2">Users</th>
                         <th class="w-1/2 justify-start">Actions</th>
@@ -91,6 +92,9 @@
                                     </svg>
                                 </button>
                             </form>
+                        </td>
+                        <td class="w-1/4">
+                            {{ contract.contract_no}}
                         </td>
                         <td class="w-1/4">
                             <a href="javascript:void(0);" onclick="openEditContractModal({{ contract.id }})" class="font-semibold hover:text-secondary">

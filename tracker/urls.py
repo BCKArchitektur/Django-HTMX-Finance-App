@@ -38,5 +38,5 @@ urlpatterns = [
     path("ajax/view-invoice/<int:invoice_id>/", views.view_invoice, name="view_invoice"),
     path('download-invoice/<int:invoice_id>/', views.download_invoice, name='download_invoice'),
     path('record-payment/<int:invoice_id>/', views.record_payment, name='record_payment'),
-
+    path('ajax/get-new-contract-number/<int:project_id>/', views.get_new_contract_number, name='get_new_contract_number'),
     ]

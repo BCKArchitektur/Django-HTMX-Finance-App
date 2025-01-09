@@ -849,6 +849,7 @@ def load_contract_data(request):
 
     contract_data = {
         'contract_name': contract.contract_name,
+        'contract_no':contract.contract_no,
         'users': users,
         'sections': section_data,
         'additional_fee_percentage': contract.additional_fee_percentage,
@@ -1063,7 +1064,7 @@ def generate_word_document(request, contract_id):
     client = project.client_name  # Assuming client_name is a related model, not just a field
 
     # Construct the template path using the template name from the URL parameter
-    template_path = os.path.join(r'C:\Users\BCK-CustomApp\Documents\GitHub\Django-HTMX-Finance-App\BCK App Templates', template_name)
+    template_path = os.path.join(r'C:\Users\BCK-CustomApp\Documents\GitHub\Django-HTMX-Finance-App\templates\estimates', template_name)
     if not os.path.exists(template_path):
         raise FileNotFoundError(f"Template not found at {template_path}")
 
@@ -1520,3 +1521,27 @@ def record_payment(request, invoice_id):
         return redirect(reverse('edit_project', args=[invoice.project.id]) + '?tab=invoices')
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+from django.http import JsonResponse
+from .models import EstimateInvoiceSettings, Project
+
+def get_new_contract_number(request, project_id):
+    try:
+        # Fetch the current consecutive number
+        settings = EstimateInvoiceSettings.objects.first()
+        if not settings:
+            return JsonResponse({"error": "Settings not configured."}, status=400)
+
+        consecutive_no = settings.consecutive_start_no
+
+        # Fetch the project
+        project = Project.objects.get(id=project_id)
+        project_no = project.project_no
+
+        # Combine consecutive_no and project_no
+        contract_no = f"{consecutive_no}-{project_no}"
+
+        return JsonResponse({"contract_no": contract_no})
+    except Project.DoesNotExist:
+        return JsonResponse({"error": "Project not found."}, status=404)

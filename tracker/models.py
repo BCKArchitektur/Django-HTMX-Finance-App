@@ -120,17 +120,15 @@ class Contract(models.Model):
     section = models.ManyToManyField(Section)
     additional_fee_percentage = models.FloatField(default=6.5) 
     vat_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=19.00,blank=True, null=True) 
+    contract_no = models.CharField(max_length=255, unique=True, blank=True, null=True)  # Concatenated field
 
     def __str__(self):
-        return self.contract_name
+        return f"({self.contract_no}-{self.contract_name} )"
 
     def delete(self, *args, **kwargs):
         for section in self.section.all():
             section.delete()  # Delete all sections related to this contract
         super().delete(*args, **kwargs)
-
-
-
 
 
 #Creating Project model
@@ -151,8 +149,6 @@ class Project(models.Model):
         for contract in self.contract.all():
             contract.delete()  # Delete all contracts related to this project
         super().delete(*args, **kwargs)
-
-
 
 
 #Creating Logs model
@@ -262,7 +258,7 @@ class Invoice(models.Model):
         return self.title
 
 
-
+import os
 
 class EstimateInvoiceSettings(models.Model):
     consecutive_start_no = models.IntegerField(default=1, help_text="Starting number for consecutive numbering.")
@@ -279,30 +275,33 @@ class EstimateInvoiceSettings(models.Model):
     inv_kost_eng_template = models.FileField(upload_to='templates/invoices/', null=True, blank=True)
     inv_kost_de_template = models.FileField(upload_to='templates/invoices/', null=True, blank=True)
 
-def save(self, *args, **kwargs):
-    if self.pk:
-        fields_to_check = [
-            'bck_eng_template',
-            'bck_de_template',
-            'kost_eng_template',
-            'kost_de_template',
-            'inv_bck_eng_template',
-            'inv_bck_de_template',
-            'inv_kost_eng_template',
-            'inv_kost_de_template',
-        ]
+    def save(self, *args, **kwargs):
+        if self.pk:
+            old_instance = EstimateInvoiceSettings.objects.get(pk=self.pk)
+            fields_to_check = [
+                'bck_eng_template',
+                'bck_de_template',
+                'kost_eng_template',
+                'kost_de_template',
+                'inv_bck_eng_template',
+                'inv_bck_de_template',
+                'inv_kost_eng_template',
+                'inv_kost_de_template',
+            ]
 
-        for field in fields_to_check:
-            old_file = getattr(EstimateInvoiceSettings.objects.get(pk=self.pk), field)
-            new_file = getattr(self, field)
-            if old_file and old_file != new_file:
-                if old_file and os.path.isfile(old_file.path):
-                    os.remove(old_file.path)
+            for field in fields_to_check:
+                old_file = getattr(old_instance, field)
+                new_file = getattr(self, field)
 
-    super().save(*args, **kwargs)
+                if old_file and old_file != new_file:
+                    if os.path.isfile(old_file.path):
+                        os.remove(old_file.path)
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return "Global Settings"
+
 
 
 class TermsAndConditionsFile(models.Model):
@@ -311,7 +310,7 @@ class TermsAndConditionsFile(models.Model):
         related_name='terms_and_conditions_files',
         on_delete=models.CASCADE
     )
-    file = models.FileField(upload_to='terms_and_conditions/')
+    file = models.FileField(upload_to='templates/terms_and_conditions/')
 
     def __str__(self):
         return f"Terms File ({self.file.name})"
