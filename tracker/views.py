@@ -434,17 +434,21 @@ def handle_existing_contract_form(request, project):
 
 def handle_new_contract_form(request, project):
     contract_name = request.POST.get('contract_name')
-    
+    contract_json = request.POST.get('contract_json')
+    contract_no = request.POST.get('contract_no')
     # Retrieve all users associated with the project
     user_ids = project.user.values_list('id', flat=True)
     
     # Debugging print statement
     print("POST data:", request.POST)
 
-    contract = Contract.objects.create(contract_name=contract_name)
+    # Create the Contract object with contract_no and contract_name
+    contract = Contract.objects.create(
+        contract_name=contract_name,
+        contract_no = contract_no
+    )
     contract.user.set(user_ids)
 
-    contract_json = request.POST.get('contract_json')
     
     # Debugging print statement to check if contract_json is None
     print("Received contract JSON:", contract_json)
