@@ -128,9 +128,13 @@
                             <button class="btn btn-xs btn-primary btn-outline m-1 h-10" onclick="openAddBudgetModal({{ contract.id }})">
                                 ✎ Budget
                             </button>
+                            <button class="btn btn-xs btn-warning btn-outline m-1 h-10" onclick="openScopeModal({{ contract.id }}, '{{ contract.scope_of_work|safe }}')">
+                                ✎ Scope
+                            </button>
                             <button class="btn btn-xs btn-secondary btn-outline m-1 h-10" onclick="openTemplateModal({{ contract.id }})">
                                 🖪 Estimate
                             </button>
+
                         </td>                        
                     </tr>
                     {% empty %}
@@ -312,14 +316,33 @@
     </div>
 </div>
 
+<!-- Scope Modal -->
+<div id="scopeModal" class="modal">
+    <div class="modal-box max-w-6xl">
+        <button class="btn btn-sm btn-circle btn-ghost position:absolute; top-0; right-0; " onclick="closeScopeModal()">✕</button>
+        <h4 class="font-bold text-lg">Edit Scope of work</h4>
+        <form id="scope-form" method="post" action="{% url 'update_scope' 0 %}">
+            {% csrf_token %}
+            <input type="hidden" name="contract_id" id="scope_contract_id">
+            <div id="quill-editor-container" style="height: 200px;"></div>
+            <input type="hidden" name="scope_of_work" id="scope_of_work">
+            <div class="modal-action">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a href="#" class="btn" onclick="closeScopeModal()">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
 
 
+<!-- Modal to select the template -->
 <!-- Modal to select the template -->
 <div id="selectTemplateModal" class="modal">
     <div class="modal-box">
         <h3 class="font-bold text-lg">Select Template and Valid Until Date</h3>
         <form id="template-form" method="get" action="{% url 'generate_word_document' 0 %}">
             <input type="hidden" name="contract_id" id="template_contract_id">
+            
             <div class="form-control m-2">
                 <label for="template_name" class="label">Template</label>
                 <select name="template_name" id="template_name" class="select select-bordered w-full">
@@ -329,8 +352,8 @@
                     <option value="BCK_De.docx">BCK_De</option>
                     <option value="BCK_En.docx">BCK_En</option>
                 </select>
-                
             </div>
+
             <div class="form-control m-2">
                 <label for="valid_until" class="label">Valid Until</label>
                 <input type="date" name="valid_until" id="valid_until" class="input input-bordered w-full">
@@ -346,6 +369,16 @@
                 </select>
             </div>
 
+            <!-- Include Scope of Work -->
+            <div class="form-control m-2">
+                <label class="flex items-center space-x-2">
+                    <input type="checkbox" name="include_scope_of_work" id="include_scope_of_work" class="checkbox checkbox-bordered">
+                    <span>Include 'Scope of Work'</span>
+                </label>
+            </div>
+            
+
+
             <div class="modal-action">
                 <button type="submit" class="btn btn-primary">Download</button>
                 <a href="#" class="btn" onclick="closeTemplateModal()">Cancel</a>
@@ -353,6 +386,7 @@
         </form>
     </div>
 </div>
+
 
 
 <!-- Modal to select the invoice template and date range -->
@@ -1181,4 +1215,103 @@
     //     });
     // });
 </script>
+
+<!-- Quill CSS -->
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+
+<!-- Quill JS -->
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+
+
+<script>
+    window.quill = null;
+
+    // Initialize Quill editor
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('Initializing Quill editor...');
+        window.quill = new Quill('#quill-editor-container', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline'],
+                    ['link', 'blockquote', 'code-block'],
+                    [{ list: 'ordered' }, { list: 'bullet' }],
+                ],
+            },
+        });
+        console.log('Quill editor initialized:', window.quill);
+    });
+
+    // Function to open the Scope Modal
+    window.openScopeModal = function (contractId, scopeContent = '') {
+        console.log('Opening Scope Modal...');
+        console.log('Contract ID:', contractId);
+        console.log('Scope Content:', scopeContent);
+
+        const form = document.getElementById('scope-form');
+        form.action = `/update-scope/${contractId}/`; // Set the form action with contract ID
+
+        document.getElementById('scope_contract_id').value = contractId; // Set the hidden input value
+        window.quill.root.innerHTML = scopeContent; // Populate the Quill editor with existing scope content
+        document.getElementById('scopeModal').classList.add('modal-open');
+        console.log('Scope Modal opened.');
+    };
+
+    // Function to close the Scope Modal
+    window.closeScopeModal = function () {
+        console.log('Closing Scope Modal...');
+        document.getElementById('scopeModal').classList.remove('modal-open');
+        console.log('Scope Modal closed.');
+    };
+
+    // Handle form submission
+    document.getElementById('scope-form').addEventListener('submit', function (event) {
+        event.preventDefault();
+        const form = event.target;
+
+        console.log('Submitting Scope form...');
+        const scopeContent = window.quill.root.innerHTML;
+
+        console.log('Form action URL:', form.action);
+        console.log('Scope Content:', scopeContent);
+
+        // Set the hidden input value for submission
+        document.getElementById('scope_of_work').value = scopeContent;
+
+        // Submit the form via fetch
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+        })
+            .then((response) => {
+                console.log('Response received:', response);
+                if (!response.headers.get('content-type').includes('application/json')) {
+                    console.error('Expected JSON response, but received:', response.headers.get('content-type'));
+                    throw new Error('Expected JSON response');
+                }
+                return response.json();
+            })
+            .then((data) => {
+                console.log('Response data:', data);
+                if (data.status === 'success') {
+                    alert('Scope updated successfully!');
+                    console.log('Scope updated successfully. Reloading page...');
+                    location.reload();
+                } else {
+                    alert('Error updating scope: ' + data.message);
+                    console.error('Error in response data:', data.message);
+                }
+            })
+            .catch((error) => {
+                console.error('Error updating scope:', error);
+                alert('An error occurred while updating the scope.');
+            });
+    });
+</script>
+
+
+
+
+
+
 {% endblock %}

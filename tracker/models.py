@@ -41,7 +41,7 @@ from phonenumber_field.modelfields import PhoneNumberField  # Use this if you wa
 class Client(models.Model):
     client_name = models.CharField(max_length=255, unique=True, default='Unknown Name')
     client_mail = models.EmailField(max_length=255, unique=True, blank=True, null=True)  # Make email optional
-    client_phone = PhoneNumberField(blank=True, null=True)  # Add phone number field, optional
+    client_phone = models.CharField(blank=True, null=True)  # Add phone number field, optional
     firm_name = models.CharField(max_length=255, unique=True, blank=True, null=True)  # Make firm name optional
     street_address = models.CharField(max_length=255, default='Unknown')
     postal_code = models.CharField(max_length=20, default='Unknown')
@@ -114,13 +114,17 @@ class Section(models.Model):
 
 
 #Creating Contract model
+from django_quill.fields import QuillField
+
 class Contract(models.Model):
     contract_name = models.CharField(max_length=255, unique=False)
     user = models.ManyToManyField(User)
     section = models.ManyToManyField(Section)
-    additional_fee_percentage = models.FloatField(default=6.5) 
-    vat_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=19.00,blank=True, null=True) 
+    additional_fee_percentage = models.FloatField(default=6.5)
+    vat_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=19.00, blank=True, null=True)
     contract_no = models.CharField(max_length=255, unique=True, blank=True, null=True)  # Concatenated field
+    scope_of_work = models.TextField(blank=True, null=True)
+ 
 
     def __str__(self):
         return f"({self.contract_no}-{self.contract_name} )"

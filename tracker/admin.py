@@ -69,7 +69,7 @@ admin.site.register(Employee, EmployeeAdmin)
 admin.site.register(User, UserAdmin)
 
 # Client Admin
-# @admin.register(Client)
+@admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
     list_display = ('client_name', 'client_mail', 'firm_name', 'street_address', 'postal_code', 'city', 'country')
     search_fields = ('client_name', 'client_mail', 'firm_name', 'city', 'country')
@@ -280,6 +280,7 @@ class TaskLibraryAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Item, ItemAdmin)
+
 
 
 

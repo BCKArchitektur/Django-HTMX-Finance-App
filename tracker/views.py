@@ -1555,3 +1555,30 @@ def get_new_contract_number(request, project_id):
         return JsonResponse({"contract_no": contract_no})
     except Project.DoesNotExist:
         return JsonResponse({"error": "Project not found."}, status=404)
+
+
+from bs4 import BeautifulSoup
+
+@csrf_exempt
+def update_scope(request, contract_id):
+    if request.method == 'POST':
+        scope_of_work = request.POST.get('scope_of_work', '')
+        print(f"Raw scope_of_work: {scope_of_work}")
+
+        # Validate HTML
+        try:
+            soup = BeautifulSoup(scope_of_work, 'html.parser')
+            sanitized_html = str(soup)  # Ensure valid HTML structure
+            print(f"Sanitized HTML: {sanitized_html}")
+        except Exception as e:
+            print(f"HTML parsing error: {e}")
+            return JsonResponse({'status': 'error', 'message': 'Invalid HTML content'}, status=400)
+
+        try:
+            contract = Contract.objects.get(id=contract_id)
+            contract.scope_of_work = sanitized_html
+            contract.save()
+            return JsonResponse({'status': 'success', 'message': 'Scope updated successfully'})
+        except Exception as e:
+            print(f"Database save error: {e}")
+            return JsonResponse({'status': 'error', 'message': f'Error saving contract: {str(e)}'}, status=500)

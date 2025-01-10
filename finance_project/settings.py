@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     # project apps
     "tracker",
     
+    'django_quill',
     
 ]
 
@@ -225,4 +226,23 @@ JAZZMIN_SETTINGS = {
 
     "show_ui_builder": False,
 
+}
+
+
+QUILL_CONFIGS = {
+    'default': {
+        'theme': 'snow',  # Available options: 'snow', 'bubble'
+        'modules': {
+            'toolbar': [
+                ['bold', 'italic', 'underline', 'strike'],
+                ['blockquote', 'code-block'],
+                [{'list': 'ordered'}, {'list': 'bullet'}],
+                [{'indent': '-1'}, {'indent': '+1'}],
+                [{'size': ['small', False, 'large', 'huge']}],
+                [{'color': []}, {'background': []}],
+                [{'align': []}],
+                ['clean'],  # Remove formatting button
+            ],
+        },
+    },
 }
