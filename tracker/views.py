@@ -1059,6 +1059,7 @@ def delete_contract(request, contract_id):
 def generate_word_document(request, contract_id):
     template_name = request.GET.get('template_name', 'Kost_De.docx')
     valid_until = request.GET.get('valid_until')
+    terms_conditions = request.GET.get('terms_conditions')
 
     print(f"Template Name: {template_name}")
     print(f"Valid Until: {valid_until}")
@@ -1109,13 +1110,13 @@ def generate_word_document(request, contract_id):
                     unit = 'Lumpsum'
                 elif unit == 'Stk':
                     unit = 'Piece'
-                elif unit == 'Std.':
+                elif unit == 'Std':
                     unit = 'Hour'
 
             item_data = {
                 'Item_serial': f"{section_counter}.{item_counter}",
                 'Item_name': item.Item_name,
-                'quantity': item.quantity,
+                'quantity': f"{item.quantity:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'unit': unit,
                 'rate': f"{Decimal(item.rate):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
@@ -1153,6 +1154,7 @@ def generate_word_document(request, contract_id):
     context = {
         # other context data
         'contract_name': contract.contract_name,
+        'contract_no': contract.contract_no,
         'project_name': project.project_name,
         'project_no': project.project_no,
         'client_name': client_name,
@@ -1166,6 +1168,7 @@ def generate_word_document(request, contract_id):
         'today_date': date.today().strftime('%d.%m.%Y'),
         'valid_until': valid_until if not valid_until else date.fromisoformat(valid_until).strftime('%d.%m.%Y'),
         'vat_percentage': f"{vat_percentage * 100:.2f}",  # Pass VAT percentage to the template if needed
+        'terms_conditions': terms_conditions,
     }
 
     # Only add the additional fee to the context if it's greater than 0
@@ -1184,14 +1187,17 @@ def generate_word_document(request, contract_id):
 
     # Create HTTP response
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-    if is_english_template and template_name in ['Kost_En.docx']:
-        response['Content-Disposition'] = f'attachment; filename=Kost_Quote_{project.project_no}_{project.project_name}.docx'
-    elif is_english_template and template_name in ['BCK_En.docx']:
-        response['Content-Disposition'] = f'attachment; filename=BCK_Quote_{project.project_no}_{project.project_name}.docx'
-    elif is_english_template =='False' and template_name in ['BCK_De.docx']:
-        response['Content-Disposition'] = f'attachment; filename=BCK_Angebot_{project.project_no}_{project.project_name}.docx'
-    else:
-        response['Content-Disposition'] = f'attachment; filename=Kost_Angebot_{project.project_no}_{project.project_name}.docx'
+    
+    # Determine the prefix based on the template type
+    prefix = "BCK" if "BCK" in template_name else "KOST"
+
+    # Build the file name in the desired format
+    file_name = f"{contract.contract_no} {prefix} {project.project_name[:6]} AN {contract.contract_name}.docx"
+
+
+    # Set the Content-Disposition header for file download
+    response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+
     doc.save(response)
 
     return response
@@ -1488,7 +1494,7 @@ def download_invoice(request, invoice_id):
     # template_path = r'Z:\02_Zubehör\3_Vorlagen\BCK App Templates\Invoice_Template.docx'
 
     # Construct the template path using the selected template name from the request
-    template_path = os.path.join(r'C:\Users\BCK-CustomApp\Documents\GitHub\Django-HTMX-Finance-App\BCK App Templates', template_name)
+    template_path = os.path.join(r'C:\Users\BCK-CustomApp\Documents\GitHub\Django-HTMX-Finance-App\templates\invoices', template_name)
 
 
     # Load the template

@@ -323,16 +323,29 @@
             <div class="form-control m-2">
                 <label for="template_name" class="label">Template</label>
                 <select name="template_name" id="template_name" class="select select-bordered w-full">
+                    <option value="" disabled selected>Select a Template</option>
                     <option value="Kost_De.docx">Kost_De</option>
                     <option value="Kost_En.docx">Kost_En</option>
                     <option value="BCK_De.docx">BCK_De</option>
                     <option value="BCK_En.docx">BCK_En</option>
                 </select>
+                
             </div>
             <div class="form-control m-2">
                 <label for="valid_until" class="label">Valid Until</label>
                 <input type="date" name="valid_until" id="valid_until" class="input input-bordered w-full">
             </div>
+
+            <!-- Terms and Conditions -->
+            <div class="form-control m-2">
+                <label for="terms_conditions" class="label">Terms & Conditions</label>
+                <select name="terms_conditions" id="terms_conditions" class="select select-bordered w-full">
+                    <option value="" disabled selected>Select Terms & Conditions</option>
+                    <option value="Studioprojekte">Studioprojekte</option>
+                    <option value="Architekturprojekte">Architekturprojekte</option>
+                </select>
+            </div>
+
             <div class="modal-action">
                 <button type="submit" class="btn btn-primary">Download</button>
                 <a href="#" class="btn" onclick="closeTemplateModal()">Cancel</a>
@@ -437,6 +450,7 @@
         const contractId = document.getElementById('template_contract_id').value;
         const templateName = document.getElementById('template_name').value;
         const validUntil = document.getElementById('valid_until').value;
+        const termsConditions = document.getElementById('terms_conditions').value;
 
         // Check if the validUntil value is provided
         if (!validUntil) {
@@ -444,15 +458,24 @@
             event.preventDefault();  // Prevent form submission
             return;
         }
-        
+
+        // Check if the termsConditions value is selected
+        if (!termsConditions) {
+            alert('Please select Terms and Conditions.');
+            event.preventDefault();  // Prevent form submission
+            return;
+        }
+
         // Set the form action URL
-        this.action = `{% url 'generate_word_document' 0 %}`.replace('0', contractId) + `?template_name=${templateName}&valid_until=${validUntil}`;
+        this.action = `{% url 'generate_word_document' 0 %}`.replace('0', contractId) + 
+                    `?template_name=${templateName}&valid_until=${validUntil}&terms_conditions=${termsConditions}`;
 
         // Close the modal
         closeTemplateModal();
 
         // Allow form submission to proceed
     });
+
 
     // Function to open the invoice template modal
     function openInvoiceTemplateModal(invoiceId) {

@@ -301,7 +301,7 @@ class TermsAndConditionsFileInline(admin.TabularInline):
 
 @admin.register(EstimateInvoiceSettings)
 class EstimateInvoiceSettingsAdmin(admin.ModelAdmin):
-    inlines = [TermsAndConditionsFileInline]
+    # inlines = [TermsAndConditionsFileInline]
     fieldsets = (
         (None, {
             'fields': ('consecutive_start_no',)
