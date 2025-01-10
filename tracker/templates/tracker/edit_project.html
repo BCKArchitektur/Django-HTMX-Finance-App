@@ -318,13 +318,13 @@
 
 <!-- Scope Modal -->
 <div id="scopeModal" class="modal">
-    <div class="modal-box max-w-6xl">
-        <button class="btn btn-sm btn-circle btn-ghost position:absolute; top-0; right-0; " onclick="closeScopeModal()">✕</button>
+    <div class="modal-box max-h-full max-w-6xl">
+        <button class="btn btn-sm btn-circle btn-primary btn-ghost position:absolute; top-0; right-0; " onclick="closeScopeModal()">✕</button>
         <h4 class="font-bold text-lg">Edit Scope of work</h4>
         <form id="scope-form" method="post" action="{% url 'update_scope' 0 %}">
             {% csrf_token %}
             <input type="hidden" name="contract_id" id="scope_contract_id">
-            <div id="quill-editor-container" style="height: 200px;"></div>
+            <div id="quill-editor-container" style="height: 300px;"></div>
             <input type="hidden" name="scope_of_work" id="scope_of_work">
             <div class="modal-action">
                 <button type="submit" class="btn btn-primary">Save</button>
@@ -335,7 +335,6 @@
 </div>
 
 
-<!-- Modal to select the template -->
 <!-- Modal to select the template -->
 <div id="selectTemplateModal" class="modal">
     <div class="modal-box">

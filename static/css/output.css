@@ -4878,6 +4878,14 @@ details.collapse summary::-webkit-details-marker {
   max-height: 9rem;
 }
 
+.max-h-72 {
+  max-height: 18rem;
+}
+
+.max-h-full {
+  max-height: 100%;
+}
+
 .w-1\/12 {
   width: 8.333333%;
 }
