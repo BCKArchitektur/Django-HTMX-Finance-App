@@ -107,13 +107,28 @@ def load_tasks(request):
     except Item.DoesNotExist:
         return HttpResponseBadRequest("Item not found")
 
+
 @login_required
 def delete_log(request, log_id):
+
+    
+    # Force clean up of the log_id to remove commas
+    try:
+        cleaned_log_id = ''.join(log_id.split(','))  # Remove commas by splitting and rejoining
+        cleaned_log_id = int(cleaned_log_id)  # Convert to integer
+    except ValueError as e:
+        return JsonResponse({'success': False, 'error': 'Invalid log_id format'}, status=400)
+    
     if request.method == 'POST':
-        log = get_object_or_404(Logs, id=log_id, user=request.user)  # Ensure the log belongs to the user
-        log.delete()
-        return JsonResponse({'success': True})
-    return JsonResponse({'success': False}, status=400)
+        try:
+            log = get_object_or_404(Logs, id=cleaned_log_id, user=request.user)  # Ensure the log belongs to the user
+            
+            log.delete()
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'success': False}, status=400)
 
 
 
