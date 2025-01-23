@@ -140,9 +140,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         html += '</tbody></table>';
                         document.getElementById('provided-quantities-table').innerHTML = html;
     
-                        document.querySelectorAll('.checkbox').forEach(checkbox => {
+                        document.querySelectorAll('#provided-quantities-table .checkbox').forEach(checkbox => {
+                            console.log('checkbox',checkbox)
                             const itemId = checkbox.dataset.itemId;
-                            const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
+                            console.log('itemid',itemId)
+                            const quantityInput = document.querySelector(`#provided-quantities-table input[name="quantity_${itemId}"]`);
+                            console.log('quantityInput',quantityInput)
     
                             checkbox.addEventListener('change', function() {
                                 console.log(`Checkbox for item ID ${itemId} changed to: ${this.checked}`);
