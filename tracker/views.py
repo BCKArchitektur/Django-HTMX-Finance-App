@@ -329,6 +329,7 @@ def handle_existing_contract_form(request, project):
 
     # Parse contract JSON
     contract_json = request.POST.get('contract_json')
+    print('contract_json:', contract_json)
     if not contract_json:
         print("No contract JSON data provided.")
         messages.error(request, "No contract JSON data provided.")
@@ -345,7 +346,8 @@ def handle_existing_contract_form(request, project):
     # Process sections
     sections_to_keep = []
     for section_data in sorted(contract_data.get('sections', []), key=lambda x: x.get('order', 0)):  # Sort sections by order
-        section_id = section_data.get('id')
+        print(f"Processing section: {section_data}")
+        section_id = section_data.get('id')  # Ensure section_id is retrieved here
         section_name = section_data['section_name']
         section_billed_hourly = section_data.get('section_billed_hourly', False)
         section_order = section_data.get('order', 0)  # Get section order
@@ -367,17 +369,21 @@ def handle_existing_contract_form(request, project):
                     order=section_order
                 )
         else:
+            print(f"Creating a new section: {section_name}")
             section = Section.objects.create(
                 section_name=section_name,
                 section_billed_hourly=section_billed_hourly,
                 order=section_order
             )
 
+        print(f"Processed section: {section}")
         sections_to_keep.append(section)
+
 
         # Process items in the section
         items_to_keep = []
         for item_data in sorted(section_data.get('items', []), key=lambda x: x.get('order', 0)):  # Sort items by order
+            print(f"Processing item: {item_data}")
             item_id = item_data.get('id')
             item_name = item_data['Item_name']
             description = item_data.get('description', '')
@@ -406,6 +412,7 @@ def handle_existing_contract_form(request, project):
                         order=item_order
                     )
             else:
+                print(f"Creating a new item: {item_name}")
                 item = Item.objects.create(
                     Item_name=item_name,
                     description=description,
@@ -415,22 +422,27 @@ def handle_existing_contract_form(request, project):
                     order=item_order
                 )
 
+            print(f"Processed item: {item}")
             items_to_keep.append(item)
 
             # Process tasks for the item
             tasks_to_keep = []
             for task_data in item_data.get('tasks', []):
+                print(f"Processing task: {task_data}")
                 task_name = task_data['task_name']
 
                 # Create task (no ID means tasks are always new)
                 task = Task.objects.create(task_name=task_name)
+                print(f"Created task: {task}")
                 tasks_to_keep.append(task)
 
             item.tasks.set(tasks_to_keep)  # Set all tasks for the item
             section.Item.add(item)  # Associate the item with the section
 
+        print(f"Setting items for section: {section.section_name}")
         section.Item.set(items_to_keep)  # Set all items for the section
 
+    print("Setting sections for the contract.")
     contract.section.set(sections_to_keep)  # Set all sections for the contract
     contract.save()
 
@@ -441,7 +453,6 @@ def handle_existing_contract_form(request, project):
     print("Contract and project updated successfully.")
     messages.success(request, "Contract updated successfully.")
     return redirect('edit_project', project_id=project.id)
-
 
 
 
@@ -1069,12 +1080,62 @@ def delete_contract(request, contract_id):
         return redirect(reverse('edit_project', args=[project_id]))
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
+from bs4 import BeautifulSoup
+from docx.shared import Pt
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.oxml import OxmlElement
+
+def insert_html_to_docx(html_content, doc, placeholder):
+    """
+    Convert HTML content to formatted DOCX content and replace the placeholder text in the Word document.
+    
+    Args:
+        html_content (str): The HTML string to convert.
+        doc (docx.Document): The Word document object.
+        placeholder (str): Placeholder text to replace in the Word document.
+    """
+    soup = BeautifulSoup(html_content, "html.parser")
+
+    # Find the paragraph containing the placeholder
+    placeholder_paragraph = None
+    for p in doc.paragraphs:
+        if placeholder in p.text:
+            placeholder_paragraph = p
+            break
+
+    if placeholder_paragraph:
+        # Clear the placeholder paragraph
+        placeholder_paragraph.clear()  # Clears the content but keeps the paragraph
+
+        # Add formatted content to the placeholder paragraph
+        for para in soup.find_all('p'):
+            for element in para.contents:
+                if element.name == "strong":
+                    run = placeholder_paragraph.add_run(element.get_text())
+                    run.bold = True
+                elif element.name == "u":
+                    run = placeholder_paragraph.add_run(element.get_text())
+                    run.underline = True
+                elif element.name == "br":
+                    placeholder_paragraph.add_run().add_break()
+                elif element.name is None:  # Plain text
+                    run = placeholder_paragraph.add_run(element.strip())
+                else:
+                    run = placeholder_paragraph.add_run(element.get_text())
+            
+            # Add a new line at the end of the paragraph if it's not the last paragraph
+            placeholder_paragraph.add_run().add_break()
+    else:
+        print(f"Placeholder '{placeholder}' not found in the document.")
 
 
 def generate_word_document(request, contract_id):
+    print('request;',request)
     template_name = request.GET.get('template_name', 'Kost_De.docx')
     valid_until = request.GET.get('valid_until')
     terms_conditions = request.GET.get('terms_conditions')
+    include_scope_of_work = request.GET.get('include_scope_of_work')
+    
 
     print(f"Template Name: {template_name}")
     print(f"Valid Until: {valid_until}")
@@ -1097,7 +1158,9 @@ def generate_word_document(request, contract_id):
     city = getattr(client, 'city', 'Unknown')
     postal_code = getattr(client, 'postal_code', 'Unknown')
     country = getattr(client.country, 'name', 'Unknown') if hasattr(client, 'country') else 'Unknown'
-
+    
+    scope_of_work_html = contract.scope_of_work  
+    print('scope_of_work_html',scope_of_work_html)
     # Calculate contract details with serial numbers
     contract_sections = []
     sum_of_items = Decimal(0)  # Ensure this is a Decimal for accurate calculations
@@ -1184,6 +1247,7 @@ def generate_word_document(request, contract_id):
         'valid_until': valid_until if not valid_until else date.fromisoformat(valid_until).strftime('%d.%m.%Y'),
         'vat_percentage': f"{vat_percentage * 100:.2f}",  # Pass VAT percentage to the template if needed
         'terms_conditions': terms_conditions,
+        'include_scope_of_work' : include_scope_of_work,
     }
 
     # Only add the additional fee to the context if it's greater than 0
@@ -1199,6 +1263,11 @@ def generate_word_document(request, contract_id):
 
     # Render the document with context
     doc.render(context)
+
+    # Insert the HTML content into the document
+    if include_scope_of_work == 'on':   
+        insert_html_to_docx(scope_of_work_html, doc, placeholder="[[SCOPE_OF_WORK]]")
+
 
     # Create HTTP response
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
@@ -1578,7 +1647,6 @@ from bs4 import BeautifulSoup
 def update_scope(request, contract_id):
     if request.method == 'POST':
         scope_of_work = request.POST.get('scope_of_work', '')
-        print(f"Raw scope_of_work: {scope_of_work}")
 
         # Validate HTML
         try:

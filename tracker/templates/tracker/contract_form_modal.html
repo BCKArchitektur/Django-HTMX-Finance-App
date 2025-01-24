@@ -145,6 +145,7 @@ document.addEventListener("DOMContentLoaded", function() {
             }
 
             let section = {
+                id: sectionBlock.getAttribute('data-section-id') || null,// Include section ID
                 order: sectionIndex, // Add order for the section
                 section_name: sectionNameInput.value,
                 section_billed_hourly: sectionBillableInput.checked,

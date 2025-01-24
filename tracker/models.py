@@ -28,11 +28,18 @@ class Employee(models.Model):
     starting_date = models.DateField(null=True, blank=True)
     holidays = models.IntegerField(default=0)
     date_override = models.BooleanField(default=False, help_text="Allow unrestricted date selection in log entries.")
+
     def save(self, *args, **kwargs):
+        # Ensure total_salary is recalculated
         self.total_salary = self.salary + (self.salary * (self.social_security_percentage / 100))
+        # Ensure date_override is True if user.is_staff is True
+        if self.user.is_staff:
+            self.date_override = True
         super().save(*args, **kwargs)
+
     def __str__(self):
         return self.user.username
+
 
 
 from phonenumber_field.modelfields import PhoneNumberField  # Use this if you want validation
