@@ -1,0 +1,127 @@
+<!-- HOAI Contract Modal -->
+<div id="hoaiContractModal" class="modal">
+    <div class="modal-box flex flex-col" style="height: 800px; max-width: 1200px;">
+        <button class="btn btn-sm btn-circle btn-ghost absolute top-2 right-2" onclick="closeHOAIContractModal()">✕</button>
+        <h3 class="font-bold text-lg mb-4">New HOAI Contract</h3>
+        
+        <!-- Content Wrapper -->
+        <div class="flex gap-4 h-full">
+            <!-- Left Section: HOAI Calculation Inputs -->
+            <div class="w-1/3 border rounded p-4">
+                <h4 class="text-xl font-bold mb-2">HOAI Berechnung</h4>
+                
+                <label class="block mb-2">HOAI Fassung:</label>
+                <select class="input input-bordered w-full mb-2" name="hoai_fassung">
+                    <option value="HOAI 2021">HOAI 2021</option>
+                </select>
+                
+                <label class="block mb-2">Honorarzone:</label>
+                <select class="input input-bordered w-full mb-2" name="honorarzone">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
+                
+                <label class="block mb-2">Honorarsatz:</label>
+                <select class="input input-bordered w-full mb-2" name="honorarsatz">
+                    <option value="Basishonorarsatz">Basishonorarsatz</option>
+                    <option value="Mindesthonorarsatz">Mindesthonorarsatz</option>
+                    <option value="Höchstsatz">Höchstsatz</option>
+                </select>
+                
+                <label class="block mb-2">Zuschlag (%):</label>
+                <input type="number" name="zuschlag" class="input input-bordered w-full mb-2" value="0" step="0.01">
+            </div>
+            
+            <!-- Right Section: Table -->
+            <div class="w-2/3 flex flex-col">
+                <h4 class="text-xl font-bold mb-2">Kostenabschätzung</h4>
+                <div class="overflow-x-auto">
+                    <table class="table-auto w-full border-collapse border border-gray-200">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border border-gray-300 px-4 py-2">Nr</th>
+                                <th class="border border-gray-300 px-4 py-2">Bezeichnung</th>
+                                <th class="border border-gray-300 px-4 py-2">geschätzte Kosten [€]</th>
+                                <th class="border border-gray-300 px-4 py-2">Anrechenbare Kosten [€]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="border border-gray-300 px-4 py-2">300</td>
+                                <td class="border border-gray-300 px-4 py-2">Bauwerk - Baukonstruktionen</td>
+                                <td class="border border-gray-300 px-4 py-2">
+                                    <input type="number" name="kosten_300" class="input input-bordered w-full" value="1000000" step="0.01" onchange="updateAnrechenbareKosten()">
+                                </td>
+                                <td class="border border-gray-300 px-4 py-2" id="anrechenbare_kosten_300">1.000.000,00</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-gray-300 px-4 py-2">400</td>
+                                <td class="border border-gray-300 px-4 py-2">Bauwerk - Technische Anlagen</td>
+                                <td class="border border-gray-300 px-4 py-2">
+                                    <input type="number" name="kosten_400" class="input input-bordered w-full" value="250000" step="0.01" onchange="updateAnrechenbareKosten()">
+                                </td>
+                                <td class="border border-gray-300 px-4 py-2" id="anrechenbare_kosten_400">250.000,00</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr class="bg-gray-100">
+                                <td colspan="3" class="border border-gray-300 px-4 py-2 text-right font-bold">Summe der anrechenbaren Kosten:</td>
+                                <td class="border border-gray-300 px-4 py-2 font-bold" id="summe_kosten">1.250.000,00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-action mt-4">
+            <button class="btn btn-primary" onclick="submitHOAIForm()">Save</button>
+            <a href="#" class="btn" onclick="closeHOAIContractModal()">Close</a>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    function openHOAIContractModal() {
+        document.getElementById('hoaiContractModal').classList.add('modal-open');
+    }
+
+    function closeHOAIContractModal() {
+        document.getElementById('hoaiContractModal').classList.remove('modal-open');
+    }
+
+    function updateAnrechenbareKosten() {
+        // Parse plain number inputs
+        const kosten300 = parseFloat(document.querySelector('[name="kosten_300"]').value) || 0;
+        const kosten400 = parseFloat(document.querySelector('[name="kosten_400"]').value) || 0;
+
+        // Update anrechenbare kosten fields in German format
+        document.getElementById('anrechenbare_kosten_300').textContent = kosten300.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('anrechenbare_kosten_400').textContent = kosten400.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        // Update sum field in German format
+        const summeKosten = kosten300 + kosten400;
+        document.getElementById('summe_kosten').textContent = summeKosten.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        console.log('elememt',document.getElementsByName('zuschlag').value)
+    }
+
+    function submitHOAIForm() {
+        // Collect form data without formatting
+        const formData = {
+            kosten_300: parseFloat(document.querySelector('[name="kosten_300"]').value) || 0,
+            kosten_400: parseFloat(document.querySelector('[name="kosten_400"]').value) || 0,
+        };
+
+        console.log('Form Data:', formData);
+        alert('Form submitted! Check console for details.');
+
+        // Close the modal after submission
+        closeHOAIContractModal();
+    }
+</script>

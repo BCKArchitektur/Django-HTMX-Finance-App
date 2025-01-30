@@ -1080,10 +1080,7 @@ def delete_contract(request, contract_id):
         return redirect(reverse('edit_project', args=[project_id]))
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
-from bs4 import BeautifulSoup
-from docx.shared import Pt
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-from docx.oxml import OxmlElement
+
 
 def insert_html_to_docx(html_content, doc, placeholder):
     """
@@ -1094,6 +1091,10 @@ def insert_html_to_docx(html_content, doc, placeholder):
         doc (docx.Document): The Word document object.
         placeholder (str): Placeholder text to replace in the Word document.
     """
+    from docx.shared import Pt
+    from docx.oxml import OxmlElement
+    from bs4 import BeautifulSoup
+
     soup = BeautifulSoup(html_content, "html.parser")
 
     # Find the paragraph containing the placeholder
@@ -1107,26 +1108,44 @@ def insert_html_to_docx(html_content, doc, placeholder):
         # Clear the placeholder paragraph
         placeholder_paragraph.clear()  # Clears the content but keeps the paragraph
 
-        # Add formatted content to the placeholder paragraph
-        for para in soup.find_all('p'):
-            for element in para.contents:
-                if element.name == "strong":
-                    run = placeholder_paragraph.add_run(element.get_text())
-                    run.bold = True
-                elif element.name == "u":
-                    run = placeholder_paragraph.add_run(element.get_text())
-                    run.underline = True
-                elif element.name == "br":
-                    placeholder_paragraph.add_run().add_break()
-                elif element.name is None:  # Plain text
-                    run = placeholder_paragraph.add_run(element.strip())
-                else:
-                    run = placeholder_paragraph.add_run(element.get_text())
-            
-            # Add a new line at the end of the paragraph if it's not the last paragraph
-            placeholder_paragraph.add_run().add_break()
+        def apply_formatting(run, element):
+            """Apply formatting to a run based on the HTML element."""
+            run.font.name = "Neue Hans Kendrick"
+            run.font.size = Pt(8)
+            if element.name == "strong":
+                run.bold = True
+            if element.name == "u":
+                run.underline = True
+
+        # Process paragraphs
+        for para in soup.find_all(['p', 'ul', 'ol']):
+            if para.name == 'p':
+                paragraph = placeholder_paragraph.insert_paragraph_before()
+                for element in para.contents:
+                    if element.name in ['strong', 'u']:
+                        run = paragraph.add_run(element.get_text())
+                        apply_formatting(run, element)
+                    elif element.name == 'br':
+                        paragraph.add_run().add_break()
+                    elif element.name is None:  # Plain text
+                        run = paragraph.add_run(element.strip())
+                        apply_formatting(run, para)
+            elif para.name in ['ul', 'ol']:
+                # Handle unordered and ordered lists
+                for li in para.find_all('li'):
+                    paragraph = placeholder_paragraph.insert_paragraph_before()
+                    paragraph.style = 'List Bullet' if para.name == 'ul' else 'List Number'
+                    for element in li.contents:
+                        if element.name in ['strong', 'u']:
+                            run = paragraph.add_run(element.get_text())
+                            apply_formatting(run, element)
+                        elif element.name is None:  # Plain text
+                            run = paragraph.add_run(element.strip())
+                            apply_formatting(run, li)
+            placeholder_paragraph = paragraph
     else:
         print(f"Placeholder '{placeholder}' not found in the document.")
+
 
 
 def generate_word_document(request, contract_id):
