@@ -1684,3 +1684,83 @@ def update_scope(request, contract_id):
         except Exception as e:
             print(f"Database save error: {e}")
             return JsonResponse({'status': 'error', 'message': f'Error saving contract: {str(e)}'}, status=500)
+
+from django.shortcuts import get_object_or_404
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework import status
+import pandas as pd
+from .models import ServiceProfile
+from .serializers import ServiceProfileSerializer
+
+class ServiceProfileUploadView(APIView):
+    """Allows users to upload an Excel file"""
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, *args, **kwargs):
+        serializer = ServiceProfileSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "File uploaded successfully!", "data": serializer.data}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ServiceProfileListView(APIView):
+    """Lists all uploaded service profiles"""
+    def get(self, request, *args, **kwargs):
+        profiles = ServiceProfile.objects.all()
+        serializer = ServiceProfileSerializer(profiles, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class HOAICalculationView(APIView):
+    """Performs calculations based on the selected Excel file and chargeable costs"""
+    
+    def post(self, request, *args, **kwargs):
+        profile_id = request.data.get('service_profile_id')
+        cost_input = float(request.data.get('chargeable_costs'))
+        fee_zone = request.data.get('fee_zone')  # "I", "II", "III", etc.
+
+        profile = get_object_or_404(ServiceProfile, id=profile_id)
+        excel_path = profile.excel_file.path
+
+        # Read Excel file
+        df = pd.read_excel(excel_path)
+
+        # Find the lower and upper bound rows
+        lower_bound = df[df["Anrechenbare Kosten (€)"] <= cost_input].iloc[-1]
+        upper_bound = df[df["Anrechenbare Kosten (€)"] > cost_input].iloc[0]
+
+        # Extract values
+        a = lower_bound["Anrechenbare Kosten (€)"]
+        aa = upper_bound["Anrechenbare Kosten (€)"]
+        
+        b = lower_bound[f"Honorarzone {fee_zone} (von)"]
+        bb = upper_bound[f"Honorarzone {fee_zone} (von)"]
+        
+        c = lower_bound[f"Honorarzone {fee_zone} (bis)"]
+        cc = upper_bound[f"Honorarzone {fee_zone} (bis)"]
+
+        # Perform linear interpolation
+        honor_from = b + ((cost_input - a) * (bb - b) / (aa - a))
+        honor_to = c + ((cost_input - a) * (cc - c) / (aa - a))
+
+        response_data = {
+            "service_profile": profile.name,
+            "chargeable_costs": cost_input,
+            "fee_zone": fee_zone,
+            "interpolation": {
+                "lower_bound_cost": a,
+                "upper_bound_cost": aa,
+                "lower_bound_von": b,
+                "upper_bound_von": bb,
+                "lower_bound_bis": c,
+                "upper_bound_bis": cc,
+            },
+            "calculated_fee": {
+                "honor_from": round(honor_from, 2),
+                "honor_to": round(honor_to, 2),
+            }
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+

@@ -325,3 +325,13 @@ class TermsAndConditionsFile(models.Model):
 
     def __str__(self):
         return f"Terms File ({self.file.name})"
+
+class ServiceProfile(models.Model):
+    """Stores different HOAI service profiles and their Excel files"""
+    name = models.CharField(max_length=255, unique=True)  # Profile Name (e.g., "HOAI 2021 - Buildings")
+    excel_file = models.FileField(upload_to='hoai_tables/')  # File upload location
+
+    uploaded_at = models.DateTimeField(auto_now_add=True)  # Timestamp for file upload
+
+    def __str__(self):
+        return self.name

@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import ServiceProfileUploadView, ServiceProfileListView, HOAICalculationView
 
 urlpatterns = [
     path("", views.log_create_compact, name='log_create_compact'),
@@ -43,4 +44,10 @@ urlpatterns = [
     
     path('update-scope/<int:contract_id>/', views.update_scope, name='update_scope'),path('update-scope/<int:contract_id>/', views.update_scope, name='update_scope'),
     
-    ]
+
+    path('upload-service-profile/', ServiceProfileUploadView.as_view(), name='upload-service-profile'),
+    path('list-service-profiles/', ServiceProfileListView.as_view(), name='list-service-profiles'),
+    path('calculate-hoai/', HOAICalculationView.as_view(), name='calculate-hoai'),
+]
+
+    
