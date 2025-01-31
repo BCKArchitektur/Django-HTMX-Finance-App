@@ -1080,7 +1080,32 @@ def delete_contract(request, contract_id):
         return redirect(reverse('edit_project', args=[project_id]))
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn  # Correct namespace handling
 
+def set_bullet(paragraph):
+    """
+    Apply a bullet point style to a paragraph programmatically.
+    """
+
+    pPr = paragraph._element.get_or_add_pPr()  # Get paragraph properties
+    numPr = OxmlElement("w:numPr")  # Create numPr element
+
+    ilvl = OxmlElement("w:ilvl")  # List indentation level
+    ilvl.set(qn("w:val"), "0")  # Top-level bullet point
+
+    numId = OxmlElement("w:numId")  # Ensure this is used for bullets
+    numId.set(qn("w:val"), "1")  # Word uses predefined bullet style with numId = 1
+
+    numPr.append(ilvl)
+    numPr.append(numId)
+    pPr.append(numPr)  # Attach the bullet point definition to the paragraph
+
+    # ✅ Ensure correct indentation for multi-line bullets
+    ind = OxmlElement("w:ind")
+    ind.set(qn("w:left"), "360")  # Adjust left indentation (lower = closer to margin)
+    ind.set(qn("w:hanging"), "360")  # Hanging indent ensures alignment of wrapped text
+    pPr.append(ind)
 
 def insert_html_to_docx(html_content, doc, placeholder):
     """
@@ -1134,7 +1159,10 @@ def insert_html_to_docx(html_content, doc, placeholder):
                 # Handle unordered and ordered lists
                 for li in para.find_all('li'):
                     paragraph = placeholder_paragraph.insert_paragraph_before()
-                    paragraph.style = 'List Bullet' if para.name == 'ul' else 'List Number'
+                    
+                    # Apply bullet formatting correctly
+                    set_bullet(paragraph)
+
                     for element in li.contents:
                         if element.name in ['strong', 'u']:
                             run = paragraph.add_run(element.get_text())
@@ -1142,7 +1170,9 @@ def insert_html_to_docx(html_content, doc, placeholder):
                         elif element.name is None:  # Plain text
                             run = paragraph.add_run(element.strip())
                             apply_formatting(run, li)
-            placeholder_paragraph = paragraph
+
+                    placeholder_paragraph = paragraph  # Move forward in the document
+
     else:
         print(f"Placeholder '{placeholder}' not found in the document.")
 

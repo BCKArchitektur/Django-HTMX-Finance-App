@@ -135,9 +135,11 @@
                             <button class="btn btn-xs btn-warning btn-outline m-1 h-10" onclick="openScopeModal({{ contract.id }}, '{{ contract.scope_of_work|safe }}')">
                                 ✎ Scope
                             </button>
-                            <button class="btn btn-xs btn-secondary btn-outline m-1 h-10" onclick="openTemplateModal({{ contract.id }})">
+                            <button class="btn btn-xs btn-secondary btn-outline m-1 h-10" 
+                                onclick="openTemplateModal({{ contract.id }}, '{{ contract.scope_of_work|safe }}')">
                                 🖪 Estimate
                             </button>
+                        
 
                         </td>                        
                     </tr>
@@ -477,10 +479,22 @@
     });
     
     // Function to open the template modal
-    function openTemplateModal(contractId) {
+    function openTemplateModal(contractId, scopeContent) {
         document.getElementById('template_contract_id').value = contractId;
+        let checkbox = document.getElementById("include_scope_of_work");
+
+        // Trim and check if scope is empty or "None"
+        if (!scopeContent || scopeContent.trim().toLowerCase() === "none") {
+            checkbox.disabled = true;
+            checkbox.checked = false;
+        } else {
+            checkbox.disabled = false;
+        }
+
+        // Open the modal
         document.getElementById('selectTemplateModal').classList.add('modal-open');
     }
+
 
     // Function to close the template modal
     function closeTemplateModal() {
@@ -1316,6 +1330,16 @@
 
 </script>
 
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let scopeOfWork = "{{ contract.scope_of_work|escapejs }}".trim();
+        let checkbox = document.getElementById("include_scope_of_work");
+
+        if (!scopeOfWork || scopeOfWork.toLowerCase() === "none") {
+            checkbox.disabled = true;
+        }
+    });
+</script>
 
 
 
