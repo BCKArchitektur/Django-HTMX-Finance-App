@@ -33,7 +33,7 @@
                 </select>
                 
 
-                <label class="block">Chargeable Costs (€):</label>
+                <label class="block">Anrechenbare Kosten (€):</label>
                 <input type="number" id="chargeableCosts" class="input input-bordered w-full mb-2" value="1250000">
 
                 <label class="block">NebenKosten (%):</label>
@@ -145,9 +145,11 @@ function updateLPInputs(lpData) {
     Object.entries(lpData).forEach(([lpKey, lpValue]) => {
         let lpNumber = lpKey.replace("lp", ""); // Extract number from key (e.g., "lp1" → "1")
         
+        let checkedAttr = lpValue > 0 ? "checked" : ""; // Only check LPs with > 0%
+        
         let lpElement = `
             <div class="flex items-center">
-                <input type="checkbox" id="${lpKey}" checked onchange="calculateHOAI()">
+                <input type="checkbox" id="${lpKey}" ${checkedAttr} onchange="calculateHOAI()">
                 <label for="${lpKey}" class="ml-2 w-2/3">LP ${lpNumber}</label>
                 <input type="number" id="${lpKey}_percentage" class="input input-sm text-right" value="${lpValue}" onchange="calculateHOAI()">%
             </div>
@@ -156,6 +158,7 @@ function updateLPInputs(lpData) {
         lpContainer.innerHTML += lpElement;
     });
 }
+
 
 function updateLPOptions() {
     let serviceProfileDropdown = document.getElementById("serviceProfile");
