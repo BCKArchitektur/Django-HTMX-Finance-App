@@ -4,4 +4,4 @@ from .models import ServiceProfile
 class ServiceProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceProfile
-        fields = ['id', 'name', 'excel_file', 'uploaded_at']
+        fields = ['id', 'name', 'no_of_Honarzone', 'lp_breakdown']  # Include LP breakdown

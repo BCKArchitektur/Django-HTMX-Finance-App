@@ -1706,11 +1706,21 @@ class ServiceProfileUploadView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ServiceProfileListView(APIView):
-    """Lists all uploaded service profiles"""
+    """Lists all uploaded service profiles, including LP breakdowns"""
     def get(self, request, *args, **kwargs):
         profiles = ServiceProfile.objects.all()
-        serializer = ServiceProfileSerializer(profiles, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        response_data = [
+            {
+                "id": profile.id,
+                "name": profile.name,
+                "no_of_Honarzone": profile.no_of_Honarzone,  
+                "lp_breakdown": profile.lp_breakdown  # Add LP breakdown
+            }
+            for profile in profiles
+        ]
+
+        return Response(response_data, status=200)
 
 class HOAICalculationView(APIView):
     """Performs calculations based on the selected Excel file and chargeable costs"""

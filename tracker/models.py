@@ -326,12 +326,30 @@ class TermsAndConditionsFile(models.Model):
     def __str__(self):
         return f"Terms File ({self.file.name})"
 
+def default_lp_breakdown():
+    """Returns a default LP breakdown dictionary."""
+    return {
+        "lp1": 2,
+        "lp2": 7,
+        "lp3": 15,
+        "lp4": 3,
+        "lp5": 25,
+        "lp6": 10,
+        "lp7": 4,
+        "lp8": 32,
+        "lp9": 2
+    }
+
+
 class ServiceProfile(models.Model):
-    """Stores different HOAI service profiles and their Excel files"""
+    """Stores different HOAI service profiles, their Excel files, and LP breakdowns."""
     name = models.CharField(max_length=255, unique=True)  # Profile Name (e.g., "HOAI 2021 - Buildings")
     excel_file = models.FileField(upload_to='hoai_tables/')  # File upload location
-
+    no_of_Honarzone = models.IntegerField(default=5)
     uploaded_at = models.DateTimeField(auto_now_add=True)  # Timestamp for file upload
+
+    # New field: Store LP percentages as JSON
+    lp_breakdown = models.JSONField(default=default_lp_breakdown) 
 
     def __str__(self):
         return self.name

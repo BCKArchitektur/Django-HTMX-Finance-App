@@ -314,3 +314,11 @@ class EstimateInvoiceSettingsAdmin(admin.ModelAdmin):
             'fields': ('inv_bck_eng_template', 'inv_bck_de_template', 'inv_kost_eng_template', 'inv_kost_de_template')
         }),
     )
+
+
+from .models import ServiceProfile
+
+@admin.register(ServiceProfile)
+class ServiceProfileAdmin(admin.ModelAdmin):
+    list_display = ('name', 'excel_file', 'uploaded_at')
+    search_fields = ('name',)
