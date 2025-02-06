@@ -165,10 +165,11 @@
                     <thead>
                         <tr>
                             <th>Invoice Number</th>
+                            <th>Type</th>
                             <th>Contract</th>
                             <th>Date Issued</th>
-                            <th>Invoice Net</th>
-                            <th>Invoice Gross</th>
+                            <th>Net</th>
+                            <th>Gross</th>
                             <th>Amount Received</th> <!-- New Column -->
                             <th>Actions</th>
                         </tr>
@@ -182,6 +183,7 @@
                                     {{ invoice.title }}
                                 </a> 
                             </td>
+                            <td>{{ invoice.invoice_type  }}    </td>
                             <td>{{ invoice.contract.contract_name }}</td>
                             <td>{{ invoice.created_at  }}</td>
                             <td data-value="{{ invoice.invoice_net }}">{{ invoice.invoice_net }}</td>

@@ -1237,7 +1237,7 @@ def generate_word_document(request, contract_id):
                     unit = 'Lumpsum'
                 elif unit == 'Stk':
                     unit = 'Piece'
-                elif unit == 'Std':
+                elif unit == 'Std'or'Std.':
                     unit = 'Hour'
 
             item_data = {
@@ -1488,6 +1488,163 @@ def view_invoice(request, invoice_id):
 
 
 from django.utils.dateparse import parse_date
+import pprint
+
+# def download_invoice(request, invoice_id):
+#     # Fetch the invoice, project, and contract
+#     invoice = get_object_or_404(Invoice, id=invoice_id)
+#     project = invoice.project
+#     contract = invoice.contract
+#     client = project.client_name
+
+#     # Get the template name and date range from the request
+#     template_name = request.GET.get('invoice_template_name', 'inv_BCK_De.docx')
+#     print(f"Template name from modal: {template_name}")
+    
+#     from_date_str = request.GET.get('from_date')
+#     to_date_str = request.GET.get('to_date')
+
+#     # Parse the date strings into date objects
+#     from_date = parse_date(from_date_str) if from_date_str else None
+#     to_date = parse_date(to_date_str) if to_date_str else None
+
+
+#     # Initialize the sections dictionary and sum_of_items
+#     sections = {}
+#     sum_of_items = Decimal('0.00')
+
+#     # Section counter
+#     section_counter = 1
+
+#     # Fetch provided quantities and related items and sections
+#     provided_quantities = invoice.provided_quantities  # Assuming this is a dictionary
+#     for item_id, details in provided_quantities.items():
+#         item = get_object_or_404(Item, id=item_id)
+#         section = item.section_set.first()  # Assuming each item belongs to one section
+#         section_name = section.section_name if section else "Unknown Section"
+#         item_total = Decimal(details['quantity']) * Decimal(details['rate'])
+
+#         if section_name not in sections:
+#             sections[section_name] = {
+#                 'section_number': section_counter,
+#                 'items': []
+#             }
+#             section_counter += 1
+
+#         # Calculate item number (e.g., 1.1, 1.2, 2.1, etc.)
+#         item_number = f"{sections[section_name]['section_number']}.{len(sections[section_name]['items']) + 1}"
+
+#         sections[section_name]['items'].append({
+#             'item_number': item_number,
+#             'item_name': item.Item_name,
+#             'unit': item.unit,
+#             'rate': f"{Decimal(details['rate']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#             'quantity': details['quantity'],
+#             'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#             'description': item.description if item.description else None,
+#         })
+
+#         sum_of_items += item_total
+
+#     # Calculate additional fee and taxes
+#     additional_fee_percentage = Decimal(contract.additional_fee_percentage)
+#     additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
+#     invoice_net = sum_of_items + additional_fee_value
+#     vat_percentage = Decimal(contract.vat_percentage) / Decimal(100)  # Use VAT from contract
+#     tax_value = invoice_net * vat_percentage
+#     invoice_gross = invoice_net + tax_value
+
+#     # Fetch all previous invoices for the same project, based on created_at comparison
+#     previous_invoices = Invoice.objects.filter(
+#         project=project,
+#         created_at__lt=invoice.created_at  # Only include invoices created before the current invoice
+#     ).order_by('created_at')
+
+#     # Prepare previous invoices data and calculate totals
+#     total_invoice_gross = Decimal('0.00')
+#     total_amount_paid = Decimal('0.00')
+
+#     previous_invoices_data = []
+
+#     for inv in previous_invoices:
+#         inv_gross = Decimal(inv.invoice_net) * (1 + vat_percentage)
+#         inv_paid = Decimal(inv.amount_received)
+
+#         total_invoice_gross += inv_gross
+#         total_amount_paid += inv_paid
+
+#         previous_invoices_data.append({
+#             'invoice_title': inv.title,
+#             'created_at': timezone.localtime(inv.created_at).strftime('%d.%m.%Y'),  # German format with time
+#             'invoice_net': f"{Decimal(inv.invoice_net):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#             'invoice_tax%': vat_percentage,
+#             'invoice_tax': f"{(Decimal(inv.invoice_net) * vat_percentage):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#             'invoice_gross': f"{inv_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#             'amount_paid': f"{inv_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#         })
+
+#     # Add the current invoice's gross to the total
+#     total_invoice_gross += invoice_gross
+
+#     # Calculate the amount to be paid (excluding the current invoice's amount received)
+#     invoice_tobepaid = total_invoice_gross - total_amount_paid
+
+#     # Prepare the context for the template
+#     context = {
+#         'client_name': client.client_name if client else "Unknown",
+#         'client_address': f"{client.street_address}\n{client.postal_code} {client.city} \n{client.country.name}",
+#         'created_at': timezone.localtime(invoice.created_at).strftime('%d.%m.%Y'),  # German format with time
+#         'project_no': project.project_no,
+#         'project_name': project.project_name,
+#         'invoice_title': invoice.title,
+#         'contract_name': contract.contract_name,
+#         'sections': sections,  # Organized by section
+#         'sum_of_items': f"{sum_of_items:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#         'invoice_net': f"{invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#         'vat_percentage': vat_percentage,  # Pass this to template to multiply by 100
+#         'tax': f"{tax_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#         'invoice_gross': f"{invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#         'previous_invoices': previous_invoices_data,  # Ensure this is always a list
+#         'total_invoice_gross': f"{total_invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#         'total_amount_paid': f"{total_amount_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#         'invoice_tobepaid': f"{invoice_tobepaid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#         'invoice_type':invoice.invoice_type,
+#         'from_date': from_date.strftime('%d.%m.%Y') if from_date else None,
+#         'to_date': to_date.strftime('%d.%m.%Y') if to_date else None,
+#         'client_firm':client.firm_name
+#     }
+
+#     if additional_fee_percentage > 0:
+#         context.update({
+#             'additional_fee_percentage': f"{additional_fee_percentage:.2f}",
+#             'additional_fee_value': f"{additional_fee_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+#         })
+
+#     # Print context for debugging
+
+#     pprint.pprint(context)
+
+#     # Path to the invoice template
+#     # template_path = r'Z:\02_Zubehör\3_Vorlagen\BCK App Templates\Invoice_Template.docx'
+
+#     # Construct the template path using the selected template name from the request
+#     template_path = os.path.join(r'C:\Users\BCK-CustomApp\Documents\GitHub\Django-HTMX-Finance-App\templates\invoices', template_name)
+
+
+#     # Load the template
+#     doc = DocxTemplate(template_path)
+
+#     # Render the document with the context
+#     doc.render(context)
+
+#     # Create the HTTP response with the rendered document
+#     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+#     response['Content-Disposition'] = f'attachment; filename=invoice_{invoice.title}_{invoice.project}.docx'
+    
+#     # Save the document to the response
+#     doc.save(response)
+
+#     return response
 
 def download_invoice(request, invoice_id):
     # Fetch the invoice, project, and contract
@@ -1507,6 +1664,8 @@ def download_invoice(request, invoice_id):
     from_date = parse_date(from_date_str) if from_date_str else None
     to_date = parse_date(to_date_str) if to_date_str else None
 
+    # **Check if template is English**
+    is_english_template = template_name in ['inv_BCK_En.docx', 'inv_Kost_En.docx']
 
     # Initialize the sections dictionary and sum_of_items
     sections = {}
@@ -1523,10 +1682,21 @@ def download_invoice(request, invoice_id):
         section_name = section.section_name if section else "Unknown Section"
         item_total = Decimal(details['quantity']) * Decimal(details['rate'])
 
+        # **Modify units for English templates**
+        unit = item.unit
+        if is_english_template:
+            if unit == 'Psch':
+                unit = 'Lumpsum'
+            elif unit == 'Stk':
+                unit = 'Piece'
+            elif unit in ['Std', 'Std.']:
+                unit = 'Hour'
+
         if section_name not in sections:
             sections[section_name] = {
                 'section_number': section_counter,
-                'items': []
+                'items': [],
+                'net_section': Decimal('0.00')  # Initialize net_section total
             }
             section_counter += 1
 
@@ -1536,20 +1706,27 @@ def download_invoice(request, invoice_id):
         sections[section_name]['items'].append({
             'item_number': item_number,
             'item_name': item.Item_name,
-            'unit': item.unit,
+            'unit': unit,  # **Updated unit for English template**
             'rate': f"{Decimal(details['rate']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
             'quantity': details['quantity'],
             'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
             'description': item.description if item.description else None,
         })
 
+        # Add item total to section total
+        sections[section_name]['net_section'] += item_total
         sum_of_items += item_total
+
+    # Convert `net_section` values to formatted strings
+    for section_name in sections:
+        sections[section_name]['net_section'] = f"{sections[section_name]['net_section']:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
 
     # Calculate additional fee and taxes
     additional_fee_percentage = Decimal(contract.additional_fee_percentage)
     additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
     invoice_net = sum_of_items + additional_fee_value
     vat_percentage = Decimal(contract.vat_percentage) / Decimal(100)  # Use VAT from contract
+    vat_percentage_display = Decimal(contract.vat_percentage)
     tax_value = invoice_net * vat_percentage
     invoice_gross = invoice_net + tax_value
 
@@ -1575,11 +1752,11 @@ def download_invoice(request, invoice_id):
         previous_invoices_data.append({
             'invoice_title': inv.title,
             'created_at': timezone.localtime(inv.created_at).strftime('%d.%m.%Y'),  # German format with time
-            'invoice_net': f"{Decimal(inv.invoice_net):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'invoice_net': f"{Decimal(inv.invoice_net):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
             'invoice_tax%': vat_percentage,
             'invoice_tax': f"{(Decimal(inv.invoice_net) * vat_percentage):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-            'invoice_gross': f"{inv_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-            'amount_paid': f"{inv_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'invoice_gross': f"{inv_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
+            'amount_paid': f"{inv_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
         })
 
     # Add the current invoice's gross to the total
@@ -1591,56 +1768,41 @@ def download_invoice(request, invoice_id):
     # Prepare the context for the template
     context = {
         'client_name': client.client_name if client else "Unknown",
+        'client_firm': client.firm_name if client else "Unknown",
         'client_address': f"{client.street_address}\n{client.postal_code} {client.city} \n{client.country.name}",
         'created_at': timezone.localtime(invoice.created_at).strftime('%d.%m.%Y'),  # German format with time
         'project_no': project.project_no,
         'project_name': project.project_name,
         'invoice_title': invoice.title,
+        'contract_no' : contract.contract_no,
         'contract_name': contract.contract_name,
         'sections': sections,  # Organized by section
-        'sum_of_items': f"{sum_of_items:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        'invoice_net': f"{invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        'vat_percentage': vat_percentage,  # Pass this to template to multiply by 100
-        'tax': f"{tax_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        'invoice_gross': f"{invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        'previous_invoices': previous_invoices_data,  # Ensure this is always a list
-        'total_invoice_gross': f"{total_invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        'total_amount_paid': f"{total_amount_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        'invoice_tobepaid': f"{invoice_tobepaid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        'invoice_type':invoice.invoice_type,
+        'sum_of_items': f"{sum_of_items:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
+        'invoice_net': f"{invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
+        'vat_percentage': vat_percentage,  
+        'vat_percentage_display': vat_percentage_display, 
+        'tax': f"{tax_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
+        'invoice_gross': f"{invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
+        'previous_invoices': previous_invoices_data, 
+        'total_invoice_gross': f"{total_invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
+        'total_amount_paid': f"{total_amount_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
+        'invoice_tobepaid': f"{invoice_tobepaid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
+        'invoice_type': invoice.invoice_type,
         'from_date': from_date.strftime('%d.%m.%Y') if from_date else None,
         'to_date': to_date.strftime('%d.%m.%Y') if to_date else None,
-        'client_firm':client.firm_name
+        'client_firm': client.firm_name
     }
 
-    if additional_fee_percentage > 0:
-        context.update({
-            'additional_fee_percentage': f"{additional_fee_percentage:.2f}",
-            'additional_fee_value': f"{additional_fee_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-        })
-
-    # Print context for debugging
-    import pprint
-    pprint.pprint(context)
-
-    # Path to the invoice template
-    # template_path = r'Z:\02_Zubehör\3_Vorlagen\BCK App Templates\Invoice_Template.docx'
-
-    # Construct the template path using the selected template name from the request
+    # Construct the template path
     template_path = os.path.join(r'C:\Users\BCK-CustomApp\Documents\GitHub\Django-HTMX-Finance-App\templates\invoices', template_name)
 
-
-    # Load the template
+    # Load and render the template
     doc = DocxTemplate(template_path)
-
-    # Render the document with the context
     doc.render(context)
 
-    # Create the HTTP response with the rendered document
+    # Save and return the document
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
     response['Content-Disposition'] = f'attachment; filename=invoice_{invoice.title}_{invoice.project}.docx'
-    
-    # Save the document to the response
     doc.save(response)
 
     return response
@@ -1667,14 +1829,14 @@ def record_payment(request, invoice_id):
 
 
 from django.http import JsonResponse
-from .models import EstimateInvoiceSettings, Project
+from .models import EstimateSettings, Project
 
 def get_new_contract_number(request, project_id):
     try:
-        # Fetch the current consecutive number
-        settings = EstimateInvoiceSettings.objects.first()
+        # Fetch the current consecutive number from EstimateSettings
+        settings = EstimateSettings.objects.first()
         if not settings:
-            return JsonResponse({"error": "Settings not configured."}, status=400)
+            return JsonResponse({"error": "Estimate settings not configured."}, status=400)
 
         consecutive_no = settings.consecutive_start_no
 
@@ -1682,12 +1844,14 @@ def get_new_contract_number(request, project_id):
         project = Project.objects.get(id=project_id)
         project_no = project.project_no
 
-        # Combine consecutive_no and project_no
+        # Combine consecutive_no and project_no to create a unique contract number
         contract_no = f"{consecutive_no}-{project_no}"
 
         return JsonResponse({"contract_no": contract_no})
+
     except Project.DoesNotExist:
         return JsonResponse({"error": "Project not found."}, status=404)
+
 
 
 from bs4 import BeautifulSoup

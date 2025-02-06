@@ -1,0 +1,28 @@
+{% extends "admin/change_form.html" %}
+
+{% block submit_buttons_bottom %}
+    <style>
+        .custom-save-button {
+            background-color: #28a745; /* Green color */
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%; /* Full width */
+            text-align: center;
+            display: block;
+            margin-top: 10px;
+        }
+
+        .custom-save-button:hover {
+            background-color: #218838; /* Darker green on hover */
+        }
+    </style>
+
+    <div class="submit-row">
+        <button type="submit" class="custom-save-button" name="_save">Save</button>
+    </div>
+{% endblock %}

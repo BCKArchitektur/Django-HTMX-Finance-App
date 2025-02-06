@@ -226,43 +226,45 @@ class TaskLibrary(models.Model):
 
 class Invoice(models.Model):
     INVOICE_TYPE_CHOICES = [
-        ('SR', 'Schlussrechnung'),  # Final invoice
-        ('AR', 'Abschlagsrechnung'),  # Partial invoice
+        ('ER', 'Einzelrechnung (Individual Invoice)'),  # Standard invoice
+        ('AR', 'Abschlagsrechnung (Partial/Progress Invoice)'),  # Partial invoice
+        ('SR', 'Schlussrechnung (Final Invoice)'),  # Final invoice
+        ('ZR', 'Anzahlungsrechnung (Advance Payment Invoice)'),  # Advance payment invoice
     ]
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE)
     provided_quantities = models.JSONField(default=dict)
     invoice_net = models.FloatField()
-    invoice_gross = models.FloatField(editable=False)  # New field for Invoice Gross
+    invoice_gross = models.FloatField(editable=False)  # Automatically calculated
     amount_received = models.FloatField(null=True, blank=True, default=0)
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=200, unique=True)  # Ensure uniqueness
     created_at = models.DateTimeField(default=timezone.now)
-    invoice_type = models.CharField(max_length=2, choices=INVOICE_TYPE_CHOICES, default='AR')  # New field for invoice type
+    invoice_type = models.CharField(max_length=2, choices=INVOICE_TYPE_CHOICES, default='ER')  # Default to Individual Invoice
 
     def save(self, *args, **kwargs):
-        # Retrieve the VAT percentage from the associated contract
-        vat_percentage = Decimal(self.contract.vat_percentage) 
-        
-        # Calculate the invoice gross based on invoice net and VAT percentage
+        # Retrieve VAT percentage from contract
+        vat_percentage = Decimal(self.contract.vat_percentage)
+
+        # Calculate invoice gross based on invoice net and VAT percentage
         self.invoice_gross = float(Decimal(self.invoice_net) * (1 + vat_percentage / Decimal(100)))
 
         if not self.title:
-            year = timezone.now().year % 100  # Get last two digits of the year
+            # Retrieve or create InvoiceSettings
             month = timezone.now().month
+            invoice_settings, _ = InvoiceSettings.objects.get_or_create(id=1)
 
-            # Create the filter format based on year and month
-            prefix = f"{year:02d}"  # Ensures year is always two digits
+            # Get the current counter and increment it
+            counter = invoice_settings.invoice_counter
+            invoice_settings.invoice_counter += 1
+            invoice_settings.save()
 
-            # Count how many invoices have this prefix in their title
-            count = Invoice.objects.count() + 700
-            
-            # Determine the invoice type prefix ('AR' or 'SR')
+            # Determine invoice type prefix ('ER', 'AR', 'SR', 'ZR')
             type_prefix = self.invoice_type
-            
-            # Generate the title using the format yycount-month with the type prefix
-            self.title = f"{type_prefix}-{prefix}{count}-{month:02d}"  # Ensures month is always two digits
-        
+
+            # Generate title using invoice counter instead of year
+            self.title = f"{counter}-{month:02d}"  # Ensures a 4-digit counter (e.g., AR-0001)
+
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -271,7 +273,51 @@ class Invoice(models.Model):
 
 import os
 
-class EstimateInvoiceSettings(models.Model):
+# class EstimateInvoiceSettings(models.Model):
+#     consecutive_start_no = models.IntegerField(default=1, help_text="Starting number for consecutive numbering.")
+
+#     # Estimate Templates
+#     bck_eng_template = models.FileField(upload_to='templates/estimates/', null=True, blank=True)
+#     bck_de_template = models.FileField(upload_to='templates/estimates/', null=True, blank=True)
+#     kost_eng_template = models.FileField(upload_to='templates/estimates/', null=True, blank=True)
+#     kost_de_template = models.FileField(upload_to='templates/estimates/', null=True, blank=True)
+
+#     # Invoice Templates
+#     inv_bck_eng_template = models.FileField(upload_to='templates/invoices/', null=True, blank=True)
+#     inv_bck_de_template = models.FileField(upload_to='templates/invoices/', null=True, blank=True)
+#     inv_kost_eng_template = models.FileField(upload_to='templates/invoices/', null=True, blank=True)
+#     inv_kost_de_template = models.FileField(upload_to='templates/invoices/', null=True, blank=True)
+
+#     def save(self, *args, **kwargs):
+#         if self.pk:
+#             old_instance = EstimateInvoiceSettings.objects.get(pk=self.pk)
+#             fields_to_check = [
+#                 'bck_eng_template',
+#                 'bck_de_template',
+#                 'kost_eng_template',
+#                 'kost_de_template',
+#                 'inv_bck_eng_template',
+#                 'inv_bck_de_template',
+#                 'inv_kost_eng_template',
+#                 'inv_kost_de_template',
+#             ]
+
+#             for field in fields_to_check:
+#                 old_file = getattr(old_instance, field)
+#                 new_file = getattr(self, field)
+
+#                 if old_file and old_file != new_file:
+#                     if os.path.isfile(old_file.path):
+#                         os.remove(old_file.path)
+
+#         super().save(*args, **kwargs)
+
+#     def __str__(self):
+#         return "Global Settings"
+
+
+class EstimateSettings(models.Model):
+    """Stores settings related to estimates."""
     consecutive_start_no = models.IntegerField(default=1, help_text="Starting number for consecutive numbering.")
 
     # Estimate Templates
@@ -280,6 +326,35 @@ class EstimateInvoiceSettings(models.Model):
     kost_eng_template = models.FileField(upload_to='templates/estimates/', null=True, blank=True)
     kost_de_template = models.FileField(upload_to='templates/estimates/', null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        """Ensures old files are removed when a new file is uploaded."""
+        if self.pk:
+            old_instance = EstimateSettings.objects.get(pk=self.pk)
+            fields_to_check = [
+                'bck_eng_template',
+                'bck_de_template',
+                'kost_eng_template',
+                'kost_de_template',
+            ]
+
+            for field in fields_to_check:
+                old_file = getattr(old_instance, field)
+                new_file = getattr(self, field)
+
+                if old_file and old_file != new_file:
+                    if os.path.isfile(old_file.path):
+                        os.remove(old_file.path)
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return "Estimate Settings"
+
+
+class InvoiceSettings(models.Model):
+    """Stores settings related to invoices."""
+    invoice_counter = models.IntegerField(default=1, help_text="Counter for generating invoice numbers.")
+
     # Invoice Templates
     inv_bck_eng_template = models.FileField(upload_to='templates/invoices/', null=True, blank=True)
     inv_bck_de_template = models.FileField(upload_to='templates/invoices/', null=True, blank=True)
@@ -287,13 +362,10 @@ class EstimateInvoiceSettings(models.Model):
     inv_kost_de_template = models.FileField(upload_to='templates/invoices/', null=True, blank=True)
 
     def save(self, *args, **kwargs):
+        """Ensures old files are removed when a new file is uploaded."""
         if self.pk:
-            old_instance = EstimateInvoiceSettings.objects.get(pk=self.pk)
+            old_instance = InvoiceSettings.objects.get(pk=self.pk)
             fields_to_check = [
-                'bck_eng_template',
-                'bck_de_template',
-                'kost_eng_template',
-                'kost_de_template',
                 'inv_bck_eng_template',
                 'inv_bck_de_template',
                 'inv_kost_eng_template',
@@ -311,20 +383,18 @@ class EstimateInvoiceSettings(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return "Global Settings"
+        return "Invoice Settings"
 
+# class TermsAndConditionsFile(models.Model):
+#     settings = models.ForeignKey(
+#         EstimateInvoiceSettings,
+#         related_name='terms_and_conditions_files',
+#         on_delete=models.CASCADE
+#     )
+#     file = models.FileField(upload_to='templates/terms_and_conditions/')
 
-
-class TermsAndConditionsFile(models.Model):
-    settings = models.ForeignKey(
-        EstimateInvoiceSettings,
-        related_name='terms_and_conditions_files',
-        on_delete=models.CASCADE
-    )
-    file = models.FileField(upload_to='templates/terms_and_conditions/')
-
-    def __str__(self):
-        return f"Terms File ({self.file.name})"
+#     def __str__(self):
+#         return f"Terms File ({self.file.name})"
 
 def default_lp_breakdown():
     """Returns a default LP breakdown dictionary."""
