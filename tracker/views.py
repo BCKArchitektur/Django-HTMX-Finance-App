@@ -344,14 +344,13 @@ def handle_existing_contract_form(request, project):
         messages.error(request, "Contract not found.")
         return redirect('edit_project', project_id=project.id)
     
-    # Retrieve hoai_data from request
+    # Retrieve and parse HOAI data
     hoai_data = request.POST.get('hoai_data', '{}')  # Default to empty JSON
     try:
-        hoai_data_parsed = json.loads(hoai_data)  # Parse JSON
+        hoai_data_parsed = json.loads(hoai_data)
     except json.JSONDecodeError:
         hoai_data_parsed = {}
         print("Error decoding HOAI data JSON")  # Debugging line
-
 
     # Validate contract form
     contract_form = ContractForm(request.POST, instance=contract)
@@ -384,19 +383,19 @@ def handle_existing_contract_form(request, project):
     sections_to_keep = []
     for section_data in sorted(contract_data.get('sections', []), key=lambda x: x.get('order', 0)):  # Sort sections by order
         print(f"Processing section: {section_data}")
-        section_id = section_data.get('id')  # Ensure section_id is retrieved here
+        section_id = section_data.get('id')  
         section_name = section_data['section_name']
         section_billed_hourly = section_data.get('section_billed_hourly', False)
-        section_order = section_data.get('order', 0)  # Get section order
+        section_order = section_data.get('order', 0)  
 
         # Retrieve or create section
-        if section_id and section_id.isdigit():  # ✅ Only update if section_id is numeric
+        if section_id and section_id.isdigit():  
             section = Section.objects.filter(id=section_id).first()
             if section:
                 print(f"Updating existing section: {section}")
                 section.section_name = section_name
                 section.section_billed_hourly = section_billed_hourly
-                section.order = section_order  # Save section order
+                section.order = section_order  
                 section.save()
             else:
                 print(f"⚠️ Section ID {section_id} provided, but no section found! Creating new.")
@@ -406,28 +405,25 @@ def handle_existing_contract_form(request, project):
                     order=section_order
                 )
         else:
-            print(f"🟡 Creating a new section (random ID detected): {section_name}")
+            print(f"🟡 Creating a new section: {section_name}")
             section = Section.objects.create(
                 section_name=section_name,
                 section_billed_hourly=section_billed_hourly,
                 order=section_order
             )
-            # ✅ Update section_id with actual database-generated ID
             section_id = section.id
-
 
         print(f"Processed section: {section}")
         sections_to_keep.append(section)
 
-
         # Process items in the section
         items_to_keep = []
-        for item_data in sorted(section_data.get('items', []), key=lambda x: x.get('order', 0)):  # Sort items by order
+        for item_data in sorted(section_data.get('items', []), key=lambda x: x.get('order', 0)):  
             print(f"Processing item: {item_data}")
             item_id = item_data.get('id')
             item_name = item_data['Item_name']
             description = item_data.get('description', '')
-            item_order = item_data.get('order', 0)  # Get item order
+            item_order = item_data.get('order', 0)  
 
             # Retrieve or create item
             if item_id and not str(item_id).startswith('new-'):
@@ -439,7 +435,7 @@ def handle_existing_contract_form(request, project):
                     item.quantity = item_data.get('quantity', item.quantity)
                     item.unit = item_data.get('unit', item.unit)
                     item.rate = item_data.get('rate', item.rate)
-                    item.order = item_order  # Save item order
+                    item.order = item_order  
                     item.save()
                 else:
                     print(f"Item with ID {item_id} not found. Creating new item.")
@@ -476,20 +472,23 @@ def handle_existing_contract_form(request, project):
                 print(f"Created task: {task}")
                 tasks_to_keep.append(task)
 
-            item.tasks.set(tasks_to_keep)  # Set all tasks for the item
-            section.Item.add(item)  # Associate the item with the section
+            item.tasks.set(tasks_to_keep)  
+            section.Item.add(item)  
 
         print(f"Setting items for section: {section.section_name}")
-        section.Item.set(items_to_keep)  # Set all items for the section
+        section.Item.set(items_to_keep)  
 
     print("Setting sections for the contract.")
-    contract.section.set(sections_to_keep)  # Set all sections for the contract
+    contract.section.set(sections_to_keep)  
     contract.save()
 
     # Save contract with updated HOAI data
     contract.hoai_data = hoai_data_parsed
     contract.save()
 
+    # ✅ Assign Budget if HOAI Mode is Enabled
+    if hoai_data_parsed:
+        assign_budget_to_contract(contract, hoai_data_parsed)
 
     # Associate contract with project
     project.contract.add(contract)
@@ -497,17 +496,33 @@ def handle_existing_contract_form(request, project):
 
     print("Contract and project updated successfully.")
     messages.success(request, "Contract updated successfully.")
+
     return redirect('edit_project', project_id=project.id)
 
+from decimal import Decimal
+import re
 
 
 import re
+from decimal import Decimal
+
+def parse_german_number(number_string):
+    """
+    Converts a German-formatted number (e.g., "101.244,50") into a Decimal (101244.50).
+    """
+    try:
+        number_string = str(number_string)
+        normalized_number = number_string.replace('.', '').replace(',', '.')
+        return Decimal(normalized_number)  # ✅ Now correctly returns Decimal
+    except (ValueError, AttributeError):
+        return Decimal(0)
 
 def assign_budget_to_contract(contract, hoai_data):
     """
     Assigns a budget to contract items based on HOAI data.
     """
-    grundhonorar = hoai_data.get("grundhonorar", 0)  # Base rate
+    grundhonorar_raw = hoai_data.get("grundhonorar", "0")
+    grundhonorar = parse_german_number(grundhonorar_raw)  # ✅ Convert to Decimal
 
     print(f"🔹 Assigning Budget - Grundhonorar: {grundhonorar}")
 
@@ -523,13 +538,13 @@ def assign_budget_to_contract(contract, hoai_data):
                 lp_key = f"lp{lp_match.group(1)}"  # Convert to format "lp1", "lp2"
                 
                 if lp_key in hoai_data.get("lp_values", {}):
-                    lp_percentage = hoai_data["lp_values"][lp_key]
+                    lp_percentage = Decimal(hoai_data["lp_values"][lp_key])  # ✅ Convert float → Decimal
 
                     # ✅ Assign Budget Values
                     item.quantity = lp_percentage
                     item.unit = "%"  
                     item.rate = grundhonorar
-                    item.total = (lp_percentage / 100) * grundhonorar
+                    item.total = (lp_percentage / Decimal(100)) * grundhonorar  # ✅ Now both are Decimal
                     item.save()
 
                     print(f"✅ Budget Assigned: {item.Item_name} | Qty: {lp_percentage}% | Rate: {grundhonorar} | Total: {item.total}")
@@ -1124,12 +1139,12 @@ def add_budget(request):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
-def parse_german_number(number_string):
-    try:
-        # Convert German-style number (1.000,50) to Python float (1000.50)
-        return float(number_string.replace('.', '').replace(',', '.'))
-    except ValueError:
-        return 0.0
+# def parse_german_number(number_string):
+#     try:
+#         # Convert German-style number (1.000,50) to Python float (1000.50)
+#         return float(number_string.replace('.', '').replace(',', '.'))
+#     except ValueError:
+#         return 0.0
 
 
 
