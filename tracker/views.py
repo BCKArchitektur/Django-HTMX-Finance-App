@@ -264,20 +264,48 @@ def handle_user_updates(project, updated_users):
     project.save()
 
 
-def get_library_section(request, section_id):
-    section = get_object_or_404(SectionLibrary, id=section_id)
-    items = section.items.all()
-    section_data = {
-        'section_name': section.name,
-        'items': [
+def get_library_section(request, section_id=None):
+    """
+    Fetches either:
+    - A specific section by ID (if section_id is provided)
+    - Multiple sections by LP if 'lp' parameter is given
+    """
+    
+    lp_param = request.GET.get("lp")  # Get LP filter if provided
+
+    if lp_param:  # If LP is passed in the request, return multiple sections
+        sections = SectionLibrary.objects.filter(lp_identifier=lp_param)
+        sections_data = [
             {
-                'Item_name': item.name,
-                'tasks': [{'task_name': task.name} for task in item.tasks.all()]
+                'section_name': section.name,
+                'items': [
+                    {
+                        'Item_name': item.name,
+                        'tasks': [{'task_name': task.name} for task in item.tasks.all()]
+                    }
+                    for item in section.items.all()
+                ]
             }
-            for item in items
+            for section in sections
         ]
-    }
-    return JsonResponse(section_data)
+        return JsonResponse(sections_data, safe=False)
+    
+    # If no LP is provided, return a specific section by ID (original behavior)
+    if section_id:
+        section = get_object_or_404(SectionLibrary, id=section_id)
+        section_data = {
+            'section_name': section.name,
+            'items': [
+                {
+                    'Item_name': item.name,
+                    'tasks': [{'task_name': task.name} for task in item.tasks.all()]
+                }
+                for item in section.items.all()
+            ]
+        }
+        return JsonResponse(section_data)
+
+    return JsonResponse({"error": "Invalid request, provide section_id or lp parameter"}, status=400)
 
 
 def handle_project_form(request, project):
@@ -315,6 +343,15 @@ def handle_existing_contract_form(request, project):
         print(f"Contract with ID {contract_id} does not exist.")
         messages.error(request, "Contract not found.")
         return redirect('edit_project', project_id=project.id)
+    
+    # Retrieve hoai_data from request
+    hoai_data = request.POST.get('hoai_data', '{}')  # Default to empty JSON
+    try:
+        hoai_data_parsed = json.loads(hoai_data)  # Parse JSON
+    except json.JSONDecodeError:
+        hoai_data_parsed = {}
+        print("Error decoding HOAI data JSON")  # Debugging line
+
 
     # Validate contract form
     contract_form = ContractForm(request.POST, instance=contract)
@@ -353,7 +390,7 @@ def handle_existing_contract_form(request, project):
         section_order = section_data.get('order', 0)  # Get section order
 
         # Retrieve or create section
-        if section_id and not str(section_id).startswith('new-'):
+        if section_id and section_id.isdigit():  # ✅ Only update if section_id is numeric
             section = Section.objects.filter(id=section_id).first()
             if section:
                 print(f"Updating existing section: {section}")
@@ -362,19 +399,22 @@ def handle_existing_contract_form(request, project):
                 section.order = section_order  # Save section order
                 section.save()
             else:
-                print(f"Section with ID {section_id} not found. Creating new section.")
+                print(f"⚠️ Section ID {section_id} provided, but no section found! Creating new.")
                 section = Section.objects.create(
                     section_name=section_name,
                     section_billed_hourly=section_billed_hourly,
                     order=section_order
                 )
         else:
-            print(f"Creating a new section: {section_name}")
+            print(f"🟡 Creating a new section (random ID detected): {section_name}")
             section = Section.objects.create(
                 section_name=section_name,
                 section_billed_hourly=section_billed_hourly,
                 order=section_order
             )
+            # ✅ Update section_id with actual database-generated ID
+            section_id = section.id
+
 
         print(f"Processed section: {section}")
         sections_to_keep.append(section)
@@ -446,6 +486,11 @@ def handle_existing_contract_form(request, project):
     contract.section.set(sections_to_keep)  # Set all sections for the contract
     contract.save()
 
+    # Save contract with updated HOAI data
+    contract.hoai_data = hoai_data_parsed
+    contract.save()
+
+
     # Associate contract with project
     project.contract.add(contract)
     project.save()
@@ -462,16 +507,29 @@ def handle_new_contract_form(request, project):
     contract_name = request.POST.get('contract_name')
     contract_json = request.POST.get('contract_json')
     contract_no = request.POST.get('contract_no')
+    hoai_data = request.POST.get('hoai_data', '{}') 
+
+
     # Retrieve all users associated with the project
     user_ids = project.user.values_list('id', flat=True)
     
     # Debugging print statement
     print("POST data:", request.POST)
+    print("Received hoai_data:", hoai_data)
+
+    # ✅ Convert HOAI data to Python dictionary
+    try:
+        hoai_data_parsed = json.loads(hoai_data)
+    except json.JSONDecodeError:
+        hoai_data_parsed = {}
+        print("Error decoding HOAI data JSON")  # Debugging line
+
 
     # Create the Contract object with contract_no and contract_name
     contract = Contract.objects.create(
         contract_name=contract_name,
-        contract_no = contract_no
+        contract_no = contract_no,
+        hoai_data=hoai_data_parsed  # Store HOAI data in JSONField
     )
     contract.user.set(user_ids)
 
@@ -877,17 +935,22 @@ def load_contract_data(request):
             'items': item_data,
         })
 
+    # ✅ Retrieve HOAI Data (Ensure it's sent as JSON)
+    hoai_data = contract.hoai_data if contract.hoai_data else {}
+
     contract_data = {
         'contract_name': contract.contract_name,
-        'contract_no':contract.contract_no,
+        'contract_no': contract.contract_no,
         'users': users,
         'sections': section_data,
         'additional_fee_percentage': contract.additional_fee_percentage,
         'vat_percentage': contract.vat_percentage,  # Add VAT percentage to the response
         'invoices_exist': invoices_exist,  # Add whether invoices exist to the response
+        'hoai_data': hoai_data,  # ✅ Include HOAI data in the response
     }
 
     return JsonResponse(contract_data)
+
 
 
 

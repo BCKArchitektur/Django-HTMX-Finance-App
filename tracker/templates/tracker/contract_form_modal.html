@@ -39,7 +39,10 @@
                     <span class="mr-2">HOAI Mode</span>
                     <input type="checkbox" id="hoaiModeSwitch" class="toggle toggle-primary" onchange="toggleHOAIMode()">
                 </label>
-                
+
+                <!-- Hidden input to store HOAI Data -->
+                <input type="hidden" name="hoai_data" id="hoai_data">
+                            
 
 
             </div>
@@ -405,7 +408,67 @@ document.addEventListener("DOMContentLoaded", function() {
             contractNoInput.value = data.contract_no; // Populate contract number
             contractNameInput.readOnly = !data.is_editable; // Example of handling read-only
 
+            // ✅ HOAI Mode Handling
+            if (data.hoai_data && Object.keys(data.hoai_data).length > 0) {
+                console.log("🟢 HOAI Data Found, Enabling HOAI Mode...");
 
+                // Enable HOAI Mode Switch
+                document.getElementById("hoaiModeSwitch").checked = true;
+                document.getElementById("hoaiCalculator").classList.remove("hidden");
+
+                // ✅ Set Service Profile first
+                let serviceProfileDropdown = document.getElementById("serviceProfile");
+                serviceProfileDropdown.value = data.hoai_data.serviceProfile;
+                console.log(`🟡 Setting Service Profile: ${data.hoai_data.serviceProfile}`);
+
+                // ✅ Manually trigger change event to update Honorarzone & LPs
+                serviceProfileDropdown.dispatchEvent(new Event("change"));
+
+                // ✅ Wait for Honorarzone and LP options to populate before setting other fields
+                setTimeout(() => {
+                    Object.keys(data.hoai_data).forEach(key => {
+                        let inputField = document.getElementById(key);
+                        if (inputField) {
+                            console.log(`🟡 Setting HOAI Field: ${key} = ${data.hoai_data[key]}`);
+                            inputField.value = data.hoai_data[key];
+                        }
+                    });
+
+                    // ✅ Restore LP selections
+                    if (data.hoai_data.lp_enabled) {
+                        Object.keys(data.hoai_data.lp_enabled).forEach(lpKey => {
+                            let lpCheckbox = document.getElementById(lpKey);
+                            if (lpCheckbox) {
+                                lpCheckbox.checked = data.hoai_data.lp_enabled[lpKey];
+                                console.log(`🟢 Restored LP Checkbox: ${lpKey} = ${lpCheckbox.checked}`);
+                            }
+                        });
+                    }
+
+                    // ✅ Restore LP values
+                    if (data.hoai_data.lp_values) {
+                        Object.keys(data.hoai_data.lp_values).forEach(lpKey => {
+                            let lpInput = document.getElementById(lpKey + "_percentage");
+                            if (lpInput) {
+                                lpInput.value = data.hoai_data.lp_values[lpKey];
+                                console.log(`🟢 Restored LP Value: ${lpKey} = ${lpInput.value}%`);
+                            }
+                        });
+                    }
+
+                    // ✅ Store HOAI Data in Hidden Field
+                    document.getElementById("hoai_data").value = JSON.stringify(data.hoai_data);
+
+                }, 500); // ⏳ Small delay for Honorarzone update
+
+            } else {
+                console.log("⚠️ No HOAI Data Found, keeping it disabled.");
+                document.getElementById("hoaiModeSwitch").checked = false;
+                document.getElementById("hoaiCalculator").classList.add("hidden");
+            }
+
+
+            
             // Clear existing sections and populate the container
             const sectionsContainer = document.getElementById('sections-container');
             sectionsContainer.innerHTML = '';
@@ -994,6 +1057,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Function to add a section from the library
     window.addSectionFromLibrary = function(sectionId) {
     const newSectionId = Math.random().toString(36).substr(2, 9); // Generate a new unique ID
+    console.log('Newsectionid',newSectionId);
     console.log("Fetching section from library with ID:", sectionId); // Debugging line
     fetchData(`/ajax/get-library-section/${sectionId}/`, data => {
         const sectionTemplate = `
@@ -1092,6 +1156,43 @@ document.addEventListener("DOMContentLoaded", function() {
         addHiddenInputToForm();
     });
 
+    document.getElementById("contract-form").addEventListener("submit", function(event) {
+        let hoaiModeEnabled = document.getElementById("hoaiModeSwitch").checked;
+        let hoaiData = {};
+
+        if (hoaiModeEnabled) {
+            hoaiData = {
+                serviceProfile: document.getElementById("serviceProfile").value,
+                honorarzone: document.getElementById("honorarzone").value,
+                honorarsatz: document.getElementById("honorarsatz").value,
+                baukonstruktionen: document.getElementById("baukonstruktionen").value,
+                technischeAnlagen: document.getElementById("technischeAnlagen").value,
+                anrechenbareKosten: document.getElementById("anrechenbareKosten").value,
+                nebenKosten: document.getElementById("nebenKosten").value,
+                zuschlag: document.getElementById("zuschlag").value,
+                vat: document.getElementById("vt").value,
+                lp_enabled: {}, // Store enabled LPs
+                lp_values: {}   // Store LP percentages
+            };
+
+            // Capture LP selection and values
+            document.querySelectorAll("#lpContainer input[type='checkbox']").forEach(lpCheckbox => {
+                let lpKey = lpCheckbox.id; // e.g., "lp1", "lp2"
+                hoaiData.lp_enabled[lpKey] = lpCheckbox.checked; // Store if LP is enabled
+            });
+
+            document.querySelectorAll("#lpContainer input[type='number']").forEach(lpInput => {
+                let lpKey = lpInput.id.replace("_percentage", ""); // Extract LP key (e.g., "lp1")
+                hoaiData.lp_values[lpKey] = parseFloat(lpInput.value) || 0; // Store LP percentage
+            });
+        }
+
+        // ✅ Save HOAI data (including LP data) to the hidden input field
+        document.getElementById("hoai_data").value = JSON.stringify(hoaiData);
+    });
+
+
+
     // Drag and drop event listeners
     document.addEventListener('dragover', function(event) {
         event.preventDefault();
@@ -1100,6 +1201,7 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById('sections-container').addEventListener('drop', function(event) {
         event.preventDefault();
         const sectionId = event.dataTransfer.getData('sectionId');
+        
         addSectionFromLibrary(sectionId);
     });
 

@@ -90,11 +90,13 @@
                 <p><strong>Zuschlag:</strong> <span id="zuschlagAmount">-</span> €</p>
                 <p><strong>Net Honorarium:</strong> <span id="netHonor">-</span> €</p>
                 <p><strong>VAT:</strong> <span id="vatAmount">-</span> €</p>
-                
+
                 <div class="divider"></div>
 
                 <p class="text-md font-bold"><strong>Total Gross Honorarium:</strong> <span id="grossHonor">-</span> €</p>
                 
+                <button type="button" class="btn btn-primary mt-4 w-full" onclick="loadSectionsFromLP()">Load Sections from LP</button>
+
             </div>
         </div>
     </div>
@@ -117,6 +119,8 @@ function fetchServiceProfiles() {
     fetch(API_BASE + "list-service-profiles/")
         .then(response => response.json())
         .then(data => {
+            console.log("✅ Fetched Service Profiles:", data); // Debugging output
+
             let serviceProfileDropdown = document.getElementById("serviceProfile");
             serviceProfileDropdown.innerHTML = '<option value="">Select a Profile</option>';
             
@@ -124,7 +128,7 @@ function fetchServiceProfiles() {
                 let option = document.createElement("option");
                 option.value = profile.id;
                 option.textContent = profile.name;
-                option.dataset.honorarzone = profile.no_of_Honarzone;
+                option.dataset.honorarzone = profile.no_of_Honarzone;  // Ensure this is set
                 option.dataset.lpBreakdown = JSON.stringify(profile.lp_breakdown); // Store LP data
                 serviceProfileDropdown.appendChild(option);
             });
@@ -132,8 +136,9 @@ function fetchServiceProfiles() {
             // Attach event listener to update LPs based on selection
             serviceProfileDropdown.addEventListener("change", updateLPOptions);
         })
-        .catch(error => console.error("Error loading service profiles:", error));
+        .catch(error => console.error("❌ Error loading service profiles:", error));
 }
+
 
 function updateLPBreakdown() {
     let serviceProfileDropdown = document.getElementById("serviceProfile");
@@ -156,22 +161,35 @@ function updateLPInputs(lpData) {
     let lpContainer = document.getElementById("lpContainer");
     lpContainer.innerHTML = ""; // Clear previous LPs
 
+    let shouldTriggerCalculation = false; // ✅ Track if calculation should be triggered
+
     Object.entries(lpData).forEach(([lpKey, lpValue]) => {
         let lpNumber = lpKey.replace("lp", ""); // Extract number from key (e.g., "lp1" → "1")
         
         let checkedAttr = lpValue > 0 ? "checked" : ""; // Only check LPs with > 0%
-        
+        if (lpValue > 0) shouldTriggerCalculation = true; // ✅ If any LP is checked, we should trigger calculation
+
         let lpElement = `
             <div class="flex items-center">
-                <input type="checkbox" id="${lpKey}" ${checkedAttr} onchange="calculateHOAI()">
+                <input type="checkbox" id="${lpKey}" ${checkedAttr} onchange="calculateHOAI(); updateFeeBreakdown(getSelectedLPs());">
                 <label for="${lpKey}" class="ml-2 w-2/3">LP${lpNumber}</label>
-                <input type="number" id="${lpKey}_percentage" class="input input-sm text-right" value="${lpValue}" onchange="calculateHOAI()">%
+                <input type="number" id="${lpKey}_percentage" class="input input-sm text-right" value="${lpValue}" onchange="calculateHOAI(); updateFeeBreakdown(getSelectedLPs());">%
             </div>
         `;
 
         lpContainer.innerHTML += lpElement;
     });
+
+    // ✅ Automatically trigger HOAI calculation & fee breakdown update
+    if (shouldTriggerCalculation) {
+        console.log("🟢 Auto-triggering HOAI Calculation & Fee Breakdown...");
+        setTimeout(() => {
+            calculateHOAI();
+            updateFeeBreakdown(getSelectedLPs());
+        }, 600); // Delay to ensure UI updates before recalculating
+    }
 }
+
 
 
 function updateLPOptions() {
@@ -424,5 +442,54 @@ document.addEventListener("DOMContentLoaded", function () {
     updateAnrechenbareKosten();
 });
 
+async function loadSectionsFromLP() {
+    let serviceProfileDropdown = document.getElementById("serviceProfile");
+    let selectedOption = serviceProfileDropdown.options[serviceProfileDropdown.selectedIndex];
+
+    if (!selectedOption || !selectedOption.dataset.lpBreakdown) {
+        alert("Please select a Service Profile with a valid LP breakdown.");
+        return;
+    }
+
+    let lpBreakdown = JSON.parse(selectedOption.dataset.lpBreakdown);
+    let sectionsContainer = document.getElementById("sections-container");
+    sectionsContainer.innerHTML = ""; // Clear previous sections
+
+    console.log("🔍 Filtering checked LPs...");
+
+    // Correct LP-to-Section ID Mapping (from your original request)
+    const lpToSectionMapping = {
+        "lp1": 1,  // LP1 maps to Section ID 1
+        "lp2": 3,  // LP2 maps to Section ID 3
+        "lp3": 4,  // LP3 maps to Section ID 4
+        "lp4": 5,  // LP4 maps to Section ID 5
+        "lp5": 6,  // LP5 maps to Section ID 6
+        "lp6": 7,  // LP6 maps to Section ID 7
+        "lp7": 8,  // LP7 maps to Section ID 8
+        "lp8": 9,  // LP8 maps to Section ID 9
+        "lp9": 10  // LP9 maps to Section ID 10
+    };
+
+    // Get checked LPs (Only checked LPs from Fee Breakdown)
+    let selectedLPs = Object.keys(lpBreakdown)
+        .filter(lpKey => lpBreakdown[lpKey] > 0 && document.getElementById(lpKey).checked) // Only checked LPs
+        .sort((a, b) => parseInt(a.replace("lp", "")) - parseInt(b.replace("lp", ""))); // Sort numerically
+
+    console.log("✅ Selected LPs (checked only, in correct order):", selectedLPs);
+
+    // Process each checked LP sequentially with delay
+    for (const lpKey of selectedLPs) {
+        let sectionId = lpToSectionMapping[lpKey]; // Get mapped Section ID
+        if (sectionId) {
+            console.log(`🔍 Fetching section for ${lpKey} (Section ID: ${sectionId})...`);
+            await addSectionFromLibrary(sectionId); // Load sections in correct order
+            await new Promise(resolve => setTimeout(resolve, 5)); // 5ms delay
+        } else {
+            console.warn(`⚠️ No section mapping found for ${lpKey}`);
+        }
+    }
+
+    console.log("✅ Sections added from library in correct order!");
+}
 
 </script>
