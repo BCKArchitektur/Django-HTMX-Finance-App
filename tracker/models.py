@@ -72,6 +72,9 @@ class Item(models.Model):
         ('Std', 'Std'),
         ('Psch', 'Psch'),
         ('Stk', 'Stk'),
+        ('%', '%'),
+        ('Monat(e)', 'Monat(e)'),
+        ('Tag(e)', 'Tag(e)'),
     ]
 
     Item_name = models.CharField(max_length=255, unique=False)
@@ -131,6 +134,7 @@ class Contract(models.Model):
     vat_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=19.00, blank=True, null=True)
     contract_no = models.CharField(max_length=255, unique=True, blank=True, null=True)  # Concatenated field
     scope_of_work = models.TextField(blank=True, null=True)
+    hoai_data = models.JSONField(default=dict, blank=True, null=True)  # Store HOAI inputs
  
 
     def __str__(self):

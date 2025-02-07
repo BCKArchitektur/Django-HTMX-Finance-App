@@ -1,9 +1,9 @@
 <!-- HOAI Contract Modal -->
-<div id="hoaiContractModal" class="modal">
-    <div class="modal-box max-w-6xl">
+<div  id="hoaiCalculator" class="hidden">
+    <div>
         <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 
-        <button class="btn btn-sm btn-circle btn-ghost absolute top-2 right-2" onclick="closeHOAIContractModal()">✕</button>
+        <!-- <button class="btn btn-sm btn-circle btn-ghost absolute top-2 right-2" onclick="closeHOAIContractModal()">✕</button> -->
         <h3 class="font-bold text-lg mb-4">New HOAI Contract</h3>
 
         <!-- Content Section -->
@@ -11,7 +11,7 @@
             
             <!-- Left Section: Inputs -->
             <div class="border rounded-lg p-4 bg-gray-100">
-                <h4 class="text-xl font-bold mb-4">HOAI Berechnung</h4>
+                <h4 class="text-l font-bold mb-4">HOAI Berechnung</h4>
 
                 <label class="block">Service Profile:</label>
                 <select class="input input-bordered w-full mb-2" id="serviceProfile">
@@ -32,9 +32,15 @@
                     <option value="Oberer Honorarsatz">Oberer Honorarsatz</option>
                 </select>
                 
-
+                <label class="block">Bauwerk-Baukonstruktionen(€):</label>
+                <input type="number" id="baukonstruktionen" class="input input-success input-bordered w-full mb-2" value="1000000">
+                
+                <label class="block">Bauwerk-Technische Anlagen(€):</label>
+                <input type="number" id="technischeAnlagen" class="input input-success input-bordered w-full mb-2" value="250000">
+                
                 <label class="block">Anrechenbare Kosten (€):</label>
-                <input type="number" id="chargeableCosts" class="input input-bordered w-full mb-2" value="1250000">
+                <input type="number" id="anrechenbareKosten" class="input input-bordered w-full mb-2" value="1250000" readonly>
+                
 
                 <label class="block">NebenKosten (%):</label>
                 <input type="number" id="nebenKosten" class="input input-bordered w-full mb-2" value="0" step="0.01">
@@ -50,7 +56,7 @@
 
             <!-- Middle Section: LP Customization -->
             <div class="border rounded-lg p-4 bg-gray-100">
-                <h4 class="text-xl font-bold mb-4">Leistungsphasen (LP)</h4>
+                <h4 class="text-l font-bold mb-4">Leistungsphasen (LP)</h4>
 
                 <div id="lpInputs">
                     <div class="grid grid-cols-1 gap-2" id="lpContainer">
@@ -58,20 +64,25 @@
                     </div>
                 </div>
 
-                <button class="btn btn-secondary mt-4 w-full" onclick="calculateHOAI()">Calculate</button>
+                <!-- <button type="button" class="btn btn-secondary mt-4 w-full" onclick="calculateHOAI(event)">Calculate</button> -->
+
             </div>
 
 
 
             <!-- Right Section: Results -->
             <div class="border rounded-lg p-4 bg-gray-50">
-                <h4 class="text-xl font-bold mb-4">Calculation Results</h4>
+                <h4 class="text-l font-bold mb-4">Calculation Results</h4>
 
                 <p><strong>Interpolated Basishonorarsatz:</strong> <span id="interpolatedBase">-</span> €</p>
                 <p><strong>Interpolated Oberer Honorarsatz:</strong> <span id="interpolatedUpper">-</span> €</p>
 
+                <div class="divider"></div>
+
                 <h4 class="font-bold mt-4">Fee Breakdown</h4>
                 <ul id="feeBreakdown" class="list-disc pl-5 text-sm"></ul>
+
+                <div class="divider"></div>
 
                 <h4 class="font-bold mt-4">Total Fees</h4>
                 <p><strong>Honorarsatz Factor:</strong> <span id="honorarsatzFactor">-</span></p>
@@ -79,6 +90,9 @@
                 <p><strong>Zuschlag:</strong> <span id="zuschlagAmount">-</span> €</p>
                 <p><strong>Net Honorarium:</strong> <span id="netHonor">-</span> €</p>
                 <p><strong>VAT:</strong> <span id="vatAmount">-</span> €</p>
+                
+                <div class="divider"></div>
+
                 <p class="text-md font-bold"><strong>Total Gross Honorarium:</strong> <span id="grossHonor">-</span> €</p>
                 
             </div>
@@ -150,7 +164,7 @@ function updateLPInputs(lpData) {
         let lpElement = `
             <div class="flex items-center">
                 <input type="checkbox" id="${lpKey}" ${checkedAttr} onchange="calculateHOAI()">
-                <label for="${lpKey}" class="ml-2 w-2/3">LP ${lpNumber}</label>
+                <label for="${lpKey}" class="ml-2 w-2/3">LP${lpNumber}</label>
                 <input type="number" id="${lpKey}_percentage" class="input input-sm text-right" value="${lpValue}" onchange="calculateHOAI()">%
             </div>
         `;
@@ -211,16 +225,17 @@ let initialNetHonor = 0; // Store initial net honor for LP calculations
 
 function calculateHOAI() {
     let serviceProfileId = document.getElementById("serviceProfile").value;
-    let chargeableCosts = parseFloat(document.getElementById("chargeableCosts").value);
-    let vatPercentage = parseFloat(document.getElementById("vt").value);
-    let nebenKostenPercentage = parseFloat(document.getElementById("nebenKosten").value);
-    let zuschlagPercentage = parseFloat(document.getElementById("zuschlag").value);
+    let chargeableCosts = parseFloat(document.getElementById("anrechenbareKosten").value) || 0;
+    let vatPercentage = parseFloat(document.getElementById("vt").value) || 0;
+    let nebenKostenPercentage = parseFloat(document.getElementById("nebenKosten").value) || 0;
+    let zuschlagPercentage = parseFloat(document.getElementById("zuschlag").value) || 0;
     let feeZoneDropdown = document.getElementById("honorarzone");
     let feeZone = feeZoneDropdown.value ? parseInt(feeZoneDropdown.value) : 1;
     let honorarSatz = document.getElementById("honorarsatz").value;
 
+    // Prevent execution if no service profile is selected
     if (!serviceProfileId) {
-        alert("Please select a Service Profile.");
+        console.warn("Service Profile not selected. Skipping HOAI calculation.");
         return;
     }
 
@@ -241,7 +256,7 @@ function calculateHOAI() {
     .then(response => response.json())
     .then(data => {
         if (!data.calculated_fee) {
-            alert("Error in HOAI calculation. Please check your inputs.");
+            console.warn("HOAI calculation failed. Skipping update.");
             return;
         }
 
@@ -287,7 +302,7 @@ function calculateHOAI() {
         let totalPercentage = selectedLPs.reduce((sum, lp) => sum + lp.percentage, 0);
 
         if (totalPercentage === 0) {
-            alert("At least one LP phase must have a percentage greater than 0!");
+            console.warn("No Leistungsphasen selected. Skipping HOAI calculation.");
             return;
         }
 
@@ -314,26 +329,26 @@ function calculateHOAI() {
 
         document.getElementById("honorarsatzFactor").textContent = honorarSatzFactor.toLocaleString('de-DE', { minimumFractionDigits: 0 }) + "%";
 
+        // 🔥 **Fix: Ensure LP Breakdown is Updated**
         updateFeeBreakdown(selectedLPs);
     })
     .catch(error => {
         console.error("Error calculating HOAI:", error);
-        alert("Failed to calculate HOAI. Please try again.");
     });
 }
 
 
 function getSelectedLPs() {
     let lpList = [
-        { id: "lp1", label: "Grundlagenermittlung", percentage: parseFloat(document.getElementById("lp1_percentage").value) },
-        { id: "lp2", label: "Vorplanung", percentage: parseFloat(document.getElementById("lp2_percentage").value) },
-        { id: "lp3", label: "Entwurfsplanung", percentage: parseFloat(document.getElementById("lp3_percentage").value) },
-        { id: "lp4", label: "Genehmigungsplanung", percentage: parseFloat(document.getElementById("lp4_percentage").value) },
-        { id: "lp5", label: "Ausführungsplanung", percentage: parseFloat(document.getElementById("lp5_percentage").value) },
-        { id: "lp6", label: "Vorbereitung der Vergabe", percentage: parseFloat(document.getElementById("lp6_percentage").value) },
-        { id: "lp7", label: "Mitwirkung bei der Vergabe", percentage: parseFloat(document.getElementById("lp7_percentage").value) },
-        { id: "lp8", label: "Objektüberwachung", percentage: parseFloat(document.getElementById("lp8_percentage").value) },
-        { id: "lp9", label: "Objektbetreuung", percentage: parseFloat(document.getElementById("lp9_percentage").value) }
+        { id: "lp1", label: "LP-1 ", percentage: parseFloat(document.getElementById("lp1_percentage").value) },
+        { id: "lp2", label: "LP-2 ", percentage: parseFloat(document.getElementById("lp2_percentage").value) },
+        { id: "lp3", label: "LP-3 ", percentage: parseFloat(document.getElementById("lp3_percentage").value) },
+        { id: "lp4", label: "LP-4 ", percentage: parseFloat(document.getElementById("lp4_percentage").value) },
+        { id: "lp5", label: "LP-5 ", percentage: parseFloat(document.getElementById("lp5_percentage").value) },
+        { id: "lp6", label: "LP-6 ", percentage: parseFloat(document.getElementById("lp6_percentage").value) },
+        { id: "lp7", label: "LP-7 ", percentage: parseFloat(document.getElementById("lp7_percentage").value) },
+        { id: "lp8", label: "LP-8 ", percentage: parseFloat(document.getElementById("lp8_percentage").value) },
+        { id: "lp9", label: "LP-9 ", percentage: parseFloat(document.getElementById("lp9_percentage").value) }
     ];
 
     return lpList.filter(lp => document.getElementById(lp.id).checked);
@@ -354,11 +369,60 @@ function updateFeeBreakdown(selectedLPs) {
         li.innerHTML = `<strong>${lp.label} (${lp.percentage}%):</strong> ${feeAmount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
         feeBreakdown.appendChild(li);
     });
+
+    console.log("Updated LP Breakdown:", selectedLPs);
 }
 
 
 function getCSRFToken() {
     return document.querySelector('[name=csrfmiddlewaretoken]').value;
 }
+document.addEventListener("DOMContentLoaded", function () {
+    const inputsToWatch = [
+        "serviceProfile",
+        "honorarzone",
+        "honorarsatz",
+        "chargeableCosts",
+        "nebenKosten",
+        "zuschlag",
+        "vt"
+    ];
+
+    inputsToWatch.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener("change", calculateHOAI);
+            element.addEventListener("input", calculateHOAI);
+        }
+    });
+
+    // Also watch for changes in Leistungsphasen (LP)
+    document.getElementById("lpContainer").addEventListener("change", calculateHOAI);
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    const baukonstruktionen = document.getElementById("baukonstruktionen");
+    const technischeAnlagen = document.getElementById("technischeAnlagen");
+    const anrechenbareKosten = document.getElementById("anrechenbareKosten");
+
+    function updateAnrechenbareKosten() {
+        let totalCost = 
+            (parseFloat(baukonstruktionen.value) || 0) + 
+            (parseFloat(technischeAnlagen.value) || 0);
+        
+        anrechenbareKosten.value = totalCost;
+
+        // Automatically trigger HOAI calculation
+        calculateHOAI();
+    }
+
+    // Attach event listeners to detect changes
+    baukonstruktionen.addEventListener("input", updateAnrechenbareKosten);
+    technischeAnlagen.addEventListener("input", updateAnrechenbareKosten);
+
+    // Initialize on page load
+    updateAnrechenbareKosten();
+});
+
 
 </script>

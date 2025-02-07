@@ -35,8 +35,18 @@
                     </div>
                 </label>
 
+                <label class="cursor-pointer flex items-center">
+                    <span class="mr-2">HOAI Mode</span>
+                    <input type="checkbox" id="hoaiModeSwitch" class="toggle toggle-primary" onchange="toggleHOAIMode()">
+                </label>
+                
+
+
             </div>
 
+                <div id="hoaiCalculator_div" class="m-4">
+                    {% include 'tracker/hoai_contract_modal.html' %}
+                </div>
             <div class="mb-4">
                 <button type="button" class="btn btn-sm btn-secondary mb-2" onclick="addSection()">+ New Section</button>
             </div>
@@ -872,6 +882,18 @@ document.addEventListener("DOMContentLoaded", function() {
         jsonInput.value = JSON.stringify(contractJSON);
         document.getElementById('contract-form').appendChild(jsonInput);
     }
+
+
+
+
+
+    
+    window.toggleHOAIMode = function() {
+        let hoaiCalculator = document.getElementById("hoaiCalculator");
+        hoaiCalculator.classList.toggle("hidden");
+    }
+
+
 
     // Function to add a new section
     window.addSection = function() {
