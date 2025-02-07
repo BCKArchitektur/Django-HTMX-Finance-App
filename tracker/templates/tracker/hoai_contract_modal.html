@@ -433,11 +433,20 @@ document.addEventListener("DOMContentLoaded", function () {
     const anrechenbareKosten = document.getElementById("anrechenbareKosten");
 
     function updateAnrechenbareKosten() {
-        let totalCost = 
-            (parseFloat(baukonstruktionen.value) || 0) + 
-            (parseFloat(technischeAnlagen.value) || 0);
+        let baukonstruktionenValue = parseFloat(baukonstruktionen.value) || 0;
+        let technischeAnlagenValue = parseFloat(technischeAnlagen.value) || 0;
         
-        anrechenbareKosten.value = totalCost;
+        let maxFullCharge = 0.25 * baukonstruktionenValue;
+        let adjustedTechnischeAnlagen;
+
+        if (technischeAnlagenValue <= maxFullCharge) {
+            adjustedTechnischeAnlagen = technischeAnlagenValue;
+        } else {
+            adjustedTechnischeAnlagen = maxFullCharge + 0.5 * (technischeAnlagenValue - maxFullCharge);
+        }
+
+        let totalAnrechenbareKosten = baukonstruktionenValue + adjustedTechnischeAnlagen;
+        anrechenbareKosten.value = totalAnrechenbareKosten.toFixed(2); // Format as decimal
 
         // Automatically trigger HOAI calculation
         calculateHOAI();
