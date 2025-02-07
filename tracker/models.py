@@ -135,7 +135,7 @@ class Contract(models.Model):
     contract_no = models.CharField(max_length=255, unique=True, blank=True, null=True)  # Concatenated field
     scope_of_work = models.TextField(blank=True, null=True)
     hoai_data = models.JSONField(default=dict, blank=True, null=True)  # Store HOAI inputs
- 
+    zuschlag_value = models.CharField(max_length=255,default=0, blank=True, null=True)  # New Field
 
     def __str__(self):
         return f"({self.contract_no}-{self.contract_name} )"

@@ -486,6 +486,13 @@ def handle_existing_contract_form(request, project):
     contract.hoai_data = hoai_data_parsed
     contract.save()
 
+    hoai_data = json.loads(request.POST.get('hoai_data', '{}'))
+    zuschlag_value = hoai_data.get("zuschlag", 0)
+
+    contract.zuschlag_value = zuschlag_value
+    contract.vat_percentage = hoai_data.get("vat", contract.vat_percentage)
+    contract.save()
+
     # ✅ Assign Budget if HOAI Mode is Enabled
     if hoai_data_parsed:
         assign_budget_to_contract(contract, hoai_data_parsed)
@@ -575,11 +582,17 @@ def handle_new_contract_form(request, project):
         hoai_data_parsed = {}
         print("Error decoding HOAI data JSON")  # Debugging
 
+    hoai_data = json.loads(request.POST.get('hoai_data', '{}'))
+    zuschlag_value = hoai_data.get("zuschlag", 0)
+
     # ✅ Create Contract object
     contract = Contract.objects.create(
         contract_name=contract_name,
         contract_no=contract_no,
-        hoai_data=hoai_data_parsed  
+        hoai_data=hoai_data, 
+        zuschlag_value=zuschlag_value,
+        vat_percentage=hoai_data.get("vat", 19.00),
+        additional_fee_percentage = hoai_data.get("nebenKosten", 6.5)
     )
     contract.user.set(user_ids)
 
@@ -991,6 +1004,7 @@ def load_contract_data(request):
 
     # ✅ Retrieve HOAI Data (Ensure it's sent as JSON)
     hoai_data = contract.hoai_data if contract.hoai_data else {}
+    zuschlag_value = contract.zuschlag_value
 
     contract_data = {
         'contract_name': contract.contract_name,
@@ -1001,6 +1015,7 @@ def load_contract_data(request):
         'vat_percentage': contract.vat_percentage,  # Add VAT percentage to the response
         'invoices_exist': invoices_exist,  # Add whether invoices exist to the response
         'hoai_data': hoai_data,  # ✅ Include HOAI data in the response
+        'zuschlag_value': zuschlag_value,
     }
 
     return JsonResponse(contract_data)

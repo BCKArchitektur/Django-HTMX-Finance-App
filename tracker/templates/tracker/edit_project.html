@@ -289,6 +289,12 @@
                             <td><input type="text" id="additional_fee" class="input  input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
+                            <td class="text-right font-thin w-1/6">Zuschlag (€)</td>
+                            <td>
+                                <input type="text" id="zuschlag_value" class="input input-sm w-1/4" readonly>
+                            </td>
+                        </tr>
+                        <tr>
                             <td class="text-right font-bold w-1/6">Net Contract €</td>
                             <td><input type="text" id="net_contract" class="input  input-sm w-1/4" readonly></td>
                         </tr>
@@ -695,7 +701,12 @@
         console.log('Additional Fee Percentage:', additionalFeePercentage);
         console.log('Additional Fee:', additionalFee);
 
-        const netContract = sumOfItems + additionalFee;
+
+        const zuschlagPercentage = parseFloat(document.getElementById('zuschlag_value').value) || 0;
+        const zuschlagAmount = (sumOfItems * zuschlagPercentage) / 100;
+
+
+        const netContract = sumOfItems + additionalFee + zuschlagAmount;
 
         const vatPercentageInput = document.getElementById('id_vat_percentage');
         const vatPercentage = parseFloat(vatPercentageInput.value) || 0;
@@ -1021,6 +1032,8 @@ function populateBudgetTable(contractId) {
             additionalFeePercentageInput.disabled = true;
         }
 
+        document.getElementById('zuschlag_value').value = data.zuschlag_value || 0; // Fetch Zuschlag
+        console.log('zuschlag_value',data)
         // Populate VAT percentage and sync select field with hidden input
         const vatPercentageInput = document.getElementById('id_vat_percentage');
         const vatPercentageSelect = document.getElementById('vat_percentage_select');
