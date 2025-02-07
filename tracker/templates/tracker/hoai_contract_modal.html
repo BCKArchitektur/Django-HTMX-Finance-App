@@ -75,7 +75,10 @@
                 <h4 class="text-l font-bold mb-4">Calculation Results</h4>
 
                 <p><strong>Interpolated Basishonorarsatz:</strong> <span id="interpolatedBase">-</span> €</p>
+                
                 <p><strong>Interpolated Oberer Honorarsatz:</strong> <span id="interpolatedUpper">-</span> €</p>
+
+                <p><strong>Grundhonorar (100%):</strong> <span id="grundhonorar">-</span> €</p>
 
                 <div class="divider"></div>
 
@@ -311,7 +314,13 @@ function calculateHOAI() {
         }
 
         // Store the initial net honor to use for breakdown calculations
-        initialNetHonor = netHonor;
+        initialNetHonor = netHonor; // Store the initial value
+        
+        // **✅ Update Grundhonorar Field**
+        document.getElementById("grundhonorar").textContent = initialNetHonor.toLocaleString('de-DE', { 
+            minimumFractionDigits: 2, 
+            maximumFractionDigits: 2 
+        }) ;
 
         document.getElementById("interpolatedBase").textContent = honorFrom.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         document.getElementById("interpolatedUpper").textContent = honorTo.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

@@ -15,6 +15,8 @@
         <form id="contract-form" method="post" action="{% url 'edit_project' project.id %}">
             {% csrf_token %}
             <input type="hidden" name="contract_id" id="contract_id">
+
+            
             <!-- Contract Name Input with Success/Error Messages -->
             <div class="join space-x-4">
                 <!-- Contract Number Display -->
@@ -1157,40 +1159,44 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     document.getElementById("contract-form").addEventListener("submit", function(event) {
-        let hoaiModeEnabled = document.getElementById("hoaiModeSwitch").checked;
-        let hoaiData = {};
+    let hoaiModeEnabled = document.getElementById("hoaiModeSwitch").checked;
+    let hoaiData = {};
 
-        if (hoaiModeEnabled) {
-            hoaiData = {
-                serviceProfile: document.getElementById("serviceProfile").value,
-                honorarzone: document.getElementById("honorarzone").value,
-                honorarsatz: document.getElementById("honorarsatz").value,
-                baukonstruktionen: document.getElementById("baukonstruktionen").value,
-                technischeAnlagen: document.getElementById("technischeAnlagen").value,
-                anrechenbareKosten: document.getElementById("anrechenbareKosten").value,
-                nebenKosten: document.getElementById("nebenKosten").value,
-                zuschlag: document.getElementById("zuschlag").value,
-                vat: document.getElementById("vt").value,
-                lp_enabled: {}, // Store enabled LPs
-                lp_values: {}   // Store LP percentages
-            };
+    if (hoaiModeEnabled) {
+        // ✅ Extract HOAI Data
+        hoaiData = {
+            serviceProfile: document.getElementById("serviceProfile").value,
+            honorarzone: document.getElementById("honorarzone").value,
+            honorarsatz: document.getElementById("honorarsatz").value,
+            baukonstruktionen: document.getElementById("baukonstruktionen").value,
+            technischeAnlagen: document.getElementById("technischeAnlagen").value,
+            anrechenbareKosten: document.getElementById("anrechenbareKosten").value,
+            nebenKosten: document.getElementById("nebenKosten").value,
+            zuschlag: document.getElementById("zuschlag").value,
+            vat: document.getElementById("vt").value,
+            grundhonorar: parseFloat(document.getElementById("grundhonorar").textContent.replace(',', '.')) || 0,
+            lp_enabled: {},
+            lp_values: {}
+        };
 
-            // Capture LP selection and values
-            document.querySelectorAll("#lpContainer input[type='checkbox']").forEach(lpCheckbox => {
-                let lpKey = lpCheckbox.id; // e.g., "lp1", "lp2"
-                hoaiData.lp_enabled[lpKey] = lpCheckbox.checked; // Store if LP is enabled
-            });
+        // ✅ Capture LP selection (checkboxes)
+        document.querySelectorAll("#lpContainer input[type='checkbox']").forEach(lpCheckbox => {
+            let lpKey = lpCheckbox.id; // e.g., "lp1", "lp2"
+            hoaiData.lp_enabled[lpKey] = lpCheckbox.checked;
+        });
 
-            document.querySelectorAll("#lpContainer input[type='number']").forEach(lpInput => {
-                let lpKey = lpInput.id.replace("_percentage", ""); // Extract LP key (e.g., "lp1")
-                hoaiData.lp_values[lpKey] = parseFloat(lpInput.value) || 0; // Store LP percentage
-            });
-        }
+        // ✅ Capture LP percentage values (inputs)
+        document.querySelectorAll("#lpContainer input[type='number']").forEach(lpInput => {
+            let lpKey = lpInput.id.replace("_percentage", ""); // Extract LP key (e.g., "lp1")
+            hoaiData.lp_values[lpKey] = parseFloat(lpInput.value) || 0;
+        });
 
-        // ✅ Save HOAI data (including LP data) to the hidden input field
+        // ✅ Save HOAI data to the hidden input
         document.getElementById("hoai_data").value = JSON.stringify(hoaiData);
-    });
 
+        console.log("✅ HOAI data saved:", hoaiData);
+    }
+});
 
 
     // Drag and drop event listeners

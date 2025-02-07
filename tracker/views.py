@@ -501,81 +501,108 @@ def handle_existing_contract_form(request, project):
 
 
 
+import re
 
+def assign_budget_to_contract(contract, hoai_data):
+    """
+    Assigns a budget to contract items based on HOAI data.
+    """
+    grundhonorar = hoai_data.get("grundhonorar", 0)  # Base rate
+
+    print(f"🔹 Assigning Budget - Grundhonorar: {grundhonorar}")
+
+    # Loop through sections
+    for section in contract.section.all():
+        for item in section.Item.all():
+            item_name = item.Item_name.strip()
+
+            # ✅ Extract LP key from item name (even if it contains extra text)
+            lp_match = re.search(r"LP(\d+)", item_name, re.IGNORECASE)
+
+            if lp_match:
+                lp_key = f"lp{lp_match.group(1)}"  # Convert to format "lp1", "lp2"
+                
+                if lp_key in hoai_data.get("lp_values", {}):
+                    lp_percentage = hoai_data["lp_values"][lp_key]
+
+                    # ✅ Assign Budget Values
+                    item.quantity = lp_percentage
+                    item.unit = "%"  
+                    item.rate = grundhonorar
+                    item.total = (lp_percentage / 100) * grundhonorar
+                    item.save()
+
+                    print(f"✅ Budget Assigned: {item.Item_name} | Qty: {lp_percentage}% | Rate: {grundhonorar} | Total: {item.total}")
+
+    print("🟢 Budget assignment completed.")
+
+
+
+from django.http import JsonResponse
+from django.shortcuts import redirect
+import json
 
 def handle_new_contract_form(request, project):
     contract_name = request.POST.get('contract_name')
     contract_json = request.POST.get('contract_json')
     contract_no = request.POST.get('contract_no')
-    hoai_data = request.POST.get('hoai_data', '{}') 
-
+    hoai_data = request.POST.get('hoai_data', '{}')  # Default to empty JSON
 
     # Retrieve all users associated with the project
     user_ids = project.user.values_list('id', flat=True)
-    
-    # Debugging print statement
-    print("POST data:", request.POST)
-    print("Received hoai_data:", hoai_data)
 
-    # ✅ Convert HOAI data to Python dictionary
+    print("POST data:", request.POST)  # Debugging
+    print("Received hoai_data:", hoai_data)  # Debugging
+
     try:
         hoai_data_parsed = json.loads(hoai_data)
     except json.JSONDecodeError:
         hoai_data_parsed = {}
-        print("Error decoding HOAI data JSON")  # Debugging line
+        print("Error decoding HOAI data JSON")  # Debugging
 
-
-    # Create the Contract object with contract_no and contract_name
+    # ✅ Create Contract object
     contract = Contract.objects.create(
         contract_name=contract_name,
-        contract_no = contract_no,
-        hoai_data=hoai_data_parsed  # Store HOAI data in JSONField
+        contract_no=contract_no,
+        hoai_data=hoai_data_parsed  
     )
     contract.user.set(user_ids)
 
-    
-    # Debugging print statement to check if contract_json is None
-    print("Received contract JSON:", contract_json)
+    print("Received contract JSON:", contract_json)  # Debugging
 
     if contract_json:
         try:
             contract_data = json.loads(contract_json)
-            
-            # Debugging print statement to check the parsed JSON
-            print("Parsed contract data:", contract_data)
-            
+            print("Parsed contract data:", contract_data)  # Debugging
+
             for section_data in contract_data.get('sections', []):
                 section_name = section_data['section_name']
                 section_billed_hourly = section_data.get('section_billed_hourly', False)
-                
-                # Create a new section regardless of the name
+
                 section = Section.objects.create(
                     section_name=section_name,
                     section_billed_hourly=section_billed_hourly
                 )
-                print("Processed section:", section_name)  # Debugging line
+                print("Processed section:", section_name)  # Debugging
 
-                # Set project users to section
                 section.user.set(user_ids)
-                
+
                 for item_data in section_data.get('items', []):
                     Item_name = item_data['Item_name']
-                    description = item_data.get('description', '')  # Handle description
-                    
-                    # Create a new item regardless of the name
+                    description = item_data.get('description', '')
+
                     item = Item.objects.create(
                         Item_name=Item_name,
                         description=description
                     )
-                    print("Processed item:", Item_name)  # Debugging line
+                    print("Processed item:", Item_name)  # Debugging
 
-                    # Set project users to item
                     item.users.set(user_ids)
-                    
+
                     for task_data in item_data.get('tasks', []):
                         task_name = task_data['task_name']
                         task = Task.objects.create(task_name=task_name)
-                        print("Processed task:", task_name)  # Debugging line
+                        print("Processed task:", task_name)  # Debugging
                         item.tasks.add(task)
 
                     section.Item.add(item)
@@ -587,13 +614,25 @@ def handle_new_contract_form(request, project):
             project.save()
 
             messages.success(request, "New contract added successfully.")
+
+            # ✅ Assign Budget if HOAI Mode is Enabled
+            if hoai_data_parsed:
+                assign_budget_to_contract(contract, hoai_data_parsed)
+
         except json.JSONDecodeError as e:
-            print(f"JSON decode error: {e}")  # Debugging line for JSON decode error
+            print(f"JSON decode error: {e}")  # Debugging
             messages.error(request, "Error decoding the contract JSON data.")
+
     else:
         messages.error(request, "No contract JSON data provided.")
 
+    # ✅ Return JSON if AJAX request
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({"contract_id": contract.id})
+
+    # ✅ Otherwise, redirect for normal form submission
     return redirect('edit_project', project_id=project.id)
+
 
 
 def update_contract_details(request, contract):

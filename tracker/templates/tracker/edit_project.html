@@ -630,13 +630,19 @@
         const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
         const rateInput = document.querySelector(`input[name="rate_${itemId}"]`);
         const totalField = document.getElementById(`total_${itemId}`);
+        const unitSelect = document.querySelector(`select[name="unit_${itemId}"]`);
 
         // Parse the quantity and rate inputs
         const quantityValue = parseGermanNumber(quantityInput.value) || 0;
         const rateValue = parseGermanNumber(rateInput.value) || 0;
 
-        // Calculate the total
-        const totalValue = quantityValue * rateValue;
+        let totalValue;
+
+        if (unitSelect.value === "%") {
+            totalValue = (quantityValue / 100) * rateValue; // Percentage-based calculation
+        } else {
+            totalValue = quantityValue * rateValue; // Default multiplication
+        }
 
         // Update the total field with the formatted result
         totalField.textContent = formatNumberToGerman(totalValue);
@@ -644,6 +650,7 @@
         // Update the summary fields
         updateSummaryFields();
     }
+
 
     // Helper function to parse German-style number inputs
     function parseGermanNumber(numberString) {
@@ -965,6 +972,9 @@
                         <option value="Std." ${item.unit === 'Std' ? 'selected' : ''}>Std</option>
                         <option value="Psch" ${item.unit === 'Psch' ? 'selected' : ''}>Psch</option>
                         <option value="Stk" ${item.unit === 'Stk' ? 'selected' : ''}>Stk</option>
+                        <option value="%" ${item.unit === '%' ? 'selected' : ''}>%</option>
+                        <option value="Monat(e)" ${item.unit === 'Monat(e)' ? 'selected' : ''}>Monat(e)</option>
+                        <option value="Tag(e)" ${item.unit === 'Tag(e)' ? 'selected' : ''}>Tag(e)</option>
                     `;
 
                     const isPsch = item.unit === 'Psch';
@@ -1032,16 +1042,31 @@
         const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
         const originalQuantityInput = document.querySelector(`input[name="original_quantity_${itemId}"]`);
 
-        if (selectElement.value === 'Psch') {
-            quantityInput.value = '1';
-            quantityInput.readOnly = true;
-        } else {
-            quantityInput.value = originalQuantityInput.value;
-            quantityInput.readOnly = false;
+        // Reset input properties
+        quantityInput.readOnly = false;
+        quantityInput.disabled = false;
+
+        switch (selectElement.value) {
+            case "Psch":
+                quantityInput.value = "1";
+                quantityInput.readOnly = true;
+                break;
+
+            case "%":
+                quantityInput.value = originalQuantityInput.value || "0";
+                quantityInput.setAttribute("step", "0.01");
+                break;
+
+            case "Monat(e)":
+            case "Tag(e)":
+                quantityInput.value = originalQuantityInput.value || "1";
+                quantityInput.setAttribute("step", "1");
+                break;
         }
 
         updateTotal(itemId);
     }
+
 
     document.addEventListener('DOMContentLoaded', function() {
         const vatPercentageSelect = document.getElementById('vat_percentage_select');
