@@ -1163,11 +1163,17 @@ document.addEventListener("DOMContentLoaded", function() {
     let hoaiData = {};
 
     if (hoaiModeEnabled) {
-        // ✅ Extract HOAI Data
+        // ✅ Extract Basic HOAI Data
+        let serviceProfileDropdown = document.getElementById("serviceProfile");
+        let selectedOption = serviceProfileDropdown.options[serviceProfileDropdown.selectedIndex];
+
         hoaiData = {
-            serviceProfile: document.getElementById("serviceProfile").value,
+            is_hoai_contract: true,  // ✅ Mark as a HOAI contract
+            serviceProfile: selectedOption.value,
+            service_profile_name: selectedOption.textContent, // ✅ Get profile name
             honorarzone: document.getElementById("honorarzone").value,
             honorarsatz: document.getElementById("honorarsatz").value,
+            honorarsatz_factor: document.getElementById("honorarsatzFactor").value,
             baukonstruktionen: document.getElementById("baukonstruktionen").value,
             technischeAnlagen: document.getElementById("technischeAnlagen").value,
             anrechenbareKosten: document.getElementById("anrechenbareKosten").value,
@@ -1176,8 +1182,30 @@ document.addEventListener("DOMContentLoaded", function() {
             vat: document.getElementById("vt").value,
             grundhonorar: document.getElementById("grundhonorar").textContent,
             lp_enabled: {},
-            lp_values: {}
+            lp_values: {},
+            interpolation: {}
         };
+
+        // ✅ Calculate Honorarsatz Factor
+        switch (hoaiData.honorarsatz) {
+            case "Basishonorarsatz":
+                hoaiData.honorarsatz_factor = 0;
+                break;
+            case "Viertelsatz":
+                hoaiData.honorarsatz_factor = 25;
+                break;
+            case "Mittelsatz":
+                hoaiData.honorarsatz_factor = 50;
+                break;
+            case "Dreiviertelsatz":
+                hoaiData.honorarsatz_factor = 75;
+                break;
+            case "Oberer Honorarsatz":
+                hoaiData.honorarsatz_factor = 100;
+                break;
+            default:
+                hoaiData.honorarsatz_factor = 0;
+        }
 
         // ✅ Capture LP selection (checkboxes)
         document.querySelectorAll("#lpContainer input[type='checkbox']").forEach(lpCheckbox => {
@@ -1190,6 +1218,23 @@ document.addEventListener("DOMContentLoaded", function() {
             let lpKey = lpInput.id.replace("_percentage", ""); // Extract LP key (e.g., "lp1")
             hoaiData.lp_values[lpKey] = parseFloat(lpInput.value) || 0;
         });
+
+        // ✅ Get Interpolated Values
+        hoaiData.interpolated_basishonorarsatz = document.getElementById("interpolatedBase").textContent;
+        hoaiData.interpolated_oberer_honorarsatz = document.getElementById("interpolatedUpper").textContent;
+
+        // ✅ Extract LP Breakdown from Selected Service Profile
+        hoaiData.lp_breakdown_actual = JSON.parse(selectedOption.dataset.lpBreakdown || "{}");
+
+        // ✅ Store Interpolation Data
+        hoaiData.interpolation = {
+            lower_bound_cost: document.getElementById("lower_bound_cost") ? document.getElementById("lower_bound_cost").textContent : "0",
+            upper_bound_cost: document.getElementById("upper_bound_cost") ? document.getElementById("upper_bound_cost").textContent : "0",
+            lower_bound_von: document.getElementById("lower_bound_von") ? document.getElementById("lower_bound_von").textContent : "0",
+            upper_bound_von: document.getElementById("upper_bound_von") ? document.getElementById("upper_bound_von").textContent : "0",
+            lower_bound_bis: document.getElementById("lower_bound_bis") ? document.getElementById("lower_bound_bis").textContent : "0",
+            upper_bound_bis: document.getElementById("upper_bound_bis") ? document.getElementById("upper_bound_bis").textContent : "0"
+        };
 
         // ✅ Save HOAI data to the hidden input
         document.getElementById("hoai_data").value = JSON.stringify(hoaiData);

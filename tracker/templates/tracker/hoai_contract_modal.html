@@ -73,6 +73,12 @@
             <!-- Right Section: Results -->
             <div class="border rounded-lg p-4 bg-gray-50">
                 <h4 class="text-l font-bold mb-4">Calculation Results</h4>
+                <p>lower_bound_cost :<span id="lower_bound_cost">-</span> €</p>
+                <p>upper_bound_cost :<span id="upper_bound_cost">-</span> €</p>
+                <p>lower_bound_von :<span id="lower_bound_von">-</span> €</p>
+                <p>upper_bound_von :<span id="upper_bound_von">-</span> €</p>
+                <p>lower_bound_bis :<span id="lower_bound_bis">-</span> €</p>
+                <p>upper_bound_bis :<span id="upper_bound_bis">-</span> €</p>
 
                 <p><strong>Interpolated Basishonorarsatz:</strong> <span id="interpolatedBase">-</span> €</p>
                 
@@ -283,6 +289,14 @@ function calculateHOAI() {
 
         let honorFrom = data.calculated_fee.honor_from;
         let honorTo = data.calculated_fee.honor_to;
+
+        let lower_bound_cost = data.interpolation.lower_bound_cost;
+        let upper_bound_cost  = data.interpolation.upper_bound_cost ;
+        let lower_bound_von  = data.interpolation.lower_bound_von ;
+        let upper_bound_von = data.interpolation.upper_bound_von;
+        let lower_bound_bis  = data.interpolation.lower_bound_bis;
+        let upper_bound_bis  = data.interpolation.upper_bound_bis ;
+
         let netHonor;
         let honorarSatzFactor;
 
@@ -324,6 +338,16 @@ function calculateHOAI() {
 
         document.getElementById("interpolatedBase").textContent = honorFrom.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         document.getElementById("interpolatedUpper").textContent = honorTo.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+
+
+
+        document.getElementById("lower_bound_cost").textContent = lower_bound_cost.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById("upper_bound_cost").textContent = upper_bound_cost.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById("lower_bound_von").textContent = lower_bound_von.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById("upper_bound_von").textContent = upper_bound_von.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById("lower_bound_bis").textContent = lower_bound_bis.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById("upper_bound_bis").textContent = upper_bound_bis.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         let selectedLPs = getSelectedLPs();
         let totalPercentage = selectedLPs.reduce((sum, lp) => sum + lp.percentage, 0);
