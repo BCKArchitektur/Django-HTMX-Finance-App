@@ -345,7 +345,15 @@ def handle_existing_contract_form(request, project):
         return redirect('edit_project', project_id=project.id)
     
     # Retrieve and parse HOAI data
-    hoai_data = request.POST.get('hoai_data', '{}')  # Default to empty JSON
+    hoai_data = request.POST.get('hoai_data', '{}').strip()  # Remove unnecessary whitespace
+    if not hoai_data:
+        hoai_data = '{}'
+    try:
+        hoai_data_parsed = json.loads(hoai_data)
+    except json.JSONDecodeError:
+        hoai_data_parsed = {}  # Set default empty dictionary
+        print("Error decoding HOAI data JSON")  # Debugging
+
     try:
         hoai_data_parsed = json.loads(hoai_data)
     except json.JSONDecodeError:
@@ -568,21 +576,27 @@ def handle_new_contract_form(request, project):
     contract_name = request.POST.get('contract_name')
     contract_json = request.POST.get('contract_json')
     contract_no = request.POST.get('contract_no')
-    hoai_data = request.POST.get('hoai_data', '{}')  # Default to empty JSON
 
     # Retrieve all users associated with the project
     user_ids = project.user.values_list('id', flat=True)
 
     print("POST data:", request.POST)  # Debugging
-    print("Received hoai_data:", hoai_data)  # Debugging
 
-    try:
-        hoai_data_parsed = json.loads(hoai_data)
-    except json.JSONDecodeError:
-        hoai_data_parsed = {}
-        print("Error decoding HOAI data JSON")  # Debugging
+    # Retrieve and clean hoai_data
+    hoai_data_str = request.POST.get('hoai_data', '').strip()
 
-    hoai_data = json.loads(request.POST.get('hoai_data', '{}'))
+    # Initialize hoai_data as an empty dictionary
+    hoai_data = {}
+
+    # Only parse if hoai_data_str is not empty
+    if hoai_data_str:
+        try:
+            hoai_data = json.loads(hoai_data_str)
+        except json.JSONDecodeError:
+            print("Error decoding HOAI data JSON")  # Debugging
+
+
+  
     zuschlag_value = hoai_data.get("zuschlag", 0)
 
     # ✅ Create Contract object
@@ -644,8 +658,8 @@ def handle_new_contract_form(request, project):
             messages.success(request, "New contract added successfully.")
 
             # ✅ Assign Budget if HOAI Mode is Enabled
-            if hoai_data_parsed:
-                assign_budget_to_contract(contract, hoai_data_parsed)
+            if hoai_data:
+                assign_budget_to_contract(contract, hoai_data)
 
         except json.JSONDecodeError as e:
             print(f"JSON decode error: {e}")  # Debugging
@@ -1310,108 +1324,258 @@ def insert_html_to_docx(html_content, doc, placeholder):
 
 
 
+# def generate_word_document(request, contract_id):
+#     print('request;',request)
+#     template_name = request.GET.get('template_name', 'Kost_De.docx')
+#     valid_until = request.GET.get('valid_until')
+#     terms_conditions = request.GET.get('terms_conditions')
+#     include_scope_of_work = request.GET.get('include_scope_of_work')
+    
+
+#     print(f"Template Name: {template_name}")
+#     print(f"Valid Until: {valid_until}")
+
+#     contract = get_object_or_404(Contract, id=contract_id)
+#     project = contract.project_set.first()  # Assuming a contract belongs to at least one project
+#     client = project.client_name  # Assuming client_name is a related model, not just a field
+
+#     # Construct the template path using the template name from the URL parameter
+#     template_path = os.path.join(r'C:\Users\BCK-CustomApp\Documents\GitHub\Django-HTMX-Finance-App\templates\estimates', template_name)
+#     if not os.path.exists(template_path):
+#         raise FileNotFoundError(f"Template not found at {template_path}")
+
+#     doc = DocxTemplate(template_path)
+
+#     # Ensure client details are accessed correctly
+#     client_name = getattr(client, 'client_name', 'Unknown')
+#     firm_name = getattr(client, 'firm_name', 'Unknown')
+#     street_address = getattr(client, 'street_address', 'Unknown')
+#     city = getattr(client, 'city', 'Unknown')
+#     postal_code = getattr(client, 'postal_code', 'Unknown')
+#     country = getattr(client.country, 'name', 'Unknown') if hasattr(client, 'country') else 'Unknown'
+    
+#     scope_of_work_html = contract.scope_of_work  
+#     print('scope_of_work_html',scope_of_work_html)
+#     # Calculate contract details with serial numbers
+#     contract_sections = []
+#     sum_of_items = Decimal(0)  # Ensure this is a Decimal for accurate calculations
+
+#     # Initialize section counter
+#     section_counter = 1
+
+#     # Flag for checking if the template is in English
+#     is_english_template = template_name in ['BCK_En.docx', 'Kost_En.docx']
+
+#     for section in sorted(contract.section.all(), key=lambda s: getattr(s, 'order', 0)):  # Sort sections by 'order'
+#         section_total = Decimal(0)
+#         items = []
+
+#         # Initialize item counter for the current section
+#         item_counter = 1
+
+#         for item in sorted(section.Item.all(), key=lambda i: getattr(i, 'order', 0)):  # Sort items by 'order'
+#             item_total = Decimal(item.quantity) * Decimal(item.rate)
+
+#             # Check if template is in English and replace units if needed
+#             unit = item.unit
+#             if is_english_template:
+#                 if unit == 'Psch':
+#                     unit = 'Lumpsum'
+#                 elif unit == 'Stk':
+#                     unit = 'Piece'
+#                 elif unit == 'Std'or'Std.':
+#                     unit = 'Hour'
+
+#             item_data = {
+#                 'Item_serial': f"{section_counter}.{item_counter}",
+#                 'Item_name': item.Item_name,
+#                 'quantity': f"{item.quantity:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#                 'unit': unit,
+#                 'rate': f"{Decimal(item.rate):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#                 'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+#             }
+#             if item.description:
+#                 item_data['description'] = item.description
+#             items.append(item_data)
+#             section_total += item_total
+
+#             # Increment item counter
+#             item_counter += 1
+
+#         contract_sections.append({
+#             'section_serial': section_counter,
+#             'section_name': section.section_name,
+#             'net_section': f"{section_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#             'Item': items
+#         })
+#         sum_of_items += section_total
+
+#         # Increment section counter
+#         section_counter += 1
+
+
+#     additional_fee_percentage = Decimal(contract.additional_fee_percentage)
+#     additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
+#     net_contract = sum_of_items + additional_fee_value
+
+#     # Convert vat_percentage to float
+#     vat_percentage = float(contract.vat_percentage) / 100
+#     tax = float(net_contract) * vat_percentage
+#     gross_contract = net_contract + Decimal(tax)
+
+#     # Context for template
+#     context = {
+#         # other context data
+#         'contract_name': contract.contract_name,
+#         'contract_no': contract.contract_no,
+#         'project_name': project.project_name,
+#         'project_no': project.project_no,
+#         'client_name': client_name,
+#         'client_firm': firm_name,
+#         'client_address': f"{street_address}\n{postal_code} {city} \n{country}",
+#         'contract_sections': contract_sections,
+#         'sum_of_items': f"{sum_of_items:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#         'net_contract': f"{net_contract:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#         'tax': f"{Decimal(tax):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#         'gross_contract': f"{gross_contract:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+#         'today_date': date.today().strftime('%d.%m.%Y'),
+#         'valid_until': valid_until if not valid_until else date.fromisoformat(valid_until).strftime('%d.%m.%Y'),
+#         'vat_percentage': f"{vat_percentage * 100:.2f}",  # Pass VAT percentage to the template if needed
+#         'terms_conditions': terms_conditions,
+#         'include_scope_of_work' : include_scope_of_work,
+#     }
+
+#     # Only add the additional fee to the context if it's greater than 0
+#     if additional_fee_percentage > 0:
+#         context.update({
+#             'additional_fee_percentage': f"{additional_fee_percentage:.2f}",
+#             'additional_fee_value': f"{additional_fee_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+#         })
+
+#     # Print the context for debugging
+#     import pprint
+#     pprint.pprint(context)
+
+#     # Render the document with context
+#     doc.render(context)
+
+#     # Insert the HTML content into the document
+#     if include_scope_of_work == 'on':   
+#         insert_html_to_docx(scope_of_work_html, doc, placeholder="[[SCOPE_OF_WORK]]")
+
+
+#     # Create HTTP response
+#     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    
+#     # Determine the prefix based on the template type
+#     prefix = "BCK" if "BCK" in template_name else "KOST"
+
+#     # Build the file name in the desired format
+#     file_name = f"{contract.contract_no} {prefix} {project.project_name[:6]} AN {contract.contract_name}.docx"
+
+
+#     # Set the Content-Disposition header for file download
+#     response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+
+#     doc.save(response)
+
+#     return response
+
+
 def generate_word_document(request, contract_id):
-    print('request;',request)
+    print('request:', request)
     template_name = request.GET.get('template_name', 'Kost_De.docx')
     valid_until = request.GET.get('valid_until')
     terms_conditions = request.GET.get('terms_conditions')
     include_scope_of_work = request.GET.get('include_scope_of_work')
-    
 
     print(f"Template Name: {template_name}")
     print(f"Valid Until: {valid_until}")
 
     contract = get_object_or_404(Contract, id=contract_id)
-    project = contract.project_set.first()  # Assuming a contract belongs to at least one project
-    client = project.client_name  # Assuming client_name is a related model, not just a field
+    project = contract.project_set.first()
+    client = project.client_name
 
-    # Construct the template path using the template name from the URL parameter
     template_path = os.path.join(r'C:\Users\BCK-CustomApp\Documents\GitHub\Django-HTMX-Finance-App\templates\estimates', template_name)
     if not os.path.exists(template_path):
         raise FileNotFoundError(f"Template not found at {template_path}")
 
     doc = DocxTemplate(template_path)
 
-    # Ensure client details are accessed correctly
     client_name = getattr(client, 'client_name', 'Unknown')
     firm_name = getattr(client, 'firm_name', 'Unknown')
     street_address = getattr(client, 'street_address', 'Unknown')
     city = getattr(client, 'city', 'Unknown')
     postal_code = getattr(client, 'postal_code', 'Unknown')
     country = getattr(client.country, 'name', 'Unknown') if hasattr(client, 'country') else 'Unknown'
-    
-    scope_of_work_html = contract.scope_of_work  
-    print('scope_of_work_html',scope_of_work_html)
-    # Calculate contract details with serial numbers
+
+    scope_of_work_html = contract.scope_of_work
+    print('scope_of_work_html:', scope_of_work_html)
+
+    # Initialize contract sections and sums
     contract_sections = []
-    sum_of_items = Decimal(0)  # Ensure this is a Decimal for accurate calculations
-
-    # Initialize section counter
+    lp_sections = []
+    sum_of_items = Decimal(0)
     section_counter = 1
-
-    # Flag for checking if the template is in English
     is_english_template = template_name in ['BCK_En.docx', 'Kost_En.docx']
 
-    for section in sorted(contract.section.all(), key=lambda s: getattr(s, 'order', 0)):  # Sort sections by 'order'
+    # **Process Sections, Separating LP and Non-LP Sections**
+    for section in sorted(contract.section.all(), key=lambda s: getattr(s, 'order', 0)):
+        section_name = section.section_name
         section_total = Decimal(0)
         items = []
-
-        # Initialize item counter for the current section
         item_counter = 1
 
-        for item in sorted(section.Item.all(), key=lambda i: getattr(i, 'order', 0)):  # Sort items by 'order'
+        for item in sorted(section.Item.all(), key=lambda i: getattr(i, 'order', 0)):
             item_total = Decimal(item.quantity) * Decimal(item.rate)
 
-            # Check if template is in English and replace units if needed
+            # Adjust unit names if using an English template
             unit = item.unit
             if is_english_template:
-                if unit == 'Psch':
-                    unit = 'Lumpsum'
-                elif unit == 'Stk':
-                    unit = 'Piece'
-                elif unit == 'Std'or'Std.':
-                    unit = 'Hour'
+                unit = {'Psch': 'Lumpsum', 'Stk': 'Piece', 'Std': 'Hour'}.get(unit, unit)
 
-            item_data = {
+            items.append({
                 'Item_serial': f"{section_counter}.{item_counter}",
                 'Item_name': item.Item_name,
                 'quantity': f"{item.quantity:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'unit': unit,
                 'rate': f"{Decimal(item.rate):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-            }
-            if item.description:
-                item_data['description'] = item.description
-            items.append(item_data)
+            })
             section_total += item_total
-
-            # Increment item counter
             item_counter += 1
 
-        contract_sections.append({
-            'section_serial': section_counter,
-            'section_name': section.section_name,
-            'net_section': f"{section_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-            'Item': items
-        })
-        sum_of_items += section_total
+        # **If Section Name Contains "LP", Store in LP Sections**
+        if "LP" in section_name:
+            # Extract the LP percentage directly from the quantity of the first item
+            lp_percentage = items[0]['quantity'] if items else "0,00"
 
-        # Increment section counter
-        section_counter += 1
+            lp_sections.append({
+                'lp_name': section_name,
+                'lp_percentage': f"{lp_percentage}%",
+                'lp_amount': f"{section_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                'Item': items
+            })
+        else:
+            contract_sections.append({
+                'section_serial': section_counter,
+                'section_name': section_name,
+                'net_section': f"{section_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                'Item': items
+            })
+            sum_of_items += section_total
+            section_counter += 1
 
-
+    # **Calculate Contract Totals**
     additional_fee_percentage = Decimal(contract.additional_fee_percentage)
     additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
     net_contract = sum_of_items + additional_fee_value
-
-    # Convert vat_percentage to float
     vat_percentage = float(contract.vat_percentage) / 100
     tax = float(net_contract) * vat_percentage
     gross_contract = net_contract + Decimal(tax)
 
-    # Context for template
+    # **Prepare Context for DOCX Template**
     context = {
-        # other context data
         'contract_name': contract.contract_name,
         'contract_no': contract.contract_no,
         'project_name': project.project_name,
@@ -1426,49 +1590,41 @@ def generate_word_document(request, contract_id):
         'gross_contract': f"{gross_contract:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'today_date': date.today().strftime('%d.%m.%Y'),
         'valid_until': valid_until if not valid_until else date.fromisoformat(valid_until).strftime('%d.%m.%Y'),
-        'vat_percentage': f"{vat_percentage * 100:.2f}",  # Pass VAT percentage to the template if needed
+        'vat_percentage': f"{vat_percentage * 100:.2f}",
         'terms_conditions': terms_conditions,
-        'include_scope_of_work' : include_scope_of_work,
+        'include_scope_of_work': include_scope_of_work,
     }
 
-    # Only add the additional fee to the context if it's greater than 0
+    # **Include Additional Fee in Context**
     if additional_fee_percentage > 0:
         context.update({
             'additional_fee_percentage': f"{additional_fee_percentage:.2f}",
             'additional_fee_value': f"{additional_fee_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
         })
 
-    # Print the context for debugging
+    # **Include LP Sections in Context if Found**
+    if lp_sections:
+        context['lp_sections'] = lp_sections
+
+    # **Debugging Output**
     import pprint
     pprint.pprint(context)
 
-    # Render the document with context
+    # **Render DOCX**
     doc.render(context)
 
-    # Insert the HTML content into the document
-    if include_scope_of_work == 'on':   
+    # **Insert HTML Content for Scope of Work**
+    if include_scope_of_work == 'on':
         insert_html_to_docx(scope_of_work_html, doc, placeholder="[[SCOPE_OF_WORK]]")
 
-
-    # Create HTTP response
+    # **Set Response for Download**
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-    
-    # Determine the prefix based on the template type
     prefix = "BCK" if "BCK" in template_name else "KOST"
-
-    # Build the file name in the desired format
     file_name = f"{contract.contract_no} {prefix} {project.project_name[:6]} AN {contract.contract_name}.docx"
-
-
-    # Set the Content-Disposition header for file download
     response['Content-Disposition'] = f'attachment; filename="{file_name}"'
 
     doc.save(response)
-
     return response
-
-
-
 
 
 from django.contrib import messages

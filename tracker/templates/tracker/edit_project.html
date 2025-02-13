@@ -132,9 +132,12 @@
                             <button class="btn btn-xs btn-primary btn-outline m-1 h-10" onclick="openAddBudgetModal({{ contract.id }})">
                                 ✎ Budget
                             </button>
-                            <button class="btn btn-xs btn-warning btn-outline m-1 h-10" onclick="openScopeModal({{ contract.id }}, '{{ contract.scope_of_work|safe }}')">
-                                ✎ Scope
+                            <button class="btn btn-xs btn-warning btn-outline m-1 h-10"
+                            onclick="openScopeModal({{ contract.id }}, this.getAttribute('data-scope'))"
+                            data-scope="{{ contract.scope_of_work|safe }}">
+                            ✎ Scope
                             </button>
+                        
                             <button class="btn btn-xs btn-secondary btn-outline m-1 h-10" 
                                 onclick="openTemplateModal({{ contract.id }}, '{{ contract.scope_of_work|safe }}')">
                                 🖪 Estimate
@@ -378,6 +381,7 @@
                 <label for="terms_conditions" class="label">Terms & Conditions</label>
                 <select name="terms_conditions" id="terms_conditions" class="select select-bordered w-full">
                     <option value="" disabled selected>Select Terms & Conditions</option>
+                    <option value="None">None</option>
                     <option value="Studioprojekte">Studioprojekte</option>
                     <option value="Architekturprojekte">Architekturprojekte</option>
                 </select>
@@ -409,6 +413,8 @@
         <h3 class="font-bold text-lg">Select Invoice Template and Date Range</h3>
         <form id="invoice-template-form" method="get" action="{% url 'download_invoice' 0 %}">
             <input type="hidden" name="invoice_id" id="invoice_id">
+            
+            <!-- Invoice Template Selection -->
             <div class="form-control m-2">
                 <label for="invoice_template_name" class="label">Template</label>
                 <select name="invoice_template_name" id="invoice_template_name" class="select select-bordered w-full">
@@ -418,14 +424,24 @@
                     <option value="inv_Kost_En.docx">Kost En</option>
                 </select>
             </div>
-            <div class="form-control m-2">
+
+            <div class="divider"></div>
+
+            <!-- Performance Period Subheading -->
+            <h4 class="font-semibold text-md m-2">Performance Period</h4>
+
+            <!-- From Date -->
+            <div class="form-control m-2" >
                 <label for="from_date" class="label">From Date</label>
                 <input type="date" name="from_date" id="from_date" class="input input-bordered w-full">
             </div>
+
+            <!-- To Date -->
             <div class="form-control m-2">
                 <label for="to_date" class="label">To Date</label>
                 <input type="date" name="to_date" id="to_date" class="input input-bordered w-full">
             </div>
+
             <div class="modal-action">
                 <button type="submit" class="btn btn-primary">Download</button>
                 <a href="#" class="btn" onclick="closeInvoiceTemplateModal()">Cancel</a>
@@ -433,6 +449,7 @@
         </form>
     </div>
 </div>
+
 
 
 
@@ -1311,7 +1328,7 @@ function populateBudgetTable(contractId) {
         form.action = `/update-scope/${contractId}/`; // Set the form action with contract ID
 
         document.getElementById('scope_contract_id').value = contractId; // Set the hidden input value
-        window.quill.root.innerHTML = scopeContent; // Populate the Quill editor with existing scope content
+        window.quill.root.innerHTML = scopeContent;
         document.getElementById('scopeModal').classList.add('modal-open');
         console.log('Scope Modal opened.');
     };

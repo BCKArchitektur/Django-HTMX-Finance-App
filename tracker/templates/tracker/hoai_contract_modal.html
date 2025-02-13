@@ -501,7 +501,7 @@ async function loadSectionsFromLP() {
         if (sectionId) {
             console.log(`🔍 Fetching section for ${lpKey} (Section ID: ${sectionId})...`);
             await addSectionFromLibrary(sectionId); // Load sections in correct order
-            await new Promise(resolve => setTimeout(resolve, 5)); // 5ms delay
+            await new Promise(resolve => setTimeout(resolve, 200)); // 5ms delay
         } else {
             console.warn(`⚠️ No section mapping found for ${lpKey}`);
         }

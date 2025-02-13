@@ -228,6 +228,13 @@ class TaskLibrary(models.Model):
         return self.name
     
 
+class DeletedInvoiceNumber(models.Model):
+    number = models.IntegerField(unique=True)
+
+    def __str__(self):
+        return str(self.number)
+
+
 class Invoice(models.Model):
     INVOICE_TYPE_CHOICES = [
         ('ER', 'Einzelrechnung (Individual Invoice)'),  # Standard invoice
@@ -247,27 +254,26 @@ class Invoice(models.Model):
     invoice_type = models.CharField(max_length=2, choices=INVOICE_TYPE_CHOICES, default='ER')  # Default to Individual Invoice
 
     def save(self, *args, **kwargs):
-        # Retrieve VAT percentage from contract
         vat_percentage = Decimal(self.contract.vat_percentage)
-
-        # Calculate invoice gross based on invoice net and VAT percentage
         self.invoice_gross = float(Decimal(self.invoice_net) * (1 + vat_percentage / Decimal(100)))
 
         if not self.title:
-            # Retrieve or create InvoiceSettings
             month = timezone.now().month
             invoice_settings, _ = InvoiceSettings.objects.get_or_create(id=1)
 
-            # Get the current counter and increment it
-            counter = invoice_settings.invoice_counter
-            invoice_settings.invoice_counter += 1
-            invoice_settings.save()
+            # Check if there is a deleted invoice number to reuse
+            deleted_invoice = DeletedInvoiceNumber.objects.order_by("number").first()
+            if deleted_invoice:
+                counter = deleted_invoice.number
+                deleted_invoice.delete()  # Remove it from the deleted numbers table
+                print(f"DEBUG: Reusing deleted invoice number: {counter}")
+            else:
+                counter = invoice_settings.invoice_counter
+                invoice_settings.invoice_counter += 1
+                invoice_settings.save()
+                print(f"DEBUG: Assigning new invoice number: {counter}")
 
-            # Determine invoice type prefix ('ER', 'AR', 'SR', 'ZR')
-            type_prefix = self.invoice_type
-
-            # Generate title using invoice counter instead of year
-            self.title = f"{counter}-{month:02d}"  # Ensures a 4-digit counter (e.g., AR-0001)
+            self.title = f"{counter}-{month:02d}"
 
         super().save(*args, **kwargs)
 
