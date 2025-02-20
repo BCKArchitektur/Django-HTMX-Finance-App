@@ -327,19 +327,10 @@ function calculateHOAI() {
                 honorarSatzFactor = 0;
         }
 
-        // Store the initial net honor to use for breakdown calculations
-        initialNetHonor = netHonor; // Store the initial value
+        initialNetHonor = netHonor
         
-        // **✅ Update Grundhonorar Field**
-        document.getElementById("grundhonorar").textContent = initialNetHonor.toLocaleString('de-DE', { 
-            minimumFractionDigits: 2, 
-            maximumFractionDigits: 2 
-        }) ;
-
         document.getElementById("interpolatedBase").textContent = honorFrom.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         document.getElementById("interpolatedUpper").textContent = honorTo.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-
 
 
         document.getElementById("lower_bound_cost").textContent = lower_bound_cost.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -350,6 +341,7 @@ function calculateHOAI() {
         document.getElementById("upper_bound_bis").textContent = upper_bound_bis.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         let selectedLPs = getSelectedLPs();
+        
         let totalPercentage = selectedLPs.reduce((sum, lp) => sum + lp.percentage, 0);
 
         if (totalPercentage === 0) {
@@ -361,11 +353,18 @@ function calculateHOAI() {
 
         let adjustedNetHonor = netHonor * totalPercentage;
 
+        let zuschlag = (adjustedNetHonor * zuschlagPercentage) / 100;
+        adjustedNetHonor+=zuschlag
+
+        // **✅ Update Grundhonorar Field**
+        document.getElementById("grundhonorar").textContent = adjustedNetHonor.toLocaleString('de-DE', { 
+            minimumFractionDigits: 2, 
+            maximumFractionDigits: 2 
+        }) ;
         // Calculate NebenKosten and Zuschlag
         let nebenKosten = (adjustedNetHonor * nebenKostenPercentage) / 100;
-        let zuschlag = (adjustedNetHonor * zuschlagPercentage) / 100;
 
-        let totalHonor = adjustedNetHonor + nebenKosten + zuschlag;
+        let totalHonor = adjustedNetHonor + nebenKosten ;
         let vatAmount = (totalHonor * vatPercentage) / 100;
         let grossHonor = totalHonor + vatAmount;
 
@@ -409,20 +408,25 @@ function updateFeeBreakdown(selectedLPs) {
     let feeBreakdown = document.getElementById("feeBreakdown");
     feeBreakdown.innerHTML = "";
 
-    selectedLPs.forEach(lp => {
-        let feeAmount = (initialNetHonor * lp.percentage) / 100;
+    let zuschlagPercentage = parseFloat(document.getElementById("zuschlag").value) || 0;
 
-        if (isNaN(feeAmount)) {
-            feeAmount = 0;
+    selectedLPs.forEach(lp => {
+        let lpNetHonor = (initialNetHonor * lp.percentage) / 100; // Original LP value
+        let lpZuschlag = (lpNetHonor * zuschlagPercentage) / 100; // Apply Zuschlag per LP
+        let totalFee = lpNetHonor + lpZuschlag; // Final fee for this LP
+
+        if (isNaN(totalFee)) {
+            totalFee = 0;
         }
 
         let li = document.createElement("li");
-        li.innerHTML = `<strong>${lp.label} (${lp.percentage}%):</strong> ${feeAmount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+        li.innerHTML = `<strong>${lp.label} (${lp.percentage}%):</strong> ${totalFee.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
         feeBreakdown.appendChild(li);
     });
 
-    console.log("Updated LP Breakdown:", selectedLPs);
+    console.log("✅ Updated LP Breakdown with Zuschlag:", selectedLPs);
 }
+
 
 
 function getCSRFToken() {

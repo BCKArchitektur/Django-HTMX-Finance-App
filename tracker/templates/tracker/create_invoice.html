@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             <td>${quotedQuantity}</td>
                                             <td class="${quantityColorClass}">${availableQuantity}</td>  <!-- Conditional styling applied here -->
                                             <td>
-                                                <input type="text" name="quantity_${item.id}" class="input input-bordered" data-item-id="${item.id}" data-item-rate="${item.rate}" onchange="updateTotal(${item.id})" ${isChecked ? '' : 'disabled'} />
+                                                <input type="text" name="quantity_${item.id}" class="input input-bordered" data-item-id="${item.id}" data-item-rate="${item.rate}" data-item-unit="${item.unit}" onchange="updateTotal(${item.id})" ${isChecked ? '' : 'disabled'} />
                                             </td>
                                             <td id="total_${item.id}">0.00</td>
                                         </tr>`;
@@ -202,7 +202,18 @@ document.addEventListener('DOMContentLoaded', function() {
             if (checkbox.checked) {
                 const quantity = parseFloat(input.value) || 0;
                 const rate = parseFloat(input.dataset.itemRate) || 0;
-                const total = quantity * rate;
+                let total;
+                const unit = input.dataset.itemUnit;  
+                console.log('unit:',unit)
+                if (unit === "%") {
+                    total = (quantity / 100) * rate;  
+                } else if (unit === "Psch") {
+                    total = rate;  
+                } else {
+                    total = quantity * rate;  
+                }
+
+
                 sumOfItems += total;
 
                 if (totalField) {

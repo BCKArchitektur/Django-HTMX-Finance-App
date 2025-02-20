@@ -1355,6 +1355,9 @@ def extract_hoai_details(contract):
     interpolated_oberer_honorarsatz = hoai_data.get("interpolated_oberer_honorarsatz", "0")
     grundhonorar = hoai_data.get("grundhonorar", "0")
 
+    zuschlag_amount = hoai_data.get("zuschlag_amount", "0")
+    zuschlag  = hoai_data.get("zuschlag", "0")
+
     # **Extract LP Breakdown**
     lp_breakdown_actual = hoai_data.get("lp_breakdown_actual", {})
     lp_selected_values = hoai_data.get("lp_values", {})
@@ -1367,6 +1370,7 @@ def extract_hoai_details(contract):
     upper_bound_von = hoai_interpolation.get("upper_bound_von", "0")
     lower_bound_bis = hoai_interpolation.get("lower_bound_bis", "0")
     upper_bound_bis = hoai_interpolation.get("upper_bound_bis", "0")
+
 
     return {
         "is_hoai_contract": is_hoai_contract,
@@ -1388,6 +1392,8 @@ def extract_hoai_details(contract):
         "upper_bound_von": upper_bound_von,
         "lower_bound_bis": lower_bound_bis,
         "upper_bound_bis": upper_bound_bis,
+        "zuschlag_amount": zuschlag_amount,
+        "zuschlag" : zuschlag,
     }
 
 
@@ -1466,6 +1472,7 @@ def generate_word_document(request, contract_id):
             actual_lp_value = hoai_details["lp_breakdown_actual"].get(lp_key, "0")
 
 
+
             lp_percentage = Decimal(lp_value) if lp_value != "0" else Decimal(0)
             lp_amount = (lp_percentage / Decimal(100)) * grundhonorar  # ✅ Correct LP calculation
 
@@ -1475,7 +1482,7 @@ def generate_word_document(request, contract_id):
                 'lp_name': section_name,
                 'lp_percentage': f"{lp_percentage:.2f}%",
                 'lp_amount': f"{lp_amount:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-                'actual_lp_value': {actual_lp_value},
+                'actual_lp_value': f"{actual_lp_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'Item': items
             })
         else:
@@ -1490,8 +1497,12 @@ def generate_word_document(request, contract_id):
 
     # **Calculate Contract Totals (Including LP Sections)**
     additional_fee_percentage = Decimal(contract.additional_fee_percentage)
-    additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
+    additional_fee_value = (grundhonorar * additional_fee_percentage) / Decimal(100)
     
+    zuschlag_amount = float(parse_german_number(hoai_details["zuschlag_amount"]) if hoai_details["zuschlag_amount"] != "0" else Decimal(0))
+
+    grundhonorar_without_zuschlag = float(grundhonorar) - zuschlag_amount
+
     net_contract = sum_of_items + sum_of_all_lps + additional_fee_value  # ✅ Include LP sections
     vat_percentage = float(contract.vat_percentage) / 100
     tax = float(net_contract) * vat_percentage
@@ -1534,7 +1545,9 @@ def generate_word_document(request, contract_id):
         "upper_bound_von": hoai_details["upper_bound_von"] ,
         "lower_bound_bis": hoai_details["lower_bound_bis"] ,
         "upper_bound_bis": hoai_details["upper_bound_bis"],
-
+        "zuschlag_amount" : format_german_number(zuschlag_amount),
+        "grundhonorar_without_zuschlag":format_german_number(grundhonorar_without_zuschlag),
+        "zuschlag_value" : hoai_details["zuschlag"]
     }
 
     if additional_fee_percentage > 0:
