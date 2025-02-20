@@ -1,0 +1,17 @@
+# This is a Revit shared parameter file.
+# Do not edit manually.
+*META    VERSION    MINVERSION
+META    2    1
+*GROUP    ID    NAME
+GROUP    1    Project Information
+*PARAM    GUID    NAME    DATATYPE    DATACATEGORY    GROUP    VISIBLE    DESCRIPTION    USERMODIFIABLE    HIDEWHENNOVALUE
+PARAM    4606ce9f-6d8f-432c-87e8-be3e46cb1e81    1    TEXT        1    1        1    0
+PARAM    9edfb94e-d8fe-4108-b2fb-cb9f4dcc7f1f    22-016    TEXT        1    1        1    0
+PARAM    bc30205d-72eb-4da7-a9d4-7defaac99209    Stralauer Allee 1    TEXT        1    1        1    0
+PARAM    a59d282f-e1ea-41e9-bcb0-3fdb96bc6c06    Universal Music Entertainment GmbH    TEXT        1    1        1    0
+PARAM    c872f40e-281b-4a42-901d-b3e9e8e3f4c4    None    TEXT        1    1        1    0
+PARAM    ab529ddf-19e7-4b83-8c6c-66faf5726fb0    Default Comment    TEXT        1    1        1    0
+PARAM    ed58b7c0-7e61-49e2-a410-3843682c118f    BCK Architecture    TEXT        1    1        1    0
+PARAM    5bcd83ce-c4e8-4474-a264-52cb5ddd0758    UNVSTD Universal Studios    TEXT        1    1        1    0
+PARAM    ac4ecc9d-d72d-4732-8a24-e7aff837b5fd    22-016    TEXT        1    1        1    0
+PARAM    70da39a4-04f6-46d7-b5d3-549c42fcdf12    Architectural Firm    TEXT        1    1        1    0

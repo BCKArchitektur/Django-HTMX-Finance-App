@@ -37,18 +37,24 @@ def handle_invoice_deletion(sender, instance, **kwargs):
         invoice_number, _ = instance.title.split('-')  # Extract main invoice number
         invoice_number = int(invoice_number)
 
-        # Store deleted invoice number in the database
-        DeletedInvoiceNumber.objects.create(number=invoice_number)
-        print(f"DEBUG: Stored deleted invoice number in DB: {invoice_number}")
-
-        # Check if the deleted number is the last in sequence
+        # Retrieve the current invoice counter from settings
         settings = InvoiceSettings.objects.first()
         if settings:
             print(f"DEBUG: Current invoice counter before update: {settings.invoice_counter}")
+
+            # If the deleted invoice number is not the most recent one, store it
+            if invoice_number != settings.invoice_counter - 1:
+                DeletedInvoiceNumber.objects.create(number=invoice_number)
+                print(f"DEBUG: Stored deleted invoice number in DB: {invoice_number}")
+            else:
+                print(f"DEBUG: Invoice {invoice_number} was the most recent one, not storing.")
+
+            # Check if the deleted number is the last in sequence and update counter
             if invoice_number == settings.invoice_counter - 1:
                 settings.invoice_counter -= 1
                 settings.save()
                 print(f"DEBUG: Invoice counter updated to: {settings.invoice_counter}")
+
     except Exception as e:
         print(f"ERROR in handle_invoice_deletion: {e}")
 

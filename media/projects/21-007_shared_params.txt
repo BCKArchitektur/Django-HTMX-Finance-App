@@ -1,0 +1,17 @@
+# This is a Revit shared parameter file.
+# Do not edit manually.
+*META    VERSION    MINVERSION
+META    2    1
+*GROUP    ID    NAME
+GROUP    1    Project Information
+*PARAM    GUID    NAME    DATATYPE    DATACATEGORY    GROUP    VISIBLE    DESCRIPTION    USERMODIFIABLE    HIDEWHENNOVALUE
+PARAM    e65a11ae-b3c0-464e-8b9a-e3ee94b3c0ff    0    TEXT        1    1        1    0
+PARAM    fa2637a1-0fbd-4514-89ad-99ad64dc5d54    21-007    TEXT        1    1        1    0
+PARAM    dac9dfde-bab3-47db-8fcb-f5cc8a777e0d    JCK Deutschlandradio Studio    TEXT        1    1        1    0
+PARAM    714d2c5a-d390-427b-a528-ba1155480c5a    Deutschlandradio    TEXT        1    1        1    0
+PARAM    3104234d-cc9a-4cee-add8-40e8298cb8c7    None    TEXT        1    1        1    0
+PARAM    d5cd253d-8d68-4100-9ad7-ce5fe155f8d8    Default Comment    TEXT        1    1        1    0
+PARAM    1ec50169-a475-414e-a711-019eb90a3d8b    BCK Architecture    TEXT        1    1        1    0
+PARAM    f64750a3-cbb5-4f46-834b-6fec148fd9a8    DLRSTD Deutschlandradio    TEXT        1    1        1    0
+PARAM    d73d214a-1552-4810-94d2-19f2ac5dd6d4    21-007    TEXT        1    1        1    0
+PARAM    62baa4fc-cf80-4278-9f17-a94b63ef5361    Architectural Firm    TEXT        1    1        1    0

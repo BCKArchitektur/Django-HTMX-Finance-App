@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Project, Employee, Client, Logs, Contract, Section, Item, Task, ProjectPreset, UserPreset , Invoice
+from .models import User, Project, Employee, Client, Logs, Contract, Section, Item, Task, ProjectPreset, UserPreset , Invoice , DeletedInvoiceNumber
 from django.http import HttpResponse
 from openpyxl import Workbook
 from django.contrib.auth.admin import UserAdmin
@@ -140,14 +140,25 @@ class ProjectAdminForm(forms.ModelForm):
         model = Project
         fields = '__all__'
 
+# Project Admin with Shared Parameter File Action
 class ProjectAdmin(admin.ModelAdmin):
     form = ProjectAdminForm
     list_display = ('project_name', 'project_no', 'client_name', 'status', 'display_users')
-    search_fields = ('project_name', 'project_no', 'client_name__name', 'status')
+    search_fields = ('project_name', 'project_no', 'client_name__client_name', 'status')
+    actions = ["generate_shared_param_file"]
 
     def display_users(self, obj):
         return ", ".join([user.username for user in obj.user.all()])
     display_users.short_description = 'Users'
+
+    @admin.action(description="Generate Revit Shared Parameter File")
+    def generate_shared_param_file(self, request, queryset):
+        for project in queryset:
+            file_path = generate_revit_shared_parameter_file(project)
+            return FileResponse(open(file_path, 'rb'), as_attachment=True, filename=f"{project.project_no}_shared_params.txt")
+
+# Register Project Admin
+admin.site.register(Project, ProjectAdmin)
 
 # admin.site.register(Project, ProjectAdmin)
 
@@ -354,3 +365,23 @@ from .models import ServiceProfile
 class ServiceProfileAdmin(admin.ModelAdmin):
     list_display = ('name', 'excel_file', 'uploaded_at')
     search_fields = ('name',)
+
+
+
+
+from django.contrib import admin
+from django.http import FileResponse
+from .models import Project
+from .utils import generate_revit_shared_parameter_file
+
+@admin.action(description="Generate Revit Shared Parameter File")
+def generate_shared_param_file(modeladmin, request, queryset):
+    for project in queryset:
+        file_path = generate_revit_shared_parameter_file(project)
+        return FileResponse(open(file_path, 'rb'), as_attachment=True, filename=f"{project.project_no}_shared_params.txt")
+
+
+
+@admin.register(DeletedInvoiceNumber)
+class DeletedInvoiceNumber(admin.ModelAdmin):   
+    pass
