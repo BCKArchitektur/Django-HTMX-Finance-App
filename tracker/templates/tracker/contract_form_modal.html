@@ -408,7 +408,8 @@ document.addEventListener("DOMContentLoaded", function() {
             const contractNoInput = document.getElementById('id_contract_no');
             contractNameInput.value = data.contract_name;
             contractNoInput.value = data.contract_no; // Populate contract number
-            contractNameInput.readOnly = !data.is_editable; // Example of handling read-only
+
+            contractNameInput.readOnly = !isContractEditable; 
 
             // ✅ HOAI Mode Handling
             if (data.hoai_data && Object.keys(data.hoai_data).length > 0) {
