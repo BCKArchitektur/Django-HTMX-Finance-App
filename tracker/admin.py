@@ -118,15 +118,20 @@ export_to_excel.short_description = "Export Selected to Excel"
 
 # Logs Admin
 class LogsAdmin(admin.ModelAdmin):
+    change_list_template = "admin/logs/change_list.html"
+
     list_display = ['log_project_name', 'log_contract', 'log_section', 'log_Item', 'get_log_task', 'log_time', 'log_timestamps', 'user']
-    actions = [export_to_excel]
-    search_fields = ['log_project_name', 'log_contract__contract_name', 'log_section__section_name', 'log_Item__Item_name',  'user__username', 'log_timestamps']
-    
+    list_filter = ['log_project_name', 'log_contract', 'log_section', 'log_Item', 'user']
+    search_fields = ['log_project_name', 'log_contract__contract_name', 'log_section__section_name', 
+                     'log_Item__Item_name', 'log_tasks__task_name', 'user__username', 'log_timestamps']
+
     def get_log_task(self, obj):
         return obj.get_log_task()
     get_log_task.short_description = 'Tasks'
 
 admin.site.register(Logs, LogsAdmin)
+
+
 
 # Project Admin
 class ProjectAdminForm(forms.ModelForm):

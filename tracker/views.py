@@ -491,17 +491,19 @@ def handle_existing_contract_form(request, project):
     contract.save()
 
     # Save contract with updated HOAI data
-    contract.hoai_data = hoai_data_parsed
-    contract.save()
+    if contract.hoai_data:
+        contract.hoai_data = hoai_data_parsed
+        contract.save()
 
-    hoai_data = json.loads(request.POST.get('hoai_data', '{}'))
-    zuschlag_value = hoai_data.get("zuschlag", 0)
+    if contract.hoai_data:
+        hoai_data = json.loads(request.POST.get('hoai_data', '{}'))
+        zuschlag_value = hoai_data.get("zuschlag", 0)
 
-    contract.zuschlag_value = zuschlag_value
-    contract.vat_percentage = hoai_data.get("vat", contract.vat_percentage)
-    contract.save()
+        contract.zuschlag_value = zuschlag_value
+        contract.vat_percentage = hoai_data.get("vat", contract.vat_percentage)
+        contract.save()
 
-    # ✅ Assign Budget if HOAI Mode is Enabled
+    #  Assign Budget if HOAI Mode is Enabled
     if hoai_data_parsed:
         assign_budget_to_contract(contract, hoai_data_parsed)
 
@@ -1497,8 +1499,12 @@ def generate_word_document(request, contract_id):
 
     # **Calculate Contract Totals (Including LP Sections)**
     additional_fee_percentage = Decimal(contract.additional_fee_percentage)
-    additional_fee_value = (grundhonorar * additional_fee_percentage) / Decimal(100)
-    
+
+    if contract.hoai_data:
+        additional_fee_value = (grundhonorar * additional_fee_percentage) / Decimal(100)
+    else:   
+        additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
+
     zuschlag_amount = float(parse_german_number(hoai_details["zuschlag_amount"]) if hoai_details["zuschlag_amount"] != "0" else Decimal(0))
 
     grundhonorar_without_zuschlag = float(grundhonorar) - zuschlag_amount
