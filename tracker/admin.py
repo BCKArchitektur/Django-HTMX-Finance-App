@@ -117,19 +117,76 @@ def export_to_excel(modeladmin, request, queryset):
 export_to_excel.short_description = "Export Selected to Excel"
 
 # Logs Admin
+from django import forms
+from datetime import datetime
+from .models import Logs
+
+class LogsAdminForm(forms.ModelForm):
+    log_date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        required=False,
+        label="Log Date"
+    )
+    log_date_time = forms.TimeField(
+        widget=forms.TextInput(attrs={'placeholder': 'HH:MM'}),  # Adjusted placeholder
+        required=False,
+        label="Log Timestamp",
+        input_formats=['%H:%M', '%H:%M:%S']  # Allow both formats
+    )
+
+    class Meta:
+        model = Logs
+        exclude = ['log_timestamps']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        print(cleaned_data)  # Debugging
+
+        log_date = cleaned_data.get("log_date")
+        log_date_time = cleaned_data.get("log_date_time")
+
+        if log_date and log_date_time:
+            if isinstance(log_date_time, str):  # Convert string input to time format
+                try:
+                    log_date_time = datetime.strptime(log_date_time, '%H:%M:%S').time()
+                except ValueError:
+                    try:
+                        log_date_time = datetime.strptime(log_date_time, '%H:%M').time()
+                    except ValueError:
+                        raise forms.ValidationError("Time must be in HH:MM or HH:MM:SS format (24-hour)")
+
+            # Ensure seconds are always 00
+            formatted_time = log_date_time.replace(second=0).strftime('%H:%M:%S')
+            cleaned_data["log_timestamps"] = f"{log_date} {formatted_time}"
+
+            # Remove unnecessary fields
+            cleaned_data.pop("log_date", None)
+            cleaned_data.pop("log_date_time", None)
+
+        print(cleaned_data)  # Debugging
+        return cleaned_data
+
 class LogsAdmin(admin.ModelAdmin):
+    form = LogsAdminForm
     change_list_template = "admin/logs/change_list.html"
 
-    list_display = ['log_project_name', 'log_contract', 'log_section', 'log_Item', 'get_log_task', 'log_time', 'log_timestamps', 'user']
+    list_display = ['user', 'log_project_name', 'log_contract', 'log_section', 'log_Item', 'get_log_task', 'log_time', 'log_timestamps']
     list_filter = ['log_project_name', 'log_contract', 'log_section', 'log_Item', 'user']
-    search_fields = ['log_project_name', 'log_contract__contract_name', 'log_section__section_name', 
+    search_fields = ['log_project_name', 'log_contract__contract_name', 'log_section__section_name',
                      'log_Item__Item_name', 'log_tasks__task_name', 'user__username', 'log_timestamps']
+
+    fieldsets = (
+        (None, {
+            'fields': ('user', 'log_project_name', 'log_contract', 'log_section', 'log_Item', 'log_tasks', 'log_time', 'log_date', 'log_date_time')
+        }),
+    )
 
     def get_log_task(self, obj):
         return obj.get_log_task()
     get_log_task.short_description = 'Tasks'
 
 admin.site.register(Logs, LogsAdmin)
+
 
 
 
