@@ -280,25 +280,25 @@
                 <table class="table w-full">
                     <tbody>
                         <tr>
-                            <td class="text-right font-thin w-1/6">Sum of Items €</td>
+                            <td class="text-right font-thin w-1/6">Sum of Items (€)</td>
                             <td><input type="text" id="sum_of_items" class="input  input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-right font-thin w-1/6">Additional Fee(%)*</td>
+                            <td class="text-right font-thin w-1/6">Additional Fee (%)*</td>
                             <td><input type="number" step="0.01" name="additional_fee_percentage" id="additional_fee_percentage" class="input input-bordered input-secondary input-sm w-1/4"></td>
                         </tr>
                         <tr>
-                            <td class="text-right font-thin w-1/6">Additional Fee €</td>
+                            <td class="text-right font-thin w-1/6">Additional Fee (€)</td>
                             <td><input type="text" id="additional_fee" class="input  input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-right font-thin w-1/6">Zuschlag (€)</td>
+                            <td class="text-right font-thin w-1/6">Zuschlag (%)</td>
                             <td>
                                 <input type="text" id="zuschlag_value" class="input input-sm w-1/4" readonly>
                             </td>
                         </tr>
                         <tr>
-                            <td class="text-right font-bold w-1/6">Net Contract €</td>
+                            <td class="text-right font-bold w-1/6">Net Contract (€)</td>
                             <td><input type="text" id="net_contract" class="input  input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
@@ -316,11 +316,11 @@
                         </tr>                     
                         
                         <tr>
-                            <td class="text-right font-thin w-1/6">VAT €</td>
+                            <td class="text-right font-thin w-1/6">VAT (€)</td>
                             <td><input type="text" id="vat" class="input  input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-right font-bold w-1/6">Gross Contract €</td>
+                            <td class="text-right font-bold w-1/6">Gross Contract (€)</td>
                             <td><input type="text" id="gross_contract" class="input input-sm w-1/4" readonly></td>
                         </tr>
                     </tbody>
@@ -723,7 +723,7 @@
         const zuschlagAmount = (sumOfItems * zuschlagPercentage) / 100;
 
 
-        const netContract = sumOfItems + additionalFee + zuschlagAmount;
+        const netContract = sumOfItems + additionalFee ;
 
         const vatPercentageInput = document.getElementById('id_vat_percentage');
         const vatPercentage = parseFloat(vatPercentageInput.value) || 0;

@@ -1122,7 +1122,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                                 <line x1="19" y1="12" x2="12" y2="19" />
                                             </svg>
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
+                                        <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.parentNode.remove(); updateContractJSON();">x</button>
                                     </div>
                                 </div>
                                 <div class="tasks-container">
@@ -1132,7 +1132,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                             <div class="task-block form-control w-full max-w-xs m-2">
                                                 <div class="flex justify-between items-center">
                                                     <input type="text" name="sections[${newSectionId}][items][${itemId}][tasks][${taskId}][task_name]" value="${task.task_name}" class="input input-sm input-bordered w-full m-2 task-name">
-                                                    <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.remove()">x</button>
+                                                    <button type="button" class="btn btn-sm btn-danger m-1" onclick="this.parentNode.parentNode.parentNode.remove(); updateContractJSON();">x</button>
                                                 </div>
                                             </div>
                                         `;
