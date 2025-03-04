@@ -365,6 +365,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     // Function to validate input values for quantity fields
     function validateQuantityInput(input) {
+        // Ensure the function only runs for inputs inside the Invoice Modal
+        if (!input.closest("#invoiceModal")) {
+            return; // Exit if the input is not within the invoice modal
+        }
+
         const previousProvidedQuantity = parseFloat(input.placeholder) || 0;
         const quotedQuantity = parseFloat(input.closest('tr').querySelector('td:nth-child(4)').textContent) || 0;
         
@@ -383,6 +388,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         updateTotal(input.dataset.itemId); // Ensure total updates even if invalid
     }
+
 
     document.addEventListener('input', function (event) {
         if (event.target.matches('input[name^="quantity_"]')) {

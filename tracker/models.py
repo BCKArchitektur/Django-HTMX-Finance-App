@@ -67,6 +67,40 @@ class Task(models.Model):
         return self.task_name
 
 
+# class Item(models.Model):
+#     UNIT_CHOICES = [
+#         ('Std', 'Std'),
+#         ('Psch', 'Psch'),
+#         ('Stk', 'Stk'),
+#         ('%', '%'),
+#         ('Monat(e)', 'Monat(e)'),
+#         ('Tag(e)', 'Tag(e)'),
+#     ]
+
+#     Item_name = models.CharField(max_length=255, unique=False)
+#     description = models.TextField(blank=True, null=True)
+#     tasks = models.ManyToManyField(Task)
+#     users = models.ManyToManyField(User, blank=True)
+#     quantity = models.FloatField(default=0.0)
+#     unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default='Std')
+#     rate = models.FloatField(default=0.0)
+#     total = models.FloatField(default=0.0, editable=False)
+#     order = models.IntegerField(default=0) 
+
+#     def __str__(self):
+#         return self.Item_name
+
+#     def save(self, *args, **kwargs):
+#         self.total = self.quantity * self.rate
+#         super().save(*args, **kwargs)
+
+#     def delete(self, *args, **kwargs):
+#         for task in self.tasks.all():
+#             task.delete()
+#         super().delete(*args, **kwargs)
+
+from django.core.exceptions import ObjectDoesNotExist
+
 class Item(models.Model):
     UNIT_CHOICES = [
         ('Std', 'Std'),
@@ -87,17 +121,34 @@ class Item(models.Model):
     total = models.FloatField(default=0.0, editable=False)
     order = models.IntegerField(default=0) 
 
-    def __str__(self):
-        return self.Item_name
+    HOURLY_RATES_MAPPING = {
+        "Geschäftsführung": "executive_management_rate",
+        "Architekt/in": "architect_rate",
+        "Bautechniker/in": "construction_technician_rate",
+        "Projektleitung": "project_management_rate",
+        "Fachplaner/in": "specialist_planner_rate",
+        "Bauüberwachung": "construction_supervision_rate",
+        "Computational Architect": "computational_architect_rate",
+        "Bauzeichner/in": "draftsman_rate",
+    }
 
     def save(self, *args, **kwargs):
-        self.total = self.quantity * self.rate
+        # Check if the item name matches one of the predefined roles
+        rate_field = self.HOURLY_RATES_MAPPING.get(self.Item_name)
+        if rate_field:
+            try:
+                estimate_settings = EstimateSettings.objects.first()
+                if estimate_settings:
+                    self.rate = getattr(estimate_settings, rate_field, self.rate)  # Set the rate if found
+            except ObjectDoesNotExist:
+                pass  # If EstimateSettings does not exist, keep the default rate
+
+        # Calculate total
+        self.total = self.quantity * float(self.rate)
         super().save(*args, **kwargs)
 
-    def delete(self, *args, **kwargs):
-        for task in self.tasks.all():
-            task.delete()
-        super().delete(*args, **kwargs)
+    def __str__(self):
+        return self.Item_name
 
 
 
@@ -130,7 +181,7 @@ class Contract(models.Model):
     contract_name = models.CharField(max_length=255, unique=False)
     user = models.ManyToManyField(User)
     section = models.ManyToManyField(Section)
-    additional_fee_percentage = models.FloatField(default=6.5)
+    additional_fee_percentage = models.FloatField(default=6.5,blank=True, null=True)
     vat_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=19.00, blank=True, null=True)
     contract_no = models.CharField(max_length=255, unique=True, blank=True, null=True)  # Concatenated field
     scope_of_work = models.TextField(blank=True, null=True)
@@ -282,53 +333,12 @@ class Invoice(models.Model):
         return self.title
 
 
+from django.db import models
 import os
 
-# class EstimateInvoiceSettings(models.Model):
-#     consecutive_start_no = models.IntegerField(default=1, help_text="Starting number for consecutive numbering.")
-
-#     # Estimate Templates
-#     bck_eng_template = models.FileField(upload_to='templates/estimates/', null=True, blank=True)
-#     bck_de_template = models.FileField(upload_to='templates/estimates/', null=True, blank=True)
-#     kost_eng_template = models.FileField(upload_to='templates/estimates/', null=True, blank=True)
-#     kost_de_template = models.FileField(upload_to='templates/estimates/', null=True, blank=True)
-
-#     # Invoice Templates
-#     inv_bck_eng_template = models.FileField(upload_to='templates/invoices/', null=True, blank=True)
-#     inv_bck_de_template = models.FileField(upload_to='templates/invoices/', null=True, blank=True)
-#     inv_kost_eng_template = models.FileField(upload_to='templates/invoices/', null=True, blank=True)
-#     inv_kost_de_template = models.FileField(upload_to='templates/invoices/', null=True, blank=True)
-
-#     def save(self, *args, **kwargs):
-#         if self.pk:
-#             old_instance = EstimateInvoiceSettings.objects.get(pk=self.pk)
-#             fields_to_check = [
-#                 'bck_eng_template',
-#                 'bck_de_template',
-#                 'kost_eng_template',
-#                 'kost_de_template',
-#                 'inv_bck_eng_template',
-#                 'inv_bck_de_template',
-#                 'inv_kost_eng_template',
-#                 'inv_kost_de_template',
-#             ]
-
-#             for field in fields_to_check:
-#                 old_file = getattr(old_instance, field)
-#                 new_file = getattr(self, field)
-
-#                 if old_file and old_file != new_file:
-#                     if os.path.isfile(old_file.path):
-#                         os.remove(old_file.path)
-
-#         super().save(*args, **kwargs)
-
-#     def __str__(self):
-#         return "Global Settings"
-
-
 class EstimateSettings(models.Model):
-    """Stores settings related to estimates."""
+    """Stores settings related to estimates and hourly rates."""
+    
     consecutive_start_no = models.IntegerField(default=1, help_text="Starting number for consecutive numbering.")
 
     # Estimate Templates
@@ -336,6 +346,16 @@ class EstimateSettings(models.Model):
     bck_de_template = models.FileField(upload_to='templates/estimates/', null=True, blank=True)
     kost_eng_template = models.FileField(upload_to='templates/estimates/', null=True, blank=True)
     kost_de_template = models.FileField(upload_to='templates/estimates/', null=True, blank=True)
+
+    # Hourly Rates
+    executive_management_rate = models.DecimalField(max_digits=10, decimal_places=2, default=250, help_text="Rate for Geschäftsführung (Executive Management)")
+    specialist_planner_rate = models.DecimalField(max_digits=10, decimal_places=2, default=185, help_text="Rate for Fachplaner/In (Specialist Planner)")
+    project_management_rate = models.DecimalField(max_digits=10, decimal_places=2, default=165, help_text="Rate for Projektleitung (Project Management)")
+    construction_supervision_rate = models.DecimalField(max_digits=10, decimal_places=2, default=155, help_text="Rate for Bauüberwachung (Construction Supervision)")
+    computational_architect_rate = models.DecimalField(max_digits=10, decimal_places=2, default=155, help_text="Rate for Computational Architect")
+    architect_rate = models.DecimalField(max_digits=10, decimal_places=2, default=145, help_text="Rate for Architekt/In (Architect)")
+    construction_technician_rate = models.DecimalField(max_digits=10, decimal_places=2, default=135, help_text="Rate for Bautechniker/In (Construction Technician)")
+    draftsman_rate = models.DecimalField(max_digits=10, decimal_places=2, default=115, help_text="Rate for Zeichner (Draftsman)")
 
     def save(self, *args, **kwargs):
         """Ensures old files are removed when a new file is uploaded."""
@@ -360,6 +380,7 @@ class EstimateSettings(models.Model):
 
     def __str__(self):
         return "Estimate Settings"
+
 
 
 class InvoiceSettings(models.Model):

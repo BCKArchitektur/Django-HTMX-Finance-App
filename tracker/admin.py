@@ -393,7 +393,8 @@ from .models import EstimateSettings, InvoiceSettings
 
 @admin.register(EstimateSettings)
 class EstimateSettingsAdmin(admin.ModelAdmin):
-    """Admin panel for managing Estimate Settings"""
+    """Admin panel for managing Estimate Settings."""
+    
     change_form_template = "admin/estimatesettings/change_form.html"
 
     fieldsets = (
@@ -402,6 +403,18 @@ class EstimateSettingsAdmin(admin.ModelAdmin):
         }),
         ('Estimate Templates', {
             'fields': ('bck_eng_template', 'bck_de_template', 'kost_eng_template', 'kost_de_template')
+        }),
+        ('Hourly Rates', {
+            'fields': (
+                'executive_management_rate',
+                'specialist_planner_rate',
+                'project_management_rate',
+                'construction_supervision_rate',
+                'computational_architect_rate',
+                'architect_rate',
+                'construction_technician_rate',
+                'draftsman_rate',
+            )
         }),
     )
 
