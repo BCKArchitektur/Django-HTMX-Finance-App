@@ -363,6 +363,32 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+    // Function to validate input values for quantity fields
+    function validateQuantityInput(input) {
+        const previousProvidedQuantity = parseFloat(input.placeholder) || 0;
+        const quotedQuantity = parseFloat(input.closest('tr').querySelector('td:nth-child(4)').textContent) || 0;
+        
+        let enteredValue = parseFloat(input.value) || 0;
+
+        if (enteredValue < previousProvidedQuantity || enteredValue > quotedQuantity) {
+            alert(`Quantity must be between ${previousProvidedQuantity} and ${quotedQuantity}`);
+
+            // Add error styling
+            input.classList.add("input-error");
+
+        } else {
+            // Remove error styling if value is valid
+            input.classList.remove("input-error");
+        }
+
+        updateTotal(input.dataset.itemId); // Ensure total updates even if invalid
+    }
+
+    document.addEventListener('input', function (event) {
+        if (event.target.matches('input[name^="quantity_"]')) {
+            validateQuantityInput(event.target);
+        }
+    });
 });
 
 
