@@ -974,68 +974,73 @@ def add_project(request):
     return redirect('projects')
 
 
-
-
-
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import Contract, Invoice, User
 
 def load_contract_data(request):
     contract_id = request.GET.get('contract_id')
     contract = get_object_or_404(Contract, id=contract_id)
-    
+
     # Ensure the contract belongs to at least one project
     project_id = contract.project_set.first().id if contract.project_set.exists() else None
     if not project_id:
         return JsonResponse({'error': 'Contract does not belong to any project'}, status=400)
 
-    # Fetch all previous invoices for this project
-    previous_invoices = Invoice.objects.filter(project_id=project_id)
+    # Fetch all previous invoices for this contract
+    previous_invoices = Invoice.objects.filter(project_id=project_id, contract_id=contract_id).order_by('-created_at')
 
-    # Check if any invoices exist
     invoices_exist = previous_invoices.exists()
+    latest_invoice = previous_invoices.first()  # Fetch the most recent invoice
+    is_cumulative = latest_invoice.is_cumulative if latest_invoice else False
+
+    # Retrieve the latest provided quantities if cumulative mode
+    latest_provided_quantities = latest_invoice.provided_quantities if is_cumulative and latest_invoice else {}
 
     users = list(User.objects.all().values('id', 'username'))
 
-    # Retrieve and sort sections by their 'order' attribute (default to 0 if missing)
     sections = sorted(contract.section.all(), key=lambda s: getattr(s, 'order', 0))
 
     section_data = []
 
     for section in sections:
-        # Retrieve and sort items within each section by their 'order' attribute (default to 0 if missing)
         items = sorted(section.Item.all(), key=lambda i: getattr(i, 'order', 0))
 
         item_data = []
         for item in items:
-            # Calculate the total provided quantity for this item from previous invoices
-            total_provided_quantity = sum(
-                invoice.provided_quantities.get(str(item.id), {}).get('quantity', 0)
-                for invoice in previous_invoices
-            )
-            available_quantity = item.quantity - total_provided_quantity
+            if is_cumulative:
+                previous_provided_quantity = latest_provided_quantities.get(str(item.id), {}).get('quantity', 0) if latest_invoice else 0
+            else:
+                previous_provided_quantity = sum(
+                    invoice.provided_quantities.get(str(item.id), {}).get('quantity', 0)
+                    for invoice in previous_invoices
+                )
+
+            available_quantity = item.quantity - previous_provided_quantity
 
             item_data.append({
-                'order': getattr(item, 'order', 0),  # Get the 'order' attribute, default to 0
+                'order': getattr(item, 'order', 0),
                 'id': item.id,
                 'Item_name': item.Item_name,
                 'description': item.description,
                 'quantity': item.quantity,
                 'available_quantity': available_quantity,
+                'previous_provided_quantity': previous_provided_quantity,  # ✅ New field
                 'unit': item.unit,
                 'rate': item.rate,
                 'total': item.total,
-                'users': list(item.users.values_list('id', flat=True)),  # Get associated users
-                'tasks': list(item.tasks.values('id', 'task_name')),  # Get associated tasks
+                'users': list(item.users.values_list('id', flat=True)),
+                'tasks': list(item.tasks.values('id', 'task_name')),
             })
 
         section_data.append({
-            'order': getattr(section, 'order', 0),  # Get the 'order' attribute, default to 0
-            'id': section.id,  # Include the section ID
+            'order': getattr(section, 'order', 0),
+            'id': section.id,
             'section_name': section.section_name,
             'section_billed_hourly': section.section_billed_hourly,
             'items': item_data,
         })
 
-    # ✅ Retrieve HOAI Data (Ensure it's sent as JSON)
     hoai_data = contract.hoai_data if contract.hoai_data else {}
     zuschlag_value = contract.zuschlag_value
 
@@ -1045,13 +1050,16 @@ def load_contract_data(request):
         'users': users,
         'sections': section_data,
         'additional_fee_percentage': contract.additional_fee_percentage,
-        'vat_percentage': contract.vat_percentage,  # Add VAT percentage to the response
-        'invoices_exist': invoices_exist,  # Add whether invoices exist to the response
-        'hoai_data': hoai_data,  # ✅ Include HOAI data in the response
+        'vat_percentage': contract.vat_percentage,
+        'invoices_exist': invoices_exist,
+        'is_cumulative': is_cumulative,  # ✅ Include invoice mode
+        'latest_provided_quantities': latest_provided_quantities,  # ✅ Include previous provided quantities
+        'hoai_data': hoai_data,
         'zuschlag_value': zuschlag_value,
     }
 
     return JsonResponse(contract_data)
+
 
 
 
@@ -1612,10 +1620,9 @@ def create_invoice(request, project_id):
     project = get_object_or_404(Project, id=project_id)
     contracts = project.contract.all()
 
-    # Assuming the user will select a contract, and you'll fetch the first contract as a default
     selected_contract = contracts.first() if contracts else None
     additional_fee_percentage = selected_contract.additional_fee_percentage if selected_contract else 0
-    vat_percentage = selected_contract.vat_percentage if selected_contract else 0  # Fetch VAT percentage from the contract
+    vat_percentage = selected_contract.vat_percentage if selected_contract else 0
 
     if request.method == 'POST':
         form = InvoiceForm(request.POST, project=project)
@@ -1623,12 +1630,14 @@ def create_invoice(request, project_id):
             invoice = form.save(commit=False)
             invoice.project = project
             invoice.provided_quantities = json.loads(request.POST.get('provided_quantities'))
+
+            # Set is_cumulative field based on form input
+            is_cumulative = request.POST.get('is_cumulative', 'false') == 'true'
+            invoice.is_cumulative = is_cumulative
+
             invoice.save()
 
-            # Add a success message
             messages.success(request, 'Invoice created successfully.')
-
-            # Redirect to the edit project page with the invoices tab open
             return HttpResponseRedirect(reverse('edit_project', args=[project_id]) + '?tab=invoices')
         else:
             return JsonResponse({'status': 'error', 'errors': form.errors})
@@ -1640,7 +1649,7 @@ def create_invoice(request, project_id):
         'project': project,
         'contracts': contracts,
         'additional_fee_percentage': additional_fee_percentage,
-        'vat_percentage': vat_percentage  # Pass VAT percentage to the template
+        'vat_percentage': vat_percentage
     })
 
 
@@ -1985,7 +1994,7 @@ def download_invoice(request, invoice_id):
             lp_value = hoai_details["lp_values"].get(lp_key, "0")
             actual_lp_value = hoai_details["lp_breakdown_actual"].get(lp_key, "0")
             lp_percentage = Decimal(lp_value) if lp_value != "0" else Decimal(0)
-            lp_amount = (lp_percentage / Decimal(100)) * grundhonorar
+            lp_amount = (details['quantity'] / Decimal(100)) * grundhonorar
             sum_of_all_lps += lp_amount
 
             lp_sections.append({
@@ -2033,7 +2042,7 @@ def download_invoice(request, invoice_id):
     vat_percentage = Decimal(contract.vat_percentage) / Decimal(100)
     vat_percentage_display = Decimal(contract.vat_percentage)
     tax_value = invoice_net * vat_percentage
-    invoice_gross = invoice_net + tax_value + additional_fee_value
+    invoice_gross = invoice_net + tax_value
 
 
     # Fetch all previous invoices for the same project, based on created_at comparison
@@ -2051,31 +2060,36 @@ def download_invoice(request, invoice_id):
     previous_invoices_data = []
 
     for inv in previous_invoices:
-        inv_gross = Decimal(inv.invoice_net) * (1 + vat_percentage)
+        inv_net = Decimal(inv.invoice_net)
+        inv_tax = inv_net*vat_percentage
+        inv_gross = inv_net + inv_tax
+
         inv_paid = Decimal(inv.amount_received)
 
         total_invoice_gross += inv_gross
+        total_invoice_net += inv_net
         total_amount_paid += inv_paid
+        total_invoice_tax += inv_tax
 
         previous_invoices_data.append({
             'invoice_title': inv.title,
             'created_at': timezone.localtime(inv.created_at).strftime('%d.%m.%Y'),  # German format with time
-            'invoice_net': f"{Decimal(inv.invoice_net):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
+            'invoice_net': f"{inv_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
             'invoice_tax%': vat_percentage,
-            'invoice_tax': f"{(Decimal(inv.invoice_net) * vat_percentage):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'invoice_tax': f"{inv_tax:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
             'invoice_gross': f"{inv_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
             'amount_paid': f"{inv_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
         })
 
-    # Add the current invoice's gross to the total
-    total_invoice_net += invoice_net
-    total_invoice_gross += invoice_gross
-    total_invoice_tax = total_invoice_gross-total_invoice_net
+    # total_invoice_tax = total_invoice_gross-total_invoice_net
+
+    current_invoice_net = invoice_net-total_invoice_net
+    current_invoice_tax = current_invoice_net*vat_percentage
+
+    current_invoice_gross = current_invoice_net+current_invoice_tax
 
     # Calculate the amount to be paid (excluding the current invoice's amount received)
     invoice_tobepaid = total_invoice_gross - total_amount_paid
-
-
 
     # Prepare the context for the template
     context = {
@@ -2099,6 +2113,10 @@ def download_invoice(request, invoice_id):
         'tax': f"{tax_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
         'invoice_gross': f"{invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
         
+        'current_invoice_net' :  f"{current_invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
+        'current_invoice_gross' :  f"{current_invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
+        'current_invoice_tax' :  f"{current_invoice_tax:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
+
         'vat_percentage': vat_percentage,  
         'vat_percentage_display': vat_percentage_display, 
 
@@ -2366,3 +2384,15 @@ PARAM    {uuid.uuid4()}    BCK_Organization Description    TEXT        1    1   
         f.write(file_content)
 
     return file_path
+
+@login_required
+def get_first_invoice_mode(request):
+    contract_id = request.GET.get('contract_id')
+    if contract_id:
+        first_invoice = Invoice.objects.filter(contract_id=contract_id).order_by('created_at').first()
+        if first_invoice:
+            return JsonResponse({
+                'first_invoice_exists': True,
+                'is_cumulative': first_invoice.is_cumulative
+            })
+    return JsonResponse({'first_invoice_exists': False})

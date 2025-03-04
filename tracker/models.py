@@ -252,7 +252,8 @@ class Invoice(models.Model):
     title = models.CharField(max_length=200, unique=True)  # Ensure uniqueness
     created_at = models.DateTimeField(default=timezone.now)
     invoice_type = models.CharField(max_length=2, choices=INVOICE_TYPE_CHOICES, default='ER')  # Default to Individual Invoice
-
+    is_cumulative = models.BooleanField(null=True, blank=True, default=None)
+    
     def save(self, *args, **kwargs):
         vat_percentage = Decimal(self.contract.vat_percentage)
         self.invoice_gross = float(Decimal(self.invoice_net) * (1 + vat_percentage / Decimal(100)))

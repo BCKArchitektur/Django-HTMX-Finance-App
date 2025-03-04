@@ -150,10 +150,13 @@ class AddBudgetForm(forms.Form):
 class InvoiceForm(forms.ModelForm):
     class Meta:
         model = Invoice
-        fields = ['contract', 'provided_quantities', 'invoice_net', 'amount_received', 'invoice_type']  # Added 'invoice_type' here
+        fields = ['contract', 'provided_quantities', 'invoice_net', 'amount_received', 'invoice_type', 'is_cumulative']  # Added 'is_cumulative'
 
     def __init__(self, *args, **kwargs):
         project = kwargs.pop('project', None)
         super().__init__(*args, **kwargs)
         if project:
             self.fields['contract'].queryset = Contract.objects.filter(project=project)
+
+        # Ensure is_cumulative is properly handled
+        self.fields['is_cumulative'].required = False  # Make it optional

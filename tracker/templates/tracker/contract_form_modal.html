@@ -2,7 +2,14 @@
 <div id="contractModal" class="modal">
     <div class="modal-box max-w-5xl">
 
-        <button class="btn btn-sm btn-circle btn-ghost position:absolute; top-0; right-0; " onclick="closeContractModal()">✕</button>
+        <button class="btn btn-sm btn-circle btn-ghost absolute top-2 right-2" onclick="closeContractModal()">✕</button>
+        
+        <div class="absolute top-3 right-14">
+            <label class="cursor-pointer flex items-center">
+                <span class="mr-2 font-extralight text-xs">"HOAI Mode"</span>
+                <input type="checkbox" id="hoaiModeSwitch" class="toggle toggle-primary" onchange="toggleHOAIMode()">
+            </label>
+        </div>
 
         <h3 class="font-bold text-lg m-4" id="contractModalTitle">Add a New Contract</h3>
         <!-- Add this button to trigger file upload -->
@@ -37,10 +44,7 @@
                     </div>
                 </label>
 
-                <label class="cursor-pointer flex items-center">
-                    <span class="mr-2">HOAI Mode</span>
-                    <input type="checkbox" id="hoaiModeSwitch" class="toggle toggle-primary" onchange="toggleHOAIMode()">
-                </label>
+
 
                 <!-- Hidden input to store HOAI Data -->
                 <input type="hidden" name="hoai_data" id="hoai_data">

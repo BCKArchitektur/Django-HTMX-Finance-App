@@ -1,22 +1,28 @@
 <div id="invoiceModal" class="modal">
-    <div class="modal-box max-w-5xl">
+    <div class="modal-box max-w-5xl relative">
+        <!-- Close Button -->
+        <button class="btn btn-sm btn-circle btn-ghost absolute top-2 right-2" onclick="closeInvoiceModal()">✕</button>
+
+        <!-- Cummulation Mode Toggle -->
+        <div class="absolute top-3 right-14">
+            <label class="cursor-pointer flex items-center">
+                <span class="mr-2 font-extralight text-xs">"Cummulation Mode"</span>
+                <input type="checkbox" id="cummulationModeSwitch" class="toggle toggle-primary" onchange="toggleCummulationMode()">
+            </label>
+        </div>
+
         <h3 class="font-bold text-lg m-4">Create a New Invoice</h3>
         <form id="invoice-form" method="post" action="{% url 'create_invoice' project.id %}">
             {% csrf_token %}
+
+            <!-- Hidden Input for is_cumulative -->
+            <input type="hidden" id="is_cumulative" name="is_cumulative" value="false">
+
             <div class="form-control">
                 <label class="label">Project</label>
                 <input type="text" class="input input-bordered w-full" value="{{ project.project_name }}" disabled>
             </div>
-            <div class="form-control">
-                <label class="label">Invoice Type</label>
-                <select id="id_invoice_type" name="invoice_type" class="select select-bordered w-full">
-                    <option value="ER">Einzelrechnung (Individual Invoice)</option>
-                    <option value="AR">Abschlagsrechnung (Partial/Progress Invoice)</option>
-                    <option value="SR">Schlussrechnung (Final Invoice)</option>
-                    <option value="ZR">Anzahlungsrechnung (Advance Payment Invoice)</option>
-                </select>
-            </div>
-                    
+
             <div class="form-control">
                 <label class="label">Contract</label>
                 <select id="id_contract" name="contract" class="select select-bordered w-full">
@@ -26,11 +32,23 @@
                     {% endfor %}
                 </select>
             </div>
+
+            <div class="form-control">
+                <label class="label">Invoice Type</label>
+                <select id="id_invoice_type" name="invoice_type" class="select select-bordered w-full">
+                    <option value="ER">Einzelrechnung (Individual Invoice)</option>
+                    <option value="ZR">Anzahlungsrechnung (Advance Payment Invoice)</option>
+                </select>
+            </div>
+                    
+            <!-- Provided Quantities Section -->
             <div class="form-control">
                 <label class="label">Provided Quantities</label>
                 <textarea name="provided_quantities" class="textarea textarea-bordered w-full" hidden>{{ form.initial.provided_quantities }}</textarea>
                 <div id="provided-quantities-table"></div>
             </div>
+
+            <!-- Invoice Calculation Table -->
             <div class="overflow-x-auto mt-4">
                 <table class="table w-full">
                     <tbody>
@@ -65,6 +83,8 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Modal Actions -->
             <div class="modal-action">
                 <button type="submit" class="btn btn-primary">Create Invoice</button>
                 <a href="#" class="btn" onclick="closeInvoiceModal()">Cancel</a>
@@ -74,6 +94,33 @@
 </div>
 
 <script>
+function toggleCummulationMode() {
+    const isChecked = document.getElementById('cummulationModeSwitch').checked;
+    const invoiceTypeSelect = document.getElementById('id_invoice_type');
+    const isCumulativeInput = document.getElementById('is_cumulative');
+
+    // Update the hidden field value
+    isCumulativeInput.value = isChecked ? "true" : "false";
+
+    // Clear existing options
+    invoiceTypeSelect.innerHTML = '';
+
+    if (isChecked) {
+        // Cumulative Mode options
+        invoiceTypeSelect.innerHTML += `
+            <option value="AR">Abschlagsrechnung (Partial/Progress Invoice)</option>
+            <option value="SR">Schlussrechnung (Final Invoice)</option>
+            <option value="ZR">Anzahlungsrechnung (Advance Payment Invoice)</option>
+        `;
+    } else {
+        // Normal Mode options
+        invoiceTypeSelect.innerHTML += `
+            <option value="ER">Einzelrechnung (Individual Invoice)</option>
+            <option value="ZR">Anzahlungsrechnung (Advance Payment Invoice)</option>
+        `;
+    }
+}
+
 function openInvoiceModal() {
     // Reinitialize dynamic content or event listeners if necessary
     
@@ -98,6 +145,7 @@ function closeInvoiceModal() {
 document.addEventListener('DOMContentLoaded', function() {
     // Rest of your code...
     const contractField = document.querySelector('#id_contract');
+    const isCumulativeInput = document.getElementById('is_cumulative');
     
     if (contractField) {
         contractField.addEventListener('change', function() {
@@ -109,15 +157,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         document.getElementById('id_additional_fee_percentage').value = data.additional_fee_percentage || 0;
                         document.getElementById('vat_percentage').value = data.vat_percentage || 0;
     
+                        const isCumulative = data.is_cumulative;
+                        isCumulativeInput.value = isCumulative ? "true" : "false";
+
                         let html = '<table class="table w-full">';
                         html += '<thead><tr><th>Select</th><th>Section and Item</th><th>Rate/Unit</th><th>Quantity (Quoted)</th><th>Quantity (Available)</th><th>Quantity (Provided)</th><th>Total</th></tr></thead>';
                         html += '<tbody>';
+
                         data.sections.forEach(section => {
                             html += `<tr><td colspan="7" class="font-bold">${section.section_name}</td></tr>`;
                             section.items.forEach(item => {
                                 const quotedQuantity = item.quantity;
                                 const availableQuantity = item.available_quantity;
-                                const isChecked = (quotedQuantity > availableQuantity) && (availableQuantity > 0);
+                                const previousProvidedQuantity = item.previous_provided_quantity || 0;  // ✅ Get previous invoice quantity
+
+                                const isChecked = ((quotedQuantity > availableQuantity) && (availableQuantity >= 0));
+
 
                                  // Apply conditional styling
                                 const quantityColorClass = availableQuantity > 0 ? 'text-green-600' : 'text-red-500';
@@ -131,10 +186,18 @@ document.addEventListener('DOMContentLoaded', function() {
                                             <td class="pl-8">${item.Item_name}</td>
                                             <td>${item.rate}</td>
                                             <td>${quotedQuantity}</td>
-                                            <td class="${quantityColorClass}">${availableQuantity}</td>  <!-- Conditional styling applied here -->
+                                            <td class="${quantityColorClass}">${availableQuantity}</td>
                                             <td>
-                                                <input type="text" name="quantity_${item.id}" class="input input-bordered" data-item-id="${item.id}" data-item-rate="${item.rate}" data-item-unit="${item.unit}" onchange="updateTotal(${item.id})" ${isChecked ? '' : 'disabled'} />
+                                                <input type="text" name="quantity_${item.id}" class="input input-bordered"
+                                                    data-item-id="${item.id}" 
+                                                    data-item-rate="${item.rate}"
+                                                    data-item-unit="${item.unit}" 
+                                                    onchange="updateTotal(${item.id})"
+                                                    value="${isCumulative ? previousProvidedQuantity : ''}"
+                                                    placeholder="${isCumulative ? previousProvidedQuantity : ''}" 
+                                                    ${isChecked ? '' : 'disabled'} />
                                             </td>
+
                                             <td id="total_${item.id}">0.00</td>
                                         </tr>`;
                             });
@@ -143,14 +206,27 @@ document.addEventListener('DOMContentLoaded', function() {
                         document.getElementById('provided-quantities-table').innerHTML = html;
     
                         document.querySelectorAll('#provided-quantities-table .checkbox').forEach(checkbox => {
-                            console.log('checkbox',checkbox)
+                            console.log('checkbox', checkbox);
                             const itemId = checkbox.dataset.itemId;
-                            console.log('itemid',itemId)
+                            console.log('itemid', itemId);
                             const quantityInput = document.querySelector(`#provided-quantities-table input[name="quantity_${itemId}"]`);
-                            console.log('quantityInput',quantityInput)
-    
-                            checkbox.addEventListener('change', function() {
+                            console.log('quantityInput', quantityInput);
+
+                            // Get cumulative mode status
+                            const isCumulative = document.getElementById('is_cumulative').value === "true";
+
+                            // Disable checkboxes that were already checked in cumulative mode
+                            if (isCumulative && checkbox.checked) {
+                                checkbox.disabled = true;  // ✅ Prevent unchecking in cumulative invoices
+                            }
+
+                            checkbox.addEventListener('change', function () {
                                 console.log(`Checkbox for item ID ${itemId} changed to: ${this.checked}`);
+                                
+                                if (isCumulative && this.checked) {
+                                    this.disabled = true;  // ✅ Lock checkbox once checked in cumulative mode
+                                }
+
                                 if (this.checked) {
                                     quantityInput.disabled = false;
                                 } else {
@@ -159,10 +235,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                 }
                                 calculateInvoiceNet();
                             });
-    
+
                             quantityInput.addEventListener('input', calculateInvoiceNet);
                         });
-    
+
                         calculateInvoiceNet();
                     })
                     .catch(error => {
@@ -257,4 +333,37 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+    const contractField = document.querySelector('#id_contract');
+    const cummulationModeSwitch = document.getElementById('cummulationModeSwitch');
+    const isCumulativeInput = document.getElementById('is_cumulative');
+
+    if (contractField) {
+        contractField.addEventListener('change', function () {
+            const contractId = this.value;
+            if (contractId) {
+                fetch(`/ajax/get-first-invoice-mode/?contract_id=${contractId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.first_invoice_exists) {
+                            // Lock the mode based on the first invoice
+                            isCumulativeInput.value = data.is_cumulative ? "true" : "false";
+                            cummulationModeSwitch.checked = data.is_cumulative;
+                            cummulationModeSwitch.disabled = true; // Disable toggle
+                        } else {
+                            // Allow user to select if no previous invoices exist
+                            cummulationModeSwitch.disabled = false;
+                        }
+
+                        // Call toggleCummulationMode to update dropdown options
+                        toggleCummulationMode();
+                    })
+                    .catch(error => console.error('Error fetching first invoice data:', error));
+            }
+        });
+    }
+});
+
+
 </script>
