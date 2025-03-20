@@ -1590,8 +1590,11 @@ def generate_word_document(request, contract_id):
     if include_scope_of_work == 'on':
         insert_html_to_docx(scope_of_work_html, doc, placeholder="[[SCOPE_OF_WORK]]")
 
+    company_name = template_name.split("_")[0]
+    project_short_name = project.project_name.split()[0]  # Gets the first word
+    
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-    file_name = f"{contract.contract_no} BCK {project.project_name[:6]} AN {contract.contract_name}.docx"
+    file_name = f"{contract.contract_no}_{company_name}_{project_short_name}_AN_{contract.contract_name}.docx"
     response['Content-Disposition'] = f'attachment; filename="{file_name}"'
 
     doc.save(response)
@@ -2017,8 +2020,9 @@ def download_invoice(request, invoice_id):
                 'section_serial': section_counter,
                 'section_name': section_name,
                 'net_section': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-                'items': [{
-                    'item_name': item.Item_name,
+                'Item': [{
+                    'Item_name': item.Item_name,
+                    'Item_serial': f"{section_counter}.{item_counter}",
                     'unit': unit,
                     'rate': f"{Decimal(details['rate']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                     'quantity': details['quantity'],
@@ -2045,11 +2049,13 @@ def download_invoice(request, invoice_id):
     invoice_gross = invoice_net + tax_value
 
 
-    # Fetch all previous invoices for the same project, based on created_at comparison
+    # Fetch all previous invoices for the same project and contract, based on created_at comparison
     previous_invoices = Invoice.objects.filter(
         project=project,
+        contract=contract,  # Filter by contract as well
         created_at__lt=invoice.created_at  # Only include invoices created before the current invoice
     ).order_by('created_at')
+
 
     # Prepare previous invoices data and calculate totals
     total_invoice_gross = Decimal('0.00')
@@ -2175,7 +2181,22 @@ def download_invoice(request, invoice_id):
 
     # Save and return the document
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-    response['Content-Disposition'] = f'attachment; filename=invoice_{invoice.title}_{invoice.project}.docx'
+   
+    # Extract the first part of the project name (assumes it's separated by spaces)
+    project_short_name = project.project_name.split()[0]  # Gets the first word
+
+    # Determine company identifier
+    company_identifier = "BCK" if "BCK" in template_name else "KOST"
+
+    # Build the new filename
+    new_filename = f"{invoice.title}_{company_identifier}_{project_short_name}_{invoice.invoice_type}_{contract.contract_name}.docx"
+
+    # Replace spaces and special characters in filename
+    new_filename = new_filename.replace(" ", "_").replace("/", "-")
+
+    # Update response with new filename
+    response['Content-Disposition'] = f'attachment; filename={new_filename}'
+
     doc.save(response)
 
     return response

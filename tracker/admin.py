@@ -181,6 +181,8 @@ class LogsAdmin(admin.ModelAdmin):
         }),
     )
 
+    actions = [export_to_excel]
+
     def get_log_task(self, obj):
         return obj.get_log_task()
     get_log_task.short_description = 'Tasks'

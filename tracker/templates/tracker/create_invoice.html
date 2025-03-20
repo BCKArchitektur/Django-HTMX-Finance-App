@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         isCumulativeInput.value = isCumulative ? "true" : "false";
 
                         let html = '<table class="table w-full">';
-                        html += '<thead><tr><th>Select</th><th>Section and Item</th><th>Rate/Unit</th><th>Quantity (Quoted)</th><th>Quantity (Available)</th><th>Quantity (Provided)</th><th>Total</th></tr></thead>';
+                        html += '<thead><tr><th>Select</th><th>Section and Item</th><th>Rate</th><th>Quantity (Quoted)</th><th>Quantity (Available)</th><th>Quantity (Provided)</th><th>Total</th></tr></thead>';
                         html += '<tbody>';
 
                         data.sections.forEach(section => {
@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             </td>
                                             <td class="pl-8">${item.Item_name}</td>
                                             <td>${item.rate}</td>
-                                            <td>${quotedQuantity}</td>
+                                            <td>${quotedQuantity}(${item.unit})</td>
                                             <td class="${quantityColorClass}">${availableQuantity}</td>
                                             <td>
                                                 <input type="text" name="quantity_${item.id}" class="input input-bordered"

@@ -144,7 +144,7 @@ class Item(models.Model):
                 pass  # If EstimateSettings does not exist, keep the default rate
 
         # Calculate total
-        self.total = self.quantity * float(self.rate)
+        self.total = float(self.quantity) * float(self.rate)
         super().save(*args, **kwargs)
 
     def __str__(self):

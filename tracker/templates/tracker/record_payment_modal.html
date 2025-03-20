@@ -32,46 +32,57 @@
 </div>
 
 <script>
-    function openRecordPaymentModal(invoiceId) {
-        console.log(`Opening Record Payment Modal for Invoice ID: ${invoiceId}`);
-    
-        // Fetch invoice data and populate modal
-        fetch(`/ajax/view-invoice/${invoiceId}/`)
-            .then(response => {
-                console.log(`Received response:`, response);
-    
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log(`Fetched data:`, data);
-    
-                const vatPercentage = parseFloat(data.vat_percentage) || 0;
-                const invoiceNet = parseFloat(data.invoice_net) || 0;
-                const taxValue = invoiceNet * vatPercentage / 100;
-                const invoiceGross = invoiceNet + taxValue;
-    
-                console.log(`Calculated Values - Net: ${invoiceNet}, VAT: ${taxValue}, Gross: ${invoiceGross}`);
-    
-                document.getElementById('payment_invoice_net').value = invoiceNet.toFixed(2);
-                document.getElementById('payment_vat').value = taxValue.toFixed(2);
-                document.getElementById('payment_invoice_gross').value = invoiceGross.toFixed(2);
-                
-                // Populate the existing amount received in the modal
-                document.getElementById('amount_received').value = parseFloat(data.amount_received).toFixed(2);
-    
-                const form = document.getElementById('record-payment-form');
-                form.action = `{% url 'record_payment' 0 %}`.replace('0', invoiceId);
-    
-                openRecordPaymentModalUI();
-            })
-            .catch(error => {
-                console.error('Error fetching invoice:', error);
-                alert('Error fetching invoice: ' + error.message);
-            });
-    }
+function openRecordPaymentModal(invoiceId) {
+    console.log(`Opening Record Payment Modal for Invoice ID: ${invoiceId}`);
+
+    // Fetch invoice data and populate modal
+    fetch(`/ajax/view-invoice/${invoiceId}/`)
+        .then(response => {
+            console.log(`Received response:`, response);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(`Fetched data:`, data);
+
+            const vatPercentage = parseFloat(data.vat_percentage) || 0;
+            const invoiceNet = parseFloat(data.invoice_net) || 0;
+            let taxValue = 0;
+            let invoiceGross = 0;
+
+            // Check if VAT is a percentage-based unit
+            if (data.vat_unit === "%") {
+                taxValue = (invoiceNet * vatPercentage) / 100;
+            } else {
+                taxValue = vatPercentage;  // If not percentage-based, use the raw value
+            }
+
+            invoiceGross = invoiceNet + taxValue;
+
+            console.log(`Calculated Values - Net: ${invoiceNet}, VAT: ${taxValue}, Gross: ${invoiceGross}`);
+
+            // Format numbers in German format
+            document.getElementById('payment_invoice_net').value = invoiceNet.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('payment_vat').value = taxValue.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('payment_invoice_gross').value = invoiceGross.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // Populate the existing amount received in the modal
+            document.getElementById('amount_received').value = parseFloat(data.amount_received || 0).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            const form = document.getElementById('record-payment-form');
+            form.action = `{% url 'record_payment' 0 %}`.replace('0', invoiceId);
+
+            openRecordPaymentModalUI();
+        })
+        .catch(error => {
+            console.error('Error fetching invoice:', error);
+            alert('Error fetching invoice: ' + error.message);
+        });
+}
+
     
     function openRecordPaymentModalUI() {
         console.log(`Opening UI for Record Payment Modal`);

@@ -1,5 +1,5 @@
 {% extends 'tracker/base.html' %}
-
+{% load custom_filters %}
 {% block title %}Edit Project{% endblock %}
 
 {% block content %}
@@ -171,9 +171,9 @@
                             <th>Type</th>
                             <th>Contract</th>
                             <th>Date Issued</th>
-                            <th>Net</th>
-                            <th>Gross</th>
-                            <th>Amount Received</th> <!-- New Column -->
+                            <th>Net (€)</th>
+                            <th>Gross (€)</th>
+                            <th>Amount Received (€)</th> <!-- New Column -->
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -189,9 +189,9 @@
                             <td>{{ invoice.invoice_type  }}    </td>
                             <td>{{ invoice.contract.contract_name }}</td>
                             <td>{{ invoice.created_at  }}</td>
-                            <td data-value="{{ invoice.invoice_net }}">{{ invoice.invoice_net }}</td>
-                            <td data-value="{{ invoice.invoice_gross }}">{{ invoice.invoice_gross }}</td>
-                            <td data-value="{{ invoice.amount_received }}">{{ invoice.amount_received }}</td>
+                            <td data-value="{{ invoice.invoice_net }}">{{ invoice.invoice_net|german_number }}</td>
+                            <td data-value="{{ invoice.invoice_gross }}">{{ invoice.invoice_gross |german_number}}</td>
+                            <td data-value="{{ invoice.amount_received }}">{{ invoice.amount_received |german_number}}</td>
                             <td>
                                 <form method="post" action="{% url 'delete_invoice' invoice.id %}" style="display:inline;" onsubmit="return confirmDelete();">
                                     {% csrf_token %}
