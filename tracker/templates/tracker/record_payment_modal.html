@@ -23,6 +23,11 @@
                     <button type="button" class="btn btn-secondary btn-outline ml-2" onclick="copyGrossInvoice()">Copy from Invoice Gross</button>
                 </div>
             </div>
+            <div class="form-control mt-4">
+                <label class="label">Date of Payment</label>
+                <input type="date" name="date_of_payment" id="date_of_payment" class="input input-bordered w-full">
+            </div>
+            
             <div class="modal-action">
                 <button type="submit" class="btn btn-primary">Save Payment</button>
                 <a href="#" class="btn" onclick="closeRecordPaymentModal()">Cancel</a>
@@ -50,15 +55,10 @@ function openRecordPaymentModal(invoiceId) {
 
             const vatPercentage = parseFloat(data.vat_percentage) || 0;
             const invoiceNet = parseFloat(data.invoice_net) || 0;
-            let taxValue = 0;
+
             let invoiceGross = 0;
 
-            // Check if VAT is a percentage-based unit
-            if (data.vat_unit === "%") {
-                taxValue = (invoiceNet * vatPercentage) / 100;
-            } else {
-                taxValue = vatPercentage;  // If not percentage-based, use the raw value
-            }
+            const taxValue = (invoiceNet * vatPercentage) / 100;
 
             invoiceGross = invoiceNet + taxValue;
 
@@ -70,7 +70,10 @@ function openRecordPaymentModal(invoiceId) {
             document.getElementById('payment_invoice_gross').value = invoiceGross.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
             // Populate the existing amount received in the modal
-            document.getElementById('amount_received').value = parseFloat(data.amount_received || 0).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('amount_received').value = parseFloat(data.amount_received || 0).toFixed(2);
+
+            console.log(document.getElementById('amount_received').value)
+            document.getElementById('date_of_payment').value = data.date_of_payment || '';
 
             const form = document.getElementById('record-payment-form');
             form.action = `{% url 'record_payment' 0 %}`.replace('0', invoiceId);
@@ -103,8 +106,9 @@ function openRecordPaymentModal(invoiceId) {
     }
 
     function copyGrossInvoice() {
-        // Copy the value from the Invoice Gross field to the Amount Received field
-        const invoiceGross = document.getElementById('payment_invoice_gross').value;
-        document.getElementById('amount_received').value = invoiceGross;
+        const formatted = document.getElementById('payment_invoice_gross').value;
+        const normalized = parseFloat(formatted.replace(/\./g, '').replace(',', '.')).toFixed(2);
+        document.getElementById('amount_received').value = normalized;
     }
+
 </script>

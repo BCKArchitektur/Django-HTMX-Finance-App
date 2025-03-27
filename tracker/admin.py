@@ -182,7 +182,7 @@ class LogsAdmin(admin.ModelAdmin):
     )
 
     actions = [export_to_excel]
-
+            
     def get_log_task(self, obj):
         return obj.get_log_task()
     get_log_task.short_description = 'Tasks'
@@ -361,7 +361,7 @@ admin.site.register(Item, ItemAdmin)
 
 class InvoiceAdmin(admin.ModelAdmin):
     list_display = ('title', 'project', 'contract', 'invoice_net', 'amount_received', 'created_at')
-    search_fields = ('title', 'project__name', 'contract__name')
+    search_fields = ('title', 'project__project_name', 'contract__contract_name')
     list_filter = ('created_at',)
 
 admin.site.register(Invoice, InvoiceAdmin)

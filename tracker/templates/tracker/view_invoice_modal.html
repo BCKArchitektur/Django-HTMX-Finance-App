@@ -99,7 +99,7 @@
                 if (unit === "%") {
                     total = (quantity / 100) * rate;
                 } else if (unit === "Psch") {
-                    total = rate;
+                    total = quantity * rate;
                 } else {
                     total = quantity * rate;
                 }

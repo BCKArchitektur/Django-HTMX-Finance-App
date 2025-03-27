@@ -173,7 +173,7 @@
                             <th>Date Issued</th>
                             <th>Net (€)</th>
                             <th>Gross (€)</th>
-                            <th>Amount Received (€)</th> <!-- New Column -->
+                            <th>Amount Received (€)</th> 
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -191,7 +191,12 @@
                             <td>{{ invoice.created_at  }}</td>
                             <td data-value="{{ invoice.invoice_net }}">{{ invoice.invoice_net|german_number }}</td>
                             <td data-value="{{ invoice.invoice_gross }}">{{ invoice.invoice_gross |german_number}}</td>
-                            <td data-value="{{ invoice.amount_received }}">{{ invoice.amount_received |german_number}}</td>
+                            <td data-value="{{ invoice.amount_received }}">
+                                {{ invoice.amount_received|german_number }} €
+                                {% if invoice.date_of_payment %}
+                                    <br><span class="text-xs text-gray-500">({{ invoice.date_of_payment }})</span>
+                                {% endif %}
+                            </td>                            
                             <td>
                                 <form method="post" action="{% url 'delete_invoice' invoice.id %}" style="display:inline;" onsubmit="return confirmDelete();">
                                     {% csrf_token %}
@@ -364,8 +369,8 @@
                 <label for="template_name" class="label">Template</label>
                 <select name="template_name" id="template_name" class="select select-bordered w-full">
                     <option value="" disabled selected>Select a Template</option>
-                    <option value="Kost_De.docx">Kost_De</option>
-                    <option value="Kost_En.docx">Kost_En</option>
+                    <option value="KOST_De.docx">KOST_De</option>
+                    <option value="KOST_En.docx">KOST_En</option>
                     <option value="BCK_De.docx">BCK_De</option>
                     <option value="BCK_En.docx">BCK_En</option>
                 </select>
@@ -1046,8 +1051,10 @@ function populateBudgetTable(contractId) {
         const additionalFeePercentageInput = document.getElementById('additional_fee_percentage');
         additionalFeePercentageInput.value = data.additional_fee_percentage || 0;
         if (isContractInvoiced) {
-            additionalFeePercentageInput.disabled = true;
+            additionalFeePercentageInput.readOnly = true;
+            additionalFeePercentageInput.classList.add('border-red-500');
         }
+
 
         document.getElementById('zuschlag_value').value = data.zuschlag_value || 0; // Fetch Zuschlag
         console.log('zuschlag_value',data)

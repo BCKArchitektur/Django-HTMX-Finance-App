@@ -35,7 +35,7 @@ from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse, Http404  # Import Http404
 from decimal import Decimal  # Import Decimal for precision handling
-
+from datetime import datetime
 
 @login_required
 def toggle_dark_mode(request):
@@ -1273,75 +1273,6 @@ def set_bullet(paragraph):
     ind.set(qn("w:hanging"), "360")  # Hanging indent ensures alignment of wrapped text
     pPr.append(ind)
 
-def insert_html_to_docx(html_content, doc, placeholder):
-    """
-    Convert HTML content to formatted DOCX content and replace the placeholder text in the Word document.
-    
-    Args:
-        html_content (str): The HTML string to convert.
-        doc (docx.Document): The Word document object.
-        placeholder (str): Placeholder text to replace in the Word document.
-    """
-    from docx.shared import Pt
-    from docx.oxml import OxmlElement
-    from bs4 import BeautifulSoup
-
-    soup = BeautifulSoup(html_content, "html.parser")
-
-    # Find the paragraph containing the placeholder
-    placeholder_paragraph = None
-    for p in doc.paragraphs:
-        if placeholder in p.text:
-            placeholder_paragraph = p
-            break
-
-    if placeholder_paragraph:
-        # Clear the placeholder paragraph
-        placeholder_paragraph.clear()  # Clears the content but keeps the paragraph
-
-        def apply_formatting(run, element):
-            """Apply formatting to a run based on the HTML element."""
-            run.font.name = "Neue Hans Kendrick"
-            run.font.size = Pt(8)
-            if element.name == "strong":
-                run.bold = True
-            if element.name == "u":
-                run.underline = True
-
-        # Process paragraphs
-        for para in soup.find_all(['p', 'ul', 'ol']):
-            if para.name == 'p':
-                paragraph = placeholder_paragraph.insert_paragraph_before()
-                for element in para.contents:
-                    if element.name in ['strong', 'u']:
-                        run = paragraph.add_run(element.get_text())
-                        apply_formatting(run, element)
-                    elif element.name == 'br':
-                        paragraph.add_run().add_break()
-                    elif element.name is None:  # Plain text
-                        run = paragraph.add_run(element.strip())
-                        apply_formatting(run, para)
-            elif para.name in ['ul', 'ol']:
-                # Handle unordered and ordered lists
-                for li in para.find_all('li'):
-                    paragraph = placeholder_paragraph.insert_paragraph_before()
-                    
-                    # Apply bullet formatting correctly
-                    set_bullet(paragraph)
-
-                    for element in li.contents:
-                        if element.name in ['strong', 'u']:
-                            run = paragraph.add_run(element.get_text())
-                            apply_formatting(run, element)
-                        elif element.name is None:  # Plain text
-                            run = paragraph.add_run(element.strip())
-                            apply_formatting(run, li)
-
-                    placeholder_paragraph = paragraph  # Move forward in the document
-
-    else:
-        print(f"Placeholder '{placeholder}' not found in the document.")
-
 
 
 import requests
@@ -1411,10 +1342,105 @@ def extract_hoai_details(contract):
         "zuschlag" : zuschlag,
     }
 
+def insert_html_to_docx(html_content, doc, placeholder):
+    """
+    Convert HTML content to formatted DOCX content and replace the placeholder text in the Word document.
+
+    Args:
+        html_content (str): The HTML string to convert.
+        doc (docx.Document): The Word document object.
+        placeholder (str): Placeholder text to replace in the Word document.
+    """
+    from docx.shared import Pt, Inches
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(html_content, "html.parser")
+
+    # Helper: Apply bullet point style
+    def set_bullet(paragraph):
+        p = paragraph._p
+        pPr = p.get_or_add_pPr()
+
+        numPr = OxmlElement('w:numPr')
+
+        ilvl = OxmlElement('w:ilvl')
+        ilvl.set(qn('w:val'), '0')
+
+        numId = OxmlElement('w:numId')
+        numId.set(qn('w:val'), '1')
+
+        numPr.append(ilvl)
+        numPr.append(numId)
+        pPr.append(numPr)
+
+    # Helper: Apply formatting
+    def apply_formatting(run, element):
+        run.font.name = "Neue Hans Kendrick"
+        run.font.size = Pt(8)
+        if element.name == "strong":
+            run.bold = True
+        if element.name == "u":
+            run.underline = True
+
+    # Find the paragraph with placeholder
+    placeholder_paragraph = None
+    for p in doc.paragraphs:
+        if placeholder in p.text:
+            placeholder_paragraph = p
+            break
+
+    if not placeholder_paragraph:
+        print(f"Placeholder '{placeholder}' not found in the document.")
+        return
+
+    # Clear the placeholder text
+    placeholder_paragraph.clear()
+
+    # Parse and insert content
+    for para in soup.find_all(['p', 'ul', 'ol']):
+        if para.name == 'p':
+            # Handle <p><br/></p> or empty paragraph → insert one hard break (empty paragraph)
+            if not para.get_text(strip=True) and not para.find(['img', 'strong', 'u']):
+                placeholder_paragraph.insert_paragraph_before()
+                continue
+
+            # Normal <p> with content
+            paragraph = placeholder_paragraph.insert_paragraph_before()
+            paragraph.paragraph_format.left_indent = Inches(1.75)
+
+            for element in para.contents:
+                if element.name in ['strong', 'u']:
+                    run = paragraph.add_run(element.get_text())
+                    apply_formatting(run, element)
+                elif element.name == 'br':
+                    run = paragraph.add_run()
+                    run.add_break()
+                elif element.name is None:
+                    run = paragraph.add_run(element.strip())
+                    apply_formatting(run, para)
+
+        elif para.name in ['ul', 'ol']:
+            for li in para.find_all('li'):
+                paragraph = placeholder_paragraph.insert_paragraph_before()
+                set_bullet(paragraph)
+                paragraph.paragraph_format.left_indent = Inches(2.25)
+
+                for element in li.contents:
+                    if element.name in ['strong', 'u']:
+                        run = paragraph.add_run(element.get_text())
+                        apply_formatting(run, element)
+                    elif element.name is None:
+                        run = paragraph.add_run(element.strip())
+                        apply_formatting(run, li)
+
+                placeholder_paragraph = paragraph  # advance reference
+
 
 def generate_word_document(request, contract_id):
     print('request:', request)
-    template_name = request.GET.get('template_name', 'Kost_De.docx')
+    template_name = request.GET.get('template_name', 'KOST_De.docx')
     valid_until = request.GET.get('valid_until')
     terms_conditions = request.GET.get('terms_conditions')
     include_scope_of_work = request.GET.get('include_scope_of_work')
@@ -1594,7 +1620,7 @@ def generate_word_document(request, contract_id):
     project_short_name = project.project_name.split()[0]  # Gets the first word
     
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-    file_name = f"{contract.contract_no}_{company_name}_{project_short_name}_AN_{contract.contract_name}.docx"
+    file_name = f"{contract.contract_no} {company_name} {project_short_name} AN {contract.contract_name}.docx"
     response['Content-Disposition'] = f'attachment; filename="{file_name}"'
 
     doc.save(response)
@@ -1750,8 +1776,9 @@ def view_invoice(request, invoice_id):
             'invoice_net': str(invoice_net),
             'tax_value': str(tax_value),
             'invoice_gross': str(invoice_gross),
-            'vat_percentage': str(vat_percentage),  # Include VAT percentage in the response
-            'amount_received':invoice.amount_received
+            'vat_percentage': str(vat_percentage), 
+            'amount_received':invoice.amount_received,
+            'date_of_payment': invoice.date_of_payment.isoformat() if invoice.date_of_payment else None,
         }
 
         return JsonResponse(data)
@@ -1767,181 +1794,6 @@ def view_invoice(request, invoice_id):
 
 from django.utils.dateparse import parse_date
 import pprint
-
-# def download_invoice(request, invoice_id):
-#     # Fetch the invoice, project, and contract
-#     invoice = get_object_or_404(Invoice, id=invoice_id)
-#     project = invoice.project
-#     contract = invoice.contract
-#     client = project.client_name
-
-#     # Get the template name and date range from the request
-#     template_name = request.GET.get('invoice_template_name', 'inv_BCK_De.docx')
-#     print(f"Template name from modal: {template_name}")
-    
-#     from_date_str = request.GET.get('from_date')
-#     to_date_str = request.GET.get('to_date')
-
-#     # Parse the date strings into date objects
-#     from_date = parse_date(from_date_str) if from_date_str else None
-#     to_date = parse_date(to_date_str) if to_date_str else None
-
-#     # **Check if template is English**
-#     is_english_template = template_name in ['inv_BCK_En.docx', 'inv_Kost_En.docx']
-
-#     # Initialize the sections dictionary and sum_of_items
-#     sections = {}
-#     sum_of_items = Decimal('0.00')
-
-#     # Section counter
-#     section_counter = 1
-
-#     # Fetch provided quantities and related items and sections
-#     provided_quantities = invoice.provided_quantities  # Assuming this is a dictionary
-#     for item_id, details in provided_quantities.items():
-#         item = get_object_or_404(Item, id=item_id)
-#         section = item.section_set.first()  # Assuming each item belongs to one section
-#         section_name = section.section_name if section else "Unknown Section"
-#         item_total = Decimal(details['quantity']) * Decimal(details['rate'])
-
-#         # **Modify units for English templates**
-#         unit = item.unit
-#         if is_english_template:
-#             if unit == 'Psch':
-#                 unit = 'Lumpsum'
-#             elif unit == 'Stk':
-#                 unit = 'Piece'
-#             elif unit in ['Std', 'Std.']:
-#                 unit = 'Hour'
-
-#         if section_name not in sections:
-#             sections[section_name] = {
-#                 'section_number': section_counter,
-#                 'items': [],
-#                 'net_section': Decimal('0.00')  # Initialize net_section total
-#             }
-#             section_counter += 1
-
-#         # Calculate item number (e.g., 1.1, 1.2, 2.1, etc.)
-#         item_number = f"{sections[section_name]['section_number']}.{len(sections[section_name]['items']) + 1}"
-
-#         sections[section_name]['items'].append({
-#             'item_number': item_number,
-#             'item_name': item.Item_name,
-#             'unit': unit,  # **Updated unit for English template**
-#             'rate': f"{Decimal(details['rate']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-#             'quantity': details['quantity'],
-#             'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-#             'description': item.description if item.description else None,
-#         })
-
-#         # Add item total to section total
-#         sections[section_name]['net_section'] += item_total
-#         sum_of_items += item_total
-
-#     # Convert `net_section` values to formatted strings
-#     for section_name in sections:
-#         sections[section_name]['net_section'] = f"{sections[section_name]['net_section']:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-
-#     # Calculate additional fee and taxes
-#     additional_fee_percentage = Decimal(contract.additional_fee_percentage)
-#     additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
-#     invoice_net = sum_of_items + additional_fee_value
-#     vat_percentage = Decimal(contract.vat_percentage) / Decimal(100)  # Use VAT from contract
-#     vat_percentage_display = Decimal(contract.vat_percentage)
-#     tax_value = invoice_net * vat_percentage
-#     invoice_gross = invoice_net + tax_value
-
-#     # Fetch all previous invoices for the same project, based on created_at comparison
-#     previous_invoices = Invoice.objects.filter(
-#         project=project,
-#         created_at__lt=invoice.created_at  # Only include invoices created before the current invoice
-#     ).order_by('created_at')
-
-#     # Prepare previous invoices data and calculate totals
-#     total_invoice_gross = Decimal('0.00')
-#     total_amount_paid = Decimal('0.00')
-
-#     previous_invoices_data = []
-
-#     for inv in previous_invoices:
-#         inv_gross = Decimal(inv.invoice_net) * (1 + vat_percentage)
-#         inv_paid = Decimal(inv.amount_received)
-
-#         total_invoice_gross += inv_gross
-#         total_amount_paid += inv_paid
-
-#         previous_invoices_data.append({
-#             'invoice_title': inv.title,
-#             'created_at': timezone.localtime(inv.created_at).strftime('%d.%m.%Y'),  # German format with time
-#             'invoice_net': f"{Decimal(inv.invoice_net):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
-#             'invoice_tax%': vat_percentage,
-#             'invoice_tax': f"{(Decimal(inv.invoice_net) * vat_percentage):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-#             'invoice_gross': f"{inv_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
-#             'amount_paid': f"{inv_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
-#         })
-
-#     # Add the current invoice's gross to the total
-#     total_invoice_gross += invoice_gross
-
-#     # Calculate the amount to be paid (excluding the current invoice's amount received)
-#     invoice_tobepaid = total_invoice_gross - total_amount_paid
-
-#     # Prepare the context for the template
-#     context = {
-#         'client_name': client.client_name if client else "Unknown",
-#         'client_firm': client.firm_name if client else "Unknown",
-#         'client_address': f"{client.street_address}\n{client.postal_code} {client.city} \n{client.country.name}",
-#         'created_at': timezone.localtime(invoice.created_at).strftime('%d.%m.%Y'),  # German format with time
-#         'project_no': project.project_no,
-#         'project_name': project.project_name,
-#         'invoice_title': invoice.title,
-#         'contract_no' : contract.contract_no,
-#         'contract_name': contract.contract_name,
-#         'sections': sections,  # Organized by section
-#         'sum_of_items': f"{sum_of_items:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
-#         'invoice_net': f"{invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
-#         'vat_percentage': vat_percentage,  
-#         'vat_percentage_display': vat_percentage_display, 
-#         'tax': f"{tax_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
-#         'invoice_gross': f"{invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
-#         'previous_invoices': previous_invoices_data, 
-#         'total_invoice_gross': f"{total_invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
-#         'total_amount_paid': f"{total_amount_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
-#         'invoice_tobepaid': f"{invoice_tobepaid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
-#         'invoice_type': invoice.invoice_type,
-#         'from_date': from_date.strftime('%d.%m.%Y') if from_date else None,
-#         'to_date': to_date.strftime('%d.%m.%Y') if to_date else None,
-#         'client_firm': client.firm_name
-#     }
-
-#     # Construct the template path
-#     template_path = os.path.join(r'C:\Users\BCK-CustomApp\Documents\GitHub\Django-HTMX-Finance-App\templates\invoices', template_name)
-
-#     # Load and render the template
-#     doc = DocxTemplate(template_path)
-#     doc.render(context)
-
-#     # Save and return the document
-#     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-#     response['Content-Disposition'] = f'attachment; filename=invoice_{invoice.title}_{invoice.project}.docx'
-#     doc.save(response)
-
-#     return response
-
-
-
-
-
-############################################
-
-
-
-
-
-
-
-
 
 def download_invoice(request, invoice_id):
     # Fetch the invoice, project, and contract
@@ -1993,6 +1845,7 @@ def download_invoice(request, invoice_id):
         
         lp_match = re.search(r"LP(\d+)", section_name, re.IGNORECASE)
         if lp_match:
+            item_counter = 1 
             lp_key = f"lp{lp_match.group(1)}"
             lp_value = hoai_details["lp_values"].get(lp_key, "0")
             actual_lp_value = hoai_details["lp_breakdown_actual"].get(lp_key, "0")
@@ -2016,6 +1869,7 @@ def download_invoice(request, invoice_id):
             })
             item_counter += 1  # Increment item counter
         else:
+            item_counter = 1 
             contract_sections.append({
                 'section_serial': section_counter,
                 'section_name': section_name,
@@ -2079,6 +1933,7 @@ def download_invoice(request, invoice_id):
 
         previous_invoices_data.append({
             'invoice_title': inv.title,
+            'invoice_type': inv.invoice_type,
             'created_at': timezone.localtime(inv.created_at).strftime('%d.%m.%Y'),  # German format with time
             'invoice_net': f"{inv_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
             'invoice_tax%': vat_percentage,
@@ -2096,6 +1951,9 @@ def download_invoice(request, invoice_id):
 
     # Calculate the amount to be paid (excluding the current invoice's amount received)
     invoice_tobepaid = total_invoice_gross - total_amount_paid
+
+    # Count how many previous invoices are Abschlagsrechnung (AR)
+    previous_ar_count = previous_invoices.filter(invoice_type='AR').count()
 
     # Prepare the context for the template
     context = {
@@ -2161,6 +2019,12 @@ def download_invoice(request, invoice_id):
         'client_firm': client.firm_name
     }
 
+    # Only include if the current invoice is AR
+    if invoice.invoice_type == 'AR':
+        context.update({
+            'current_ar_number': previous_ar_count + 1 if previous_ar_count > 0 else ''
+        })
+
     if additional_fee_percentage > 0:
         context.update({
             'additional_fee_percentage': f"{additional_fee_percentage:.2f}",
@@ -2189,10 +2053,10 @@ def download_invoice(request, invoice_id):
     company_identifier = "BCK" if "BCK" in template_name else "KOST"
 
     # Build the new filename
-    new_filename = f"{invoice.title}_{company_identifier}_{project_short_name}_{invoice.invoice_type}_{contract.contract_name}.docx"
+    new_filename = f"{invoice.title} {company_identifier} {project_short_name} {invoice.invoice_type} {contract.contract_name}.docx"
 
     # Replace spaces and special characters in filename
-    new_filename = new_filename.replace(" ", "_").replace("/", "-")
+    # new_filename = new_filename.replace(" ", "_").replace("/", "-")
 
     # Update response with new filename
     response['Content-Disposition'] = f'attachment; filename={new_filename}'
@@ -2201,20 +2065,26 @@ def download_invoice(request, invoice_id):
 
     return response
 
-
 def record_payment(request, invoice_id):
     invoice = get_object_or_404(Invoice, id=invoice_id)
 
     if request.method == 'POST':
-        amount_received = float(request.POST.get('amount_received'))
-        invoice.amount_received = amount_received
-        invoice.save()
+        try:
+            amount_received = float(request.POST.get('amount_received', 0))
+            invoice.amount_received = amount_received
 
-        # Add a success message
-        messages.success(request, 'Payment recorded successfully.')
+            date_str = request.POST.get('date_of_payment')
+            if date_str:
+                try:
+                    invoice.date_of_payment = datetime.strptime(date_str, '%Y-%m-%d').date()
+                except ValueError:
+                    messages.warning(request, 'Invalid date format. Date of payment was not saved.')
 
-        # Redirect to the project page with the invoices tab active
-        return redirect(reverse('edit_project', args=[invoice.project.id]) + '?tab=invoices')
+            invoice.save()
+            messages.success(request, 'Payment recorded successfully.')
+            return redirect(reverse('edit_project', args=[invoice.project.id]) + '?tab=invoices')
+        except (ValueError, TypeError):
+            return JsonResponse({'error': 'Invalid input for amount or date.'}, status=400)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
