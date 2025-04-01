@@ -187,6 +187,8 @@ class Contract(models.Model):
     scope_of_work = models.TextField(blank=True, null=True)
     hoai_data = models.JSONField(default=dict, blank=True, null=True)  # Store HOAI inputs
     zuschlag_value = models.CharField(max_length=255,default=0, blank=True, null=True)  # New Field
+    nachlass_value = models.CharField(max_length=255,default=0, blank=True, null=True)
+    nachlass_percentage = models.CharField(max_length=255,default=0, blank=True, null=True)
 
     def __str__(self):
         return f"({self.contract_no}-{self.contract_name} )"

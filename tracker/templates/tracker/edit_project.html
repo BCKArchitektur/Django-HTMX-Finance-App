@@ -303,9 +303,30 @@
                             </td>
                         </tr>
                         <tr>
+                            <td class="text-right font-thin w-1/6"> - Nachlass (€) or (%)</td>
+                            <td class="flex gap-4 items-center">
+                                <!-- Option 1: Fixed value -->
+                                <label class="flex items-center gap-1">
+                                    <input type="radio" name="nachlass_mode" value="value" id="nachlass_mode_value" class="radio radio-sm" checked>
+                                    <input type="number" step="0.01" name="nachlass_value" id="nachlass_value" placeholder="€"
+                                        class="input input-sm w-24" />
+                                </label>
+                        
+                                <!-- Option 2: Percentage -->
+                                <label class="flex items-center gap-1">
+                                    <input type="radio" name="nachlass_mode" value="percentage" id="nachlass_mode_percentage" class="radio radio-sm">
+                                    <input type="number" step="0.00001" name="nachlass_percentage" id="nachlass_percentage" placeholder="%"
+                                        class="input input-sm w-24" />
+                                </label>
+                            </td>
+                        </tr>
+                        
+                        <tr>
                             <td class="text-right font-bold w-1/6">Net Contract (€)</td>
                             <td><input type="text" id="net_contract" class="input  input-sm w-1/4" readonly></td>
                         </tr>
+
+                        
                         <tr>
                             <td class="text-right font-thin w-1/6">VAT (%)*</td>
                             <td>
@@ -702,6 +723,28 @@
             .replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Add dots as thousand separators
     }
 
+    function highlightSelectedNachlassInput() {
+        const valueInput = document.getElementById('nachlass_value');
+        const percentInput = document.getElementById('nachlass_percentage');
+        const selectedMode = document.querySelector('input[name="nachlass_mode"]:checked').value;
+
+        if (selectedMode === 'value') {
+            valueInput.classList.add('input-secondary');
+            percentInput.classList.remove('input-secondary');
+        } else {
+            percentInput.classList.add('input-secondary');
+            valueInput.classList.remove('input-secondary');
+        }
+    }
+
+    document.querySelectorAll('input[name="nachlass_mode"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            highlightSelectedNachlassInput();
+            updateSummaryFields();
+        });
+    });
+
+
 
     function updateSummaryFields() {
         console.log('Updating summary fields...');
@@ -728,7 +771,23 @@
         const zuschlagAmount = (sumOfItems * zuschlagPercentage) / 100;
 
 
-        const netContract = sumOfItems + additionalFee ;
+        const nachlassValueInput = document.getElementById('nachlass_value');
+        const nachlassPercentageInput = document.getElementById('nachlass_percentage');
+        const mode = document.querySelector('input[name="nachlass_mode"]:checked').value;
+
+        let nachlassValue = parseFloat(nachlassValueInput.value.replace(',', '.')) || 0;
+        let nachlassPercentage = parseFloat(nachlassPercentageInput.value.replace(',', '.')) || 0;
+
+        // Logic based on selected mode
+        if (mode === 'percentage') {
+            nachlassValue = (sumOfItems * nachlassPercentage) / 100;
+            nachlassValueInput.value = nachlassValue.toFixed(2);
+        } else if (mode === 'value') {
+            nachlassPercentage = (nachlassValue / sumOfItems) * 100;
+            nachlassPercentageInput.value = nachlassPercentage.toFixed(5);
+        }
+
+        const netContract = sumOfItems + additionalFee - nachlassValue;
 
         const vatPercentageInput = document.getElementById('id_vat_percentage');
         const vatPercentage = parseFloat(vatPercentageInput.value) || 0;
@@ -755,6 +814,9 @@
     // Add event listeners to recalculate values when VAT or Additional Fee percentage changes
     document.getElementById('id_vat_percentage').addEventListener('input', updateSummaryFields);
     document.getElementById('additional_fee_percentage').addEventListener('input', updateSummaryFields);
+    document.getElementById('nachlass_value').addEventListener('input', updateSummaryFields);
+    document.getElementById('nachlass_percentage').addEventListener('input', updateSummaryFields);
+
 
     // Function to update the section order input field dynamically
     function updateSectionOrderInput() {
@@ -1053,11 +1115,16 @@ function populateBudgetTable(contractId) {
         if (isContractInvoiced) {
             additionalFeePercentageInput.readOnly = true;
             additionalFeePercentageInput.classList.add('border-red-500');
+            nachlass_value.readOnly = true;
+            nachlass_value.classList.add('border-red-500');
         }
 
 
         document.getElementById('zuschlag_value').value = data.zuschlag_value || 0; // Fetch Zuschlag
-        console.log('zuschlag_value',data)
+        document.getElementById('nachlass_value').value = data.nachlass_value || 0; 
+        document.getElementById('nachlass_percentage').value = data.nachlass_percentage || 0; 
+
+        console.log('nachlass_value', data.nachlass_value )
         // Populate VAT percentage and sync select field with hidden input
         const vatPercentageInput = document.getElementById('id_vat_percentage');
         const vatPercentageSelect = document.getElementById('vat_percentage_select');
@@ -1277,6 +1344,10 @@ function populateBudgetTable(contractId) {
         document.getElementById('net_contract').value = '';
         document.getElementById('vat').value = '';
         document.getElementById('gross_contract').value = '';
+        document.getElementById('nachlass_value').value = '';
+        document.getElementById('nachlass_percentage').value = '';
+
+
 
         // Optionally, reset the form itself
         document.getElementById('add-budget-form').reset();
@@ -1314,6 +1385,7 @@ function populateBudgetTable(contractId) {
 
     // Initialize Quill editor
     document.addEventListener('DOMContentLoaded', function () {
+        highlightSelectedNachlassInput();
         window.quill = new Quill('#quill-editor-container', {
             theme: 'snow',
             modules: {

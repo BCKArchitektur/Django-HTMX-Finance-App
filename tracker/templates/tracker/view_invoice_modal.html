@@ -31,6 +31,15 @@
                         <td><input type="text" id="view_additional_fee" class="input input-bordered input-sm w-1/4" readonly></td>
                     </tr>
                     <tr>
+                        <td class="text-right font-thin w-1/6">Nachlass %</td>
+                        <td><input type="text" id="view_nachlass_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
+                    </tr>
+                    <tr>
+                        <td class="text-right font-thin w-1/6">Nachlass €</td>
+                        <td><input type="text" id="view_nachlass_value" class="input input-bordered input-sm w-1/4" readonly></td>
+                    </tr>
+                    
+                    <tr>
                         <td class="text-right font-bold w-1/6">Invoice Net €</td>
                         <td><input type="text" id="view_invoice_net" class="input input-bordered input-sm w-1/4" readonly></td>
                     </tr>
@@ -127,9 +136,18 @@
             document.getElementById('view_sum_of_items').value = sumOfItems.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
             const additionalFee = (sumOfItems * additionalFeePercentage) / 100;
-            const invoiceNet = sumOfItems + additionalFee;
+            
+            const nachlassPercentage = parseFloat(data.nachlass_percentage || 0);
+            const nachlass = (sumOfItems * nachlassPercentage) / 100;
+            console.log('data',data)
+
+            document.getElementById('view_nachlass_percentage').value = nachlassPercentage.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('view_nachlass_value').value = nachlass.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            const invoiceNet = sumOfItems + additionalFee - nachlass;
             const vat = invoiceNet * vatPercentage / 100;
             const grossInvoice = invoiceNet + vat;
+
 
             document.getElementById('view_additional_fee').value = additionalFee.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             document.getElementById('view_invoice_net').value = invoiceNet.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

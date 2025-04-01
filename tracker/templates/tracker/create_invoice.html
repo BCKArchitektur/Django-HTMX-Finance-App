@@ -65,9 +65,18 @@
                             <td><input type="text" id="id_additional_fee" class="input input-bordered input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
+                            <td class="text-right font-thin w-1/6">Nachlass %</td>
+                            <td><input type="text" id="id_nachlass_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
+                        </tr>
+                        <tr>
+                            <td class="text-right font-thin w-1/6">Nachlass €</td>
+                            <td><input type="text" id="id_nachlass_value" class="input input-bordered input-sm w-1/4" readonly></td>
+                        </tr>                       
+                        <tr>
                             <td class="text-right font-bold w-1/6">Invoice Net €</td>
                             <td><input type="text" id="id_invoice_net" name="invoice_net" class="input input-bordered input-sm w-1/4" readonly></td>
                         </tr>
+                        
                         <tr>
                             <td class="text-right font-thin w-1/6">VAT(%)</td>
                             <td><input type="text" id="vat_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
@@ -156,7 +165,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     .then(data => {
                         document.getElementById('id_additional_fee_percentage').value = data.additional_fee_percentage || 0;
                         document.getElementById('vat_percentage').value = data.vat_percentage || 0;
-    
+                        document.getElementById('id_nachlass_value').value = data.nachlass_value || 0;
+                        document.getElementById('id_nachlass_percentage').value = data.nachlass_percentage || 0;
+
                         const isCumulative = data.is_cumulative;
                         isCumulativeInput.value = isCumulative ? "true" : "false";
 
@@ -308,7 +319,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const additionalFeePercentage = parseFloat(document.getElementById('id_additional_fee_percentage').value) || 0;
         const vatPercentage = parseFloat(document.getElementById('vat_percentage').value) || 0;
         const additionalFee = (sumOfItems * additionalFeePercentage) / 100;
-        const invoiceNet = sumOfItems + additionalFee;
+
+        const nachlassPercentage = parseFloat(document.getElementById('id_nachlass_percentage')?.value) || 0;
+        const nachlass = (sumOfItems * nachlassPercentage) / 100;
+
+        // Optionally update the € field if it exists
+        const nachlassValueInput = document.getElementById('id_nachlass_value');
+        if (nachlassValueInput) {
+            nachlassValueInput.value = nachlass.toFixed(2);
+        }
+
+        const invoiceNet = sumOfItems + additionalFee - nachlass;
+
+
         const vat = invoiceNet * vatPercentage / 100;
         const grossInvoice = invoiceNet + vat;
 

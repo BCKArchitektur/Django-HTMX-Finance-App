@@ -1043,6 +1043,9 @@ def load_contract_data(request):
 
     hoai_data = contract.hoai_data if contract.hoai_data else {}
     zuschlag_value = contract.zuschlag_value
+    nachlass_value = contract.nachlass_value
+    nachlass_percentage = contract.nachlass_percentage
+
 
     contract_data = {
         'contract_name': contract.contract_name,
@@ -1056,6 +1059,8 @@ def load_contract_data(request):
         'latest_provided_quantities': latest_provided_quantities,  # ✅ Include previous provided quantities
         'hoai_data': hoai_data,
         'zuschlag_value': zuschlag_value,
+        'nachlass_value' : nachlass_value,
+        'nachlass_percentage' : nachlass_percentage,
     }
 
     return JsonResponse(contract_data)
@@ -1166,6 +1171,19 @@ def add_budget(request):
             contract.vat_percentage = float(vat_percentage)
         except (ValueError, TypeError):
             contract.vat_percentage = 0.0
+
+        # Handle Nachlass value
+        nachlass_value = request.POST.get('nachlass_value')
+        try:
+            contract.nachlass_value = float(nachlass_value)
+        except (ValueError, TypeError):
+            contract.nachlass_value = 0.0
+        # Handle Nachlass percentage
+        nachlass_percentage = request.POST.get('nachlass_percentage')
+        try:
+            contract.nachlass_percentage = float(nachlass_percentage)
+        except (ValueError, TypeError):
+            contract.nachlass_percentage = 0.0
 
         # Handle the sections and items
         for section in contract.section.all():
@@ -1548,7 +1566,13 @@ def generate_word_document(request, contract_id):
 
     grundhonorar_without_zuschlag = float(grundhonorar) - zuschlag_amount
 
-    net_contract = sum_of_items + sum_of_all_lps + additional_fee_value  #Include LP sections
+    nachlass_value = Decimal(contract.nachlass_value or 0)
+    
+    nachlass_percentage = Decimal(contract.nachlass_percentage or 0)
+
+    errechnetes_Gesamthonorar  = sum_of_items + sum_of_all_lps + additional_fee_value 
+    net_contract = sum_of_items + sum_of_all_lps + additional_fee_value - nachlass_value
+
     vat_percentage = float(contract.vat_percentage) / 100
     tax = float(net_contract) * vat_percentage
     gross_contract = net_contract + Decimal(tax)
@@ -1568,6 +1592,8 @@ def generate_word_document(request, contract_id):
         'sum_of_all_lps': f"{sum_of_all_lps:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  # ✅ LP sum
         
         'net_contract': f"{net_contract:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'errechnetes_Gesamthonorar': f"{errechnetes_Gesamthonorar:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+
         'tax': f"{Decimal(tax):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'gross_contract': f"{gross_contract:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'today_date': date.today().strftime('%d.%m.%Y'),
@@ -1596,15 +1622,21 @@ def generate_word_document(request, contract_id):
         "upper_bound_bis": hoai_details["upper_bound_bis"],
         "zuschlag_amount" : format_german_number(zuschlag_amount),
         "grundhonorar_without_zuschlag":format_german_number(grundhonorar_without_zuschlag),
-        "zuschlag_value" : hoai_details["zuschlag"]
+        "zuschlag_value" : hoai_details["zuschlag"],
     }
 
     if additional_fee_percentage > 0:
         context.update({
-            'additional_fee_percentage': f"{additional_fee_percentage:.2f}",
+            'additional_fee_percentage': f"{additional_fee_percentage:.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
             'additional_fee_value': f"{additional_fee_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
         })
 
+    if nachlass_value != 0:
+        context.update({
+            'nachlass_value' : f"{nachlass_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'nachlass_percentage' : f"{nachlass_percentage:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        })
+         
     if lp_sections:
         context['lp_sections'] = lp_sections
 
@@ -1767,6 +1799,7 @@ def view_invoice(request, invoice_id):
         invoice_net = sum_of_items + additional_fee_value
         tax_value = (invoice_net * vat_percentage) / Decimal(100)
         invoice_gross = invoice_net + tax_value
+        nachlass_percentage = Decimal(contract.nachlass_percentage or 0)
 
         data = {
             'project_name': project.project_name,
@@ -1779,6 +1812,7 @@ def view_invoice(request, invoice_id):
             'vat_percentage': str(vat_percentage), 
             'amount_received':invoice.amount_received,
             'date_of_payment': invoice.date_of_payment.isoformat() if invoice.date_of_payment else None,
+            'nachlass_percentage':nachlass_percentage
         }
 
         return JsonResponse(data)
