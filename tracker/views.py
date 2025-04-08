@@ -1954,8 +1954,11 @@ def download_invoice(request, invoice_id):
     previous_invoices_data = []
 
     for inv in previous_invoices:
+        if inv.invoice_type not in ['AR', 'SR']:
+            continue  # Only consider cumulative invoices
+
         inv_net = Decimal(inv.invoice_net)
-        inv_tax = inv_net*vat_percentage
+        inv_tax = inv_net * vat_percentage
         inv_gross = inv_net + inv_tax
 
         inv_paid = Decimal(inv.amount_received)
@@ -1968,12 +1971,12 @@ def download_invoice(request, invoice_id):
         previous_invoices_data.append({
             'invoice_title': inv.title,
             'invoice_type': inv.invoice_type,
-            'created_at': timezone.localtime(inv.created_at).strftime('%d.%m.%Y'),  # German format with time
-            'invoice_net': f"{inv_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
+            'created_at': timezone.localtime(inv.created_at).strftime('%d.%m.%Y'),
+            'invoice_net': f"{inv_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
             'invoice_tax%': vat_percentage,
             'invoice_tax': f"{inv_tax:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-            'invoice_gross': f"{inv_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
-            'amount_paid': f"{inv_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
+            'invoice_gross': f"{inv_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'amount_paid': f"{inv_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         })
 
     # total_invoice_tax = total_invoice_gross-total_invoice_net
