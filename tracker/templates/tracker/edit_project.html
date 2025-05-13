@@ -220,7 +220,7 @@
         <div role="tabpanel" class="tab-content p-10" id="settings-content">
             <h2 class="text-xl font-semibold mb-4">Settings</h2>
 
-            <div class="alert alert-info mb-6">
+            <div class="alert alert-info mb-6"  id="settings-note">
               <span class="font-semibold">Note:</span> The values entered here will override the default hourly rates. Leave fields empty to use the default hourly rates.
             </div>
             
@@ -1111,12 +1111,13 @@
                 itemsTable.innerHTML = `
                     <thead>
                         <tr>
-                            <th>NO.</th>
-                            <th>ITEM</th>
-                            <th>QUANTITY</th>
-                            <th>UNIT</th>
-                            <th>RATE</th>
-                            <th>TOTAL</th>
+                            <th>No.</th>
+                            <th class="w-64">Item</th>
+                            <th>Hours<br>logged</th>
+                            <th>Quantity</th>
+                            <th>Unit</th>
+                            <th>Rate</th>
+                            <th>Total</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -1143,11 +1144,17 @@
                     const quantityValue = isPsch ? '1' : (item.quantity || '');
                     const formattedQuantityValue = formatNumberToGerman(quantityValue);
                     const formattedRate = formatNumberToGerman(item.rate || 0);
+                    const loggedHours = item.hours_logged || 0;
+
+
 
                     const itemRow = document.createElement('tr');
                     itemRow.innerHTML = `
                         <td>${sectionIndex + 1},${itemIndex + 1}</td>
-                        <td><input type="text" value="${item.Item_name}" class="input input-bordered w-full" ${itemInvoiced ? 'disabled' : ''}></td>
+                        <td class="w-64">${item.Item_name}</td>
+
+                        <td id="hours_logged_${item.id}">${formatNumberToGerman(item.hours_logged || 0)}</td>
+
                         <td>
                             <input type="text" name="quantity_${item.id}" value="${formattedQuantityValue}" 
                                 class="input input-bordered w-full" 
@@ -1171,6 +1178,15 @@
                         setTimeout(() => updateTotal(item.id), 100);
 
                     }
+                    const quotedQty = item.quantity || 0;
+                    const cell = itemRow.querySelector(`#hours_logged_${item.id}`);
+
+                    if (loggedHours > quotedQty) {
+                        cell.classList.add("text-red-600"); // Too many hours
+                    } else {
+                        cell.classList.add("text-green-600"); // Within budget
+                    }
+
                 });
 
                 sectionContainer.appendChild(itemsTable); // Append itemsTable to sectionContainer
@@ -1580,5 +1596,34 @@
         });
 
 </script>
-
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab');
+    
+        // If the current tab is settings, or if it gets switched to settings
+        function autoHideSettingsNote() {
+            const note = document.getElementById("settings-note");
+            if (note) {
+                setTimeout(() => {
+                    note.classList.add("hidden"); // or use note.remove() to fully delete it
+                }, 5000); // 5 seconds
+            }
+        }
+    
+        // Immediately hide if on load the tab is settings
+        if (tab === 'settings') {
+            autoHideSettingsNote();
+        }
+    
+        // Also re-check if user clicks the tab manually (optional)
+        const settingsTab = document.querySelector('#settings-tab');
+        if (settingsTab) {
+            settingsTab.addEventListener('click', () => {
+                setTimeout(autoHideSettingsNote, 1000); // slight delay to ensure content is visible
+            });
+        }
+    });
+    </script>
+    
 {% endblock %}

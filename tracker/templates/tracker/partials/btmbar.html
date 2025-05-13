@@ -41,7 +41,7 @@
         </a>
     {% endif %}
     {% if user|has_group:'managers' %}
-        <a href="{% url 'dashboard' %}" class="flex-1 text-center py-2 mx-1 transition-transform duration-100 transform hover:scale-103">
+        <!-- <a href="{% url 'dashboard' %}" class="flex-1 text-center py-2 mx-1 transition-transform duration-100 transform hover:scale-103">
             <div class="{% if request.path == '/dashboard/' %}border-t-4 border-teal-600{% endif %}"></div>
             <button class="flex flex-col items-center w-full {% if request.path == '/dashboard/' %}text-teal-600{% else %}text-base-content{% endif %}">
                 <svg
@@ -58,7 +58,7 @@
                 </svg>
                 <span class="btm-nav-label">Dashboard</span>
             </button>
-        </a>
+        </a> -->
         <a href="{% url 'projects' %}" class="flex-1 text-center py-2 mx-1 transition-transform duration-100 transform hover:scale-103">
             <div class="{% if request.path == '/projects/' %}border-t-4 border-green-600{% endif %}"></div>
             <button class="flex flex-col items-center w-full {% if request.path == '/projects/' %}text-green-600{% else %}text-base-content{% endif %}">

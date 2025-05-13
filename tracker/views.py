@@ -1830,6 +1830,8 @@ def view_invoice(request, invoice_id):
         
 from django.utils.dateparse import parse_date
 import pprint
+from django.http import FileResponse
+import socket
 
 def download_invoice(request, invoice_id):
     # Fetch the invoice, project, and contract
@@ -2089,7 +2091,17 @@ def download_invoice(request, invoice_id):
     response['Content-Disposition'] = f'attachment; filename={new_filename}'
     doc.save(response)
 
-    return response
+    import io
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+
+    return FileResponse(
+    buffer,
+    as_attachment=True,
+    filename=new_filename,
+    content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+)
 
 def record_payment(request, invoice_id):
     invoice = get_object_or_404(Invoice, id=invoice_id)

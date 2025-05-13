@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             </td>
                                             <td class="pl-8">${item.Item_name}</td>
                                             <td>${item.rate}</td>
-                                            <td class="${hoursClass}">${hoursLogged.toFixed(2)}</td>
+                                            <td class="${hoursClass} " >${hoursLogged.toFixed(2)}</td>
 
                                             <td>${quotedQuantity}(${item.unit})</td>
                                             <td class="${quantityColorClass}">${availableQuantity}</td>
@@ -399,30 +399,34 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
     // Function to validate input values for quantity fields
+    let quantityAlertTimeout = null; // Global timeout handler
+
     function validateQuantityInput(input) {
         // Ensure the function only runs for inputs inside the Invoice Modal
         if (!input.closest("#invoiceModal")) {
             return; // Exit if the input is not within the invoice modal
         }
 
+        // Clear any existing alert timeout
+        clearTimeout(quantityAlertTimeout);
+
         const previousProvidedQuantity = parseFloat(input.placeholder) || 0;
-        const quotedQuantity = parseFloat(input.closest('tr').querySelector('td:nth-child(4)').textContent) || 0;
-        
+        const quotedQuantity = parseFloat(input.closest('tr').querySelector('td:nth-child(5)').textContent) || 0;
         let enteredValue = parseFloat(input.value) || 0;
 
-        if (enteredValue < previousProvidedQuantity || enteredValue > quotedQuantity) {
-            alert(`Quantity must be between ${previousProvidedQuantity} and ${quotedQuantity}`);
+        // Delay the validation and alert
+        quantityAlertTimeout = setTimeout(() => {
+            if (enteredValue < previousProvidedQuantity || enteredValue > quotedQuantity) {
+                // alert(`Quantity must be between ${previousProvidedQuantity} and ${quotedQuantity}`);
+                input.classList.add("input-error");
+            } else {
+                input.classList.remove("input-error");
+            }
 
-            // Add error styling
-            input.classList.add("input-error");
-
-        } else {
-            // Remove error styling if value is valid
-            input.classList.remove("input-error");
-        }
-
-        updateTotal(input.dataset.itemId); // Ensure total updates even if invalid
+            updateTotal(input.dataset.itemId);
+        }, 500); // 500ms delay
     }
+
 
 
     document.addEventListener('input', function (event) {
