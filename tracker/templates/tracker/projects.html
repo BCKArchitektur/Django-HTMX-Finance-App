@@ -223,10 +223,11 @@
             <!-- Assigned User -->
             <div class="form-control mb-4">
                 <label for="id_user" class="label">
-                    <span class="label-text">Assigned User</span>
+                    <span class="label-text">Assign Users</span>
                 </label>
                 {{ project_form.user }}
             </div>
+
 
             <!-- Actions -->
             <div class="modal-action">
@@ -462,4 +463,30 @@ document.addEventListener("DOMContentLoaded", function() {
         }
 }
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+      new TomSelect("#id_user", {
+        plugins: ['remove_button'],
+        maxItems: null,
+        create: false,
+        searchField: 'text',
+        placeholder: "Search Users...",
+      });
+    });
+
+</script>
+<script>
+    document.addEventListener("keydown", function(event) {
+        // Check for Ctrl + S
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+            event.preventDefault(); // Prevent browser's default Save dialog
+            const projectSearchInput = document.getElementById("project-search");
+            if (projectSearchInput) {
+                projectSearchInput.focus();
+            }
+        }
+    });
+    </script>
+    
+    
 {% endblock extra_scripts %}

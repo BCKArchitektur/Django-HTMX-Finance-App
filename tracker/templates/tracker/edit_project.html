@@ -51,8 +51,9 @@
                     </select>
                 </div>
                 <div class="form-control m-1">
+                    <label for="id_user" class="label hidden"></label>
                     {{ form.user }}
-                </div>
+                </div>                
             </div>
             <div class="modal-action">
                 <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
@@ -1567,5 +1568,17 @@
     });
 </script>
 
+<script>
+        document.addEventListener("DOMContentLoaded", function () {
+          new TomSelect("#id_user", {
+            plugins: ['remove_button'],
+            maxItems: null,
+            create: false,
+            searchField: 'text',
+            placeholder: "Search Users...",
+          });
+        });
+
+</script>
 
 {% endblock %}

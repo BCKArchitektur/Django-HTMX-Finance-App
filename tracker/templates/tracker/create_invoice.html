@@ -95,7 +95,7 @@
 
             <!-- Modal Actions -->
             <div class="modal-action">
-                <button type="submit" class="btn btn-primary">Create Invoice</button>
+                <button type="submit" class="btn btn-primary btn-outline">Create Invoice</button>
                 <a href="#" class="btn" onclick="closeInvoiceModal()">Cancel</a>
             </div>
         </form>
@@ -172,7 +172,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         isCumulativeInput.value = isCumulative ? "true" : "false";
 
                         let html = '<table class="table w-full">';
-                        html += '<thead><tr><th>Select</th><th>Section and Item</th><th>Rate</th><th>Quantity<br>(Quoted)</th><th>Quantity<br>(Available)</th><th>Quantity<br>(Provided)</th><th>Total</th></tr></thead>';
+                            html += '<thead><tr><th>Select</th><th>Section and Item</th><th>Rate</th><th>Hours<br>Logged</th><th>Quantity<br>(Quoted)</th><th>Quantity<br>(Available)</th><th>Quantity<br>(Provided)</th><th>Total</th></tr></thead>';
+
                         html += '<tbody>';
 
                         data.sections.forEach(section => {
@@ -187,7 +188,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                  // Apply conditional styling
                                 const quantityColorClass = availableQuantity > 0 ? 'text-green-600' : 'text-red-500';
-    
+                                // Compare hours_logged and quotedQuantity
+                                const hoursLogged = item.hours_logged || 0;
+                                const hoursClass = hoursLogged <= quotedQuantity ? 'text-green-600' : 'text-red-500';
+
+
                                 console.log(`Item ID: ${item.id}, isChecked: ${isChecked}`);
     
                                 html += `<tr>
@@ -196,6 +201,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                             </td>
                                             <td class="pl-8">${item.Item_name}</td>
                                             <td>${item.rate}</td>
+                                            <td class="${hoursClass}">${hoursLogged.toFixed(2)}</td>
+
                                             <td>${quotedQuantity}(${item.unit})</td>
                                             <td class="${quantityColorClass}">${availableQuantity}</td>
                                             <td>
