@@ -7,12 +7,14 @@ from datetime import date
 from django.utils import timezone
 from decimal import Decimal
 import os
+from django.db.models import JSONField
+from phonenumber_field.modelfields import PhoneNumberField 
+from django.core.exceptions import ObjectDoesNotExist
+
 
 #Creating custom user model
 class User(AbstractUser):
     dark_mode = models.BooleanField(default=False)
-
-
 
 #Creating Employee model
 class Employee(models.Model):
@@ -40,10 +42,6 @@ class Employee(models.Model):
     def __str__(self):
         return self.user.username
 
-
-
-from phonenumber_field.modelfields import PhoneNumberField  # Use this if you want validation
-
 # Creating Client model
 class Client(models.Model):
     client_name = models.CharField(max_length=255, unique=True, default='Unknown Name')
@@ -58,49 +56,13 @@ class Client(models.Model):
     def __str__(self):
         return self.firm_name or self.client_name
 
-
-
 #Creating Task model
 class Task(models.Model):
     task_name = models.CharField(max_length=255, unique=False)
     def __str__(self):
         return self.task_name
 
-
-# class Item(models.Model):
-#     UNIT_CHOICES = [
-#         ('Std', 'Std'),
-#         ('Psch', 'Psch'),
-#         ('Stk', 'Stk'),
-#         ('%', '%'),
-#         ('Monat(e)', 'Monat(e)'),
-#         ('Tag(e)', 'Tag(e)'),
-#     ]
-
-#     Item_name = models.CharField(max_length=255, unique=False)
-#     description = models.TextField(blank=True, null=True)
-#     tasks = models.ManyToManyField(Task)
-#     users = models.ManyToManyField(User, blank=True)
-#     quantity = models.FloatField(default=0.0)
-#     unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default='Std')
-#     rate = models.FloatField(default=0.0)
-#     total = models.FloatField(default=0.0, editable=False)
-#     order = models.IntegerField(default=0) 
-
-#     def __str__(self):
-#         return self.Item_name
-
-#     def save(self, *args, **kwargs):
-#         self.total = self.quantity * self.rate
-#         super().save(*args, **kwargs)
-
-#     def delete(self, *args, **kwargs):
-#         for task in self.tasks.all():
-#             task.delete()
-#         super().delete(*args, **kwargs)
-
-from django.core.exceptions import ObjectDoesNotExist
-
+#Creating Item model
 class Item(models.Model):
     UNIT_CHOICES = [
         ('Std', 'Std'),
@@ -111,15 +73,18 @@ class Item(models.Model):
         ('Tag(e)', 'Tag(e)'),
     ]
 
-    Item_name = models.CharField(max_length=255, unique=False)
+    Item_name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    tasks = models.ManyToManyField(Task)
+    tasks = models.ManyToManyField('Task')
     users = models.ManyToManyField(User, blank=True)
     quantity = models.FloatField(default=0.0)
     unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default='Std')
     rate = models.FloatField(default=0.0)
     total = models.FloatField(default=0.0, editable=False)
-    order = models.IntegerField(default=0) 
+    order = models.IntegerField(default=0)
+
+    # Transient project holder (not a field)
+    _project = None
 
     HOURLY_RATES_MAPPING = {
         "Geschäftsführung": "executive_management_rate",
@@ -132,25 +97,61 @@ class Item(models.Model):
         "Bauzeichner/in": "draftsman_rate",
     }
 
-    def save(self, *args, **kwargs):
-        # Check if the item name matches one of the predefined roles
+    def set_project_context(self, project):
+        """Temporarily attach a project to the Item instance before saving."""
+        self._project = project
+
+
+    def get_applicable_rate(self):
+        print(f"\nEvaluating rate for item: '{self.Item_name}'")
+        
         rate_field = self.HOURLY_RATES_MAPPING.get(self.Item_name)
-        if rate_field:
-            try:
-                estimate_settings = EstimateSettings.objects.first()
-                if estimate_settings:
-                    self.rate = getattr(estimate_settings, rate_field, self.rate)  # Set the rate if found
-            except ObjectDoesNotExist:
-                pass  # If EstimateSettings does not exist, keep the default rate
+        if not rate_field:
+            print("No matching rate field in HOURLY_RATES_MAPPING.")
+            return self.rate
 
-        # Calculate total
+        print(f"Mapped to rate field: '{rate_field}'")
+
+        # 1. Check for project override
+        if self._project:
+            print("Project context is set.")
+            print("hourly_rates_override:", self._project.hourly_rates_override)
+
+            override_rate = self._project.hourly_rates_override.get(rate_field)
+            if override_rate is not None:
+                print(f"Found override rate: {override_rate}")
+                return float(override_rate)
+            else:
+                print("No override rate found for this field.")
+        else:
+            print("No project context provided.")
+
+        # 2. Fallback to EstimateSettings default
+        try:
+            estimate_settings = EstimateSettings.objects.first()
+            if estimate_settings:
+                default_rate = getattr(estimate_settings, rate_field, None)
+                if default_rate is not None:
+                    print(f"Using default rate from EstimateSettings: {default_rate}")
+                    return float(default_rate)
+                else:
+                    print(f"EstimateSettings does not define a value for '{rate_field}'")
+            else:
+                print("No EstimateSettings instance found.")
+        except ObjectDoesNotExist:
+            print("Failed to retrieve EstimateSettings.")
+
+        print("Returning existing item.rate:", self.rate)
+        return self.rate
+
+
+    def save(self, *args, **kwargs):
+        print(f"\nSaving item: '{self.Item_name}' with quantity: {self.quantity}")
+        self.rate = self.get_applicable_rate()
         self.total = float(self.quantity) * float(self.rate)
+        print(f"Final rate set to: {self.rate}")
+        print(f"Total calculated: {self.total}")
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return self.Item_name
-
-
 
 
 
@@ -170,8 +171,6 @@ class Section(models.Model):
         for item in self.Item.all():
             item.delete()  # Delete all items related to this section
         super().delete(*args, **kwargs)
-
-
 
 
 #Creating Contract model
@@ -209,6 +208,7 @@ class Project(models.Model):
     user = models.ManyToManyField(User)
     status = models.CharField(choices=status_choices, max_length=20)
     contract = models.ManyToManyField('Contract', blank=True)
+    hourly_rates_override = JSONField(null=True, blank=True, help_text="Custom hourly rates for this project")
 
     def __str__(self):
         return f"{self.project_no}-{self.project_name}"
@@ -234,7 +234,6 @@ class Logs(models.Model):
     def __str__(self):
         return f"{self.log_timestamps}-{self.log_project_name}-{self.log_contract}-{self.get_log_task()}-{self.log_section}-{self.log_time}-{self.user}"
      
-
 #Creating Preset model
 class ProjectPreset(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, default='1')
@@ -245,7 +244,6 @@ class ProjectPreset(models.Model):
     default_task = models.ForeignKey('Task', on_delete=models.SET_NULL, null=True, blank=True)
     def __str__(self):
         return f"Preset for {self.user.username} - {self.project.project_name}"
-
 
 #Creating UserPreset model
 class UserPreset(models.Model):
@@ -258,7 +256,7 @@ class UserPreset(models.Model):
     def __str__(self):
         return f"Preset for {self.user.username} - {self.project.project_name}"
     
-
+#Creating sectionlibrary model
 class SectionLibrary(models.Model):
     name = models.CharField(max_length=255)
     section_billed_hourly = models.BooleanField(default='False')
@@ -266,6 +264,7 @@ class SectionLibrary(models.Model):
     def __str__(self):
         return self.name
 
+#Creating itemlibrary model
 class ItemLibrary(models.Model):
     section = models.ForeignKey(SectionLibrary, related_name='items', on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
@@ -420,17 +419,6 @@ class InvoiceSettings(models.Model):
     def __str__(self):
         return "Invoice Settings"
 
-# class TermsAndConditionsFile(models.Model):
-#     settings = models.ForeignKey(
-#         EstimateInvoiceSettings,
-#         related_name='terms_and_conditions_files',
-#         on_delete=models.CASCADE
-#     )
-#     file = models.FileField(upload_to='templates/terms_and_conditions/')
-
-#     def __str__(self):
-#         return f"Terms File ({self.file.name})"
-
 def default_lp_breakdown():
     """Returns a default LP breakdown dictionary."""
     return {
@@ -444,7 +432,6 @@ def default_lp_breakdown():
         "lp8": 32,
         "lp9": 2
     }
-
 
 class ServiceProfile(models.Model):
     """Stores different HOAI service profiles, their Excel files, and LP breakdowns."""

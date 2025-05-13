@@ -69,8 +69,6 @@
               <h2 class="text-xl font-semibold">Manage Contracts</h2>
               <div class="join">
               <button class="btn btn-sm btn-accent" onclick="openContractModal({{ project.id }})">+ New Contract</button>
-              <!-- <div class="divider lg:divider-horizontal"></div> -->
-              <!-- <button class="btn btn-sm btn-secondary" onclick="openHOAIContractModal()">+ New HOAI Contract</button> -->
             </div>  
             </div>
           <div class="overflow-x-auto h-80">
@@ -216,9 +214,98 @@
                 </table>
             </div>
         </div>
+
+        <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Settings" id="settings-tab" />
+        <div role="tabpanel" class="tab-content p-10" id="settings-content">
+            <h2 class="text-xl font-semibold mb-4">Settings</h2>
+
+            <div class="alert alert-info mb-6">
+              <span class="font-semibold">Note:</span> The values entered here will override the default hourly rates. Leave fields empty to use the default hourly rates.
+            </div>
+            
+            <form id="project-settings-form" method="post" action="{% url 'update_project_settings' project.id %}">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="label font-semibold">Geschäftsführung</label>
+                        <input type="number" step="0.01" name="executive_management_rate"
+                               class="input input-bordered w-full required-field"
+                               placeholder="Standard: 250.00"
+                               value="{{ project.hourly_rates_override.executive_management_rate|default_if_none:'' }}" required>
+                    </div>
+        
+                    <div>
+                        <label class="label font-semibold">Fachplaner/in</label>
+                        <input type="number" step="0.01" name="specialist_planner_rate"
+                               class="input input-bordered w-full required-field"
+                               placeholder="Standard: 185.00"
+                               value="{{ project.hourly_rates_override.specialist_planner_rate|default_if_none:'' }}" required>
+                    </div>
+        
+                    <div>
+                        <label class="label font-semibold">Projektleitung</label>
+                        <input type="number" step="0.01" name="project_management_rate"
+                               class="input input-bordered w-full required-field"
+                               placeholder="Standard: 165.00"
+                               value="{{ project.hourly_rates_override.project_management_rate|default_if_none:'' }}" required>
+                    </div>
+        
+                    <div>
+                        <label class="label font-semibold">Bauüberwachung</label>
+                        <input type="number" step="0.01" name="construction_supervision_rate"
+                               class="input input-bordered w-full required-field"
+                               placeholder="Standard: 155.00"
+                               value="{{ project.hourly_rates_override.construction_supervision_rate|default_if_none:'' }}" required>
+                    </div>
+        
+                    <div>
+                        <label class="label font-semibold">Computational Architect</label>
+                        <input type="number" step="0.01" name="computational_architect_rate"
+                               class="input input-bordered w-full required-field"
+                               placeholder="Standard: 155.00"
+                               value="{{ project.hourly_rates_override.computational_architect_rate|default_if_none:'' }}" required>
+                    </div>
+        
+                    <div>
+                        <label class="label font-semibold">Architekt/in</label>
+                        <input type="number" step="0.01" name="architect_rate"
+                               class="input input-bordered w-full required-field"
+                               placeholder="Standard: 145.00"
+                               value="{{ project.hourly_rates_override.architect_rate|default_if_none:'' }}">
+                    </div>
+        
+                    <div>
+                        <label class="label font-semibold">Bautechniker/in</label>
+                        <input type="number" step="0.01" name="construction_technician_rate"
+                               class="input input-bordered w-full required-field"
+                               placeholder="Standard: 135.00"
+                               value="{{ project.hourly_rates_override.construction_technician_rate|default_if_none:'' }}" required>
+                    </div>
+        
+                    <div>
+                        <label class="label font-semibold">Zeichner/in</label>
+                        <input type="number" step="0.01" name="draftsman_rate"
+                               class="input input-bordered w-full required-field"
+                               placeholder="Standard: 115.00"
+                               value="{{ project.hourly_rates_override.draftsman_rate|default_if_none:'' }}" required>
+                    </div>
+                </div>
+        
+                <div class="flex flex-wrap gap-4 mt-6">
+                    <button id="save-settings-button" type="submit" class="btn btn-primary btn-outline">Save</button>
+                </div>
+    
+            </form>
+            <div class="flex gap-4 mt-3">
+
+                <form method="post" action="{% url 'reset_project_hourly_rates' project.id %}" 
+                      onsubmit="return confirm('Are you sure you want to reset all custom hourly rates?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-error btn-outline">Reset</button>
+                </form>
+            </div>
+            
     </div>
-
-
 
 <!-- Add/Edit Users Modal -->
 <div id="addUsersModal" class="modal">
@@ -251,8 +338,6 @@
         </form>
     </div>
 </div>
-
-
 
 <!-- Add/Edit Budget Modal -->
 <div id="addBudgetModal" class="modal">
@@ -378,7 +463,6 @@
     </div>
 </div>
 
-
 <!-- Modal to select the template -->
 <div id="selectTemplateModal" class="modal">
     <div class="modal-box">
@@ -431,8 +515,6 @@
     </div>
 </div>
 
-
-
 <!-- Modal to select the invoice template and date range -->
 <div id="selectInvoiceTemplateModal" class="modal">
     <div class="modal-box">
@@ -476,13 +558,8 @@
     </div>
 </div>
 
-
-
-
-
 {% include 'tracker/view_invoice_modal.html' %}
 {% include 'tracker/record_payment_modal.html' %}
-
 {% include 'tracker/create_invoice.html' %}
 {% include 'tracker/contract_form_modal.html' %}
 {% include 'tracker/hoai_contract_modal.html' %}
@@ -492,43 +569,50 @@
 {% block extra_scripts %}
 <script src="//unpkg.com/alpinejs" defer></script>
 <script>
-    function showContracts() {
-        document.getElementById('contracts-content').style.display = 'block';
-        document.getElementById('invoices-content').style.display = 'none';
-        document.getElementById('contracts-tab').checked = true; // Ensure the Contracts tab is checked
-        document.getElementById('invoices-tab').checked = false; // Ensure the Invoices tab is unchecked
-        history.pushState(null, '', window.location.pathname + '?tab=contracts');
+    function showTab(tabName) {
+        const tabs = ['contracts', 'invoices', 'settings'];
+
+        tabs.forEach(function(name) {
+            // Hide all tab contents
+            document.getElementById(`${name}-content`).style.display = 'none';
+            // Uncheck all tabs
+            document.getElementById(`${name}-tab`).checked = false;
+        });
+
+        // Show selected tab content
+        document.getElementById(`${tabName}-content`).style.display = 'block';
+        // Check selected tab
+        document.getElementById(`${tabName}-tab`).checked = true;
+
+        // Update URL
+        history.pushState(null, '', window.location.pathname + `?tab=${tabName}`);
     }
 
-    function showInvoices() {
-        document.getElementById('contracts-content').style.display = 'none';
-        document.getElementById('invoices-content').style.display = 'block';
-        document.getElementById('contracts-tab').checked = false; // Ensure the Contracts tab is unchecked
-        document.getElementById('invoices-tab').checked = true; // Ensure the Invoices tab is checked
-        history.pushState(null, '', window.location.pathname + '?tab=invoices');
-    }
-
-    document.getElementById('contracts-tab').addEventListener('click', showContracts);
-    document.getElementById('invoices-tab').addEventListener('click', showInvoices);
-
+    document.getElementById('contracts-tab').addEventListener('click', function () {
+        showTab('contracts');
+    });
+    document.getElementById('invoices-tab').addEventListener('click', function () {
+        showTab('invoices');
+    });
+    document.getElementById('settings-tab').addEventListener('click', function () {
+        showTab('settings');
+    });
 
     function initializeTab() {
         const urlParams = new URLSearchParams(window.location.search);
         const tab = urlParams.get('tab');
 
-        if (tab === 'invoices') {
-            showInvoices();
-            document.getElementById('invoices-tab').checked = true;
+        if (['contracts', 'invoices', 'settings'].includes(tab)) {
+            showTab(tab);
         } else {
-            showContracts();
-            document.getElementById('contracts-tab').checked = true;
+            showTab('contracts'); // Default
         }
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         initializeTab();
     });
-    
+
     // Function to open the template modal
     function openTemplateModal(contractId, scopeContent) {
         document.getElementById('template_contract_id').value = contractId;
@@ -545,7 +629,6 @@
         // Open the modal
         document.getElementById('selectTemplateModal').classList.add('modal-open');
     }
-
 
     // Function to close the template modal
     function closeTemplateModal() {
@@ -578,10 +661,7 @@
 
         // Close the modal
         closeTemplateModal();
-
-        // Allow form submission to proceed
     });
-
 
     // Function to open the invoice template modal
     function openInvoiceTemplateModal(invoiceId) {
@@ -613,7 +693,6 @@
         // Close the modal
         closeInvoiceTemplateModal();
 
-        // Allow form submission to proceed
     });
 
     function fetchData(url, callback) {
@@ -700,14 +779,11 @@
         updateSummaryFields();
     }
 
-
     // Helper function to parse German-style number inputs
     function parseGermanNumber(numberString) {
         // Convert German formatted number (e.g., "1.234,56") to standard float (e.g., 1234.56)
         return parseFloat(numberString.replace(/\./g, '').replace(',', '.'));
     }
-
-
 
     // Format the number into German format (e.g., "1.234,56")
     function formatNumberToGerman(number) {
@@ -743,8 +819,6 @@
             updateSummaryFields();
         });
     });
-
-
 
     function updateSummaryFields() {
         console.log('Updating summary fields...');
@@ -809,8 +883,6 @@
         console.log('Gross Contract:', grossContract);
     }
 
-
-
     // Add event listeners to recalculate values when VAT or Additional Fee percentage changes
     document.getElementById('id_vat_percentage').addEventListener('input', updateSummaryFields);
     document.getElementById('additional_fee_percentage').addEventListener('input', updateSummaryFields);
@@ -827,8 +899,6 @@
         }));
         sectionOrderInput.value = JSON.stringify(sectionOrder);
     }
-
-
 
     function moveSectionUp_budget(button) {
         const sectionContainer = button.closest('.section-container');
@@ -849,7 +919,6 @@
             updateSectionOrderInput();
         }
     }
-
 
     // Function to add hidden input to the form
     function addHiddenInputToForm() {
@@ -974,177 +1043,173 @@
         }
     }
 
+    function populateBudgetTable(contractId) {
+        console.log('Fetching contract data for contract ID:', contractId);
 
+        fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
+            console.log('Contract data received:', data);
 
-function populateBudgetTable(contractId) {
-    console.log('Fetching contract data for contract ID:', contractId);
+            const budgetTable = document.getElementById('budget-table');
+            budgetTable.innerHTML = ''; // Clear existing content
 
-    fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
-        console.log('Contract data received:', data);
+            // Dynamically add or update the hidden input for contract JSON
+            const form = document.getElementById('add-budget-form');
+            let jsonInput = form.querySelector('input[name="contract_json"]');
+            if (!jsonInput) {
+                jsonInput = document.createElement('input');
+                jsonInput.type = 'hidden';
+                jsonInput.name = 'contract_json';
+                form.appendChild(jsonInput);
+            }
 
-        const budgetTable = document.getElementById('budget-table');
-        budgetTable.innerHTML = ''; // Clear existing content
+            let isContractInvoiced = false;
 
-        // Dynamically add or update the hidden input for contract JSON
-        const form = document.getElementById('add-budget-form');
-        let jsonInput = form.querySelector('input[name="contract_json"]');
-        if (!jsonInput) {
-            jsonInput = document.createElement('input');
-            jsonInput.type = 'hidden';
-            jsonInput.name = 'contract_json';
-            form.appendChild(jsonInput);
-        }
+            let sectionOrderInput = form.querySelector('input[name="section_order"]');
+            if (!window.sectionOrderInput) {
+                window.sectionOrderInput = document.createElement('input');
+                window.sectionOrderInput.type = 'hidden';
+                window.sectionOrderInput.name = 'section_order';
+                form.appendChild(window.sectionOrderInput);
+            }
 
-        let isContractInvoiced = false;
+            data.sections.forEach((section, sectionIndex) => {
+                // Create a container for each section
+                const sectionContainer = document.createElement('div');
+                sectionContainer.classList.add('section-container', 'my-4', 'p-2', 'border', 'border-gray-300', 'rounded');
+                sectionContainer.setAttribute('data-section-index', sectionIndex);
 
-        let sectionOrderInput = form.querySelector('input[name="section_order"]');
-        if (!window.sectionOrderInput) {
-            window.sectionOrderInput = document.createElement('input');
-            window.sectionOrderInput.type = 'hidden';
-            window.sectionOrderInput.name = 'section_order';
-            form.appendChild(window.sectionOrderInput);
-        }
+                // Add a header for the section with move buttons
+                const sectionHeader = document.createElement('div');
+                sectionHeader.classList.add('section-header', 'flex', 'justify-between', 'items-center', 'mb-2');
+                sectionHeader.innerHTML = `
+                    <div class="section-name font-semibold">${section.section_name}</div>
+                    <div>
+                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionUp_budget(this)">
+                            <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" />
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="18" y1="11" x2="12" y2="5" />
+                                <line x1="6" y1="11" x2="12" y2="5" />
+                            </svg>
+                        </button>
+                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionDown_budget(this)">
+                            <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" />
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="18" y1="13" x2="12" y2="19" />
+                                <line x1="6" y1="13" x2="12" y2="19" />
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                sectionContainer.appendChild(sectionHeader);
 
-        data.sections.forEach((section, sectionIndex) => {
-            // Create a container for each section
-            const sectionContainer = document.createElement('div');
-            sectionContainer.classList.add('section-container', 'my-4', 'p-2', 'border', 'border-gray-300', 'rounded');
-            sectionContainer.setAttribute('data-section-index', sectionIndex);
-
-            // Add a header for the section with move buttons
-            const sectionHeader = document.createElement('div');
-            sectionHeader.classList.add('section-header', 'flex', 'justify-between', 'items-center', 'mb-2');
-            sectionHeader.innerHTML = `
-                <div class="section-name font-semibold">${section.section_name}</div>
-                <div>
-                    <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionUp_budget(this)">
-                        <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" />
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="18" y1="11" x2="12" y2="5" />
-                            <line x1="6" y1="11" x2="12" y2="5" />
-                        </svg>
-                    </button>
-                    <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionDown_budget(this)">
-                        <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" />
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="18" y1="13" x2="12" y2="19" />
-                            <line x1="6" y1="13" x2="12" y2="19" />
-                        </svg>
-                    </button>
-                </div>
-            `;
-            sectionContainer.appendChild(sectionHeader);
-
-            // Create a table for the items within this section
-            const itemsTable = document.createElement('table');
-            itemsTable.classList.add('items-table', 'table', 'w-full');
-            itemsTable.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>NO.</th>
-                        <th>ITEM</th>
-                        <th>QUANTITY</th>
-                        <th>UNIT</th>
-                        <th>RATE</th>
-                        <th>TOTAL</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            `;
-
-            // Add items to the itemsTable
-            const itemsTableBody = itemsTable.querySelector('tbody');
-            section.items.forEach((item, itemIndex) => {
-                const itemInvoiced = item.quantity !== item.available_quantity;
-                if (itemInvoiced) {
-                    isContractInvoiced = true;
-                }
-
-                const unitOptions = `
-                    <option value="Std." ${item.unit === 'Std' ? 'selected' : ''}>Std</option>
-                    <option value="Psch" ${item.unit === 'Psch' ? 'selected' : ''}>Psch</option>
-                    <option value="Stk" ${item.unit === 'Stk' ? 'selected' : ''}>Stk</option>
-                    <option value="%" ${item.unit === '%' ? 'selected' : ''}>%</option>
-                    <option value="Monat(e)" ${item.unit === 'Monat(e)' ? 'selected' : ''}>Monat(e)</option>
-                    <option value="Tag(e)" ${item.unit === 'Tag(e)' ? 'selected' : ''}>Tag(e)</option>
+                // Create a table for the items within this section
+                const itemsTable = document.createElement('table');
+                itemsTable.classList.add('items-table', 'table', 'w-full');
+                itemsTable.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>NO.</th>
+                            <th>ITEM</th>
+                            <th>QUANTITY</th>
+                            <th>UNIT</th>
+                            <th>RATE</th>
+                            <th>TOTAL</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
                 `;
 
-                const isPsch = item.unit === 'Psch';
-                const quantityValue = isPsch ? '1' : (item.quantity || '');
-                const formattedQuantityValue = formatNumberToGerman(quantityValue);
-                const formattedRate = formatNumberToGerman(item.rate || 0);
+                // Add items to the itemsTable
+                const itemsTableBody = itemsTable.querySelector('tbody');
+                section.items.forEach((item, itemIndex) => {
+                    const itemInvoiced = item.quantity !== item.available_quantity;
+                    if (itemInvoiced) {
+                        isContractInvoiced = true;
+                    }
 
-                const itemRow = document.createElement('tr');
-                itemRow.innerHTML = `
-                    <td>${sectionIndex + 1},${itemIndex + 1}</td>
-                    <td><input type="text" value="${item.Item_name}" class="input input-bordered w-full" ${itemInvoiced ? 'disabled' : ''}></td>
-                    <td>
-                        <input type="text" name="quantity_${item.id}" value="${formattedQuantityValue}" 
-                            class="input input-bordered w-full" 
-                            ${itemInvoiced ? 'disabled' : (isPsch ? 'readonly' : '')} 
-                            onchange="updateTotal(${item.id})">
-                        <input type="hidden" name="original_quantity_${item.id}" value="${quantityValue}">
-                    </td>
-                    <td>
-                        <select name="unit_${item.id}" class="select select-bordered w-full" ${itemInvoiced ? 'disabled' : ''} onchange="handleUnitChange(this, ${item.id})">
-                            ${unitOptions}
-                        </select>
-                    </td>
-                    <td><input type="text" name="rate_${item.id}" value="${formattedRate}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" ${itemInvoiced ? 'disabled' : ''}></td>
-                    <td id="total_${item.id}">${formatNumberToGerman(item.total || 0)}</td>
-                `;
+                    const unitOptions = `
+                        <option value="Std." ${item.unit === 'Std' ? 'selected' : ''}>Std</option>
+                        <option value="Psch" ${item.unit === 'Psch' ? 'selected' : ''}>Psch</option>
+                        <option value="Stk" ${item.unit === 'Stk' ? 'selected' : ''}>Stk</option>
+                        <option value="%" ${item.unit === '%' ? 'selected' : ''}>%</option>
+                        <option value="Monat(e)" ${item.unit === 'Monat(e)' ? 'selected' : ''}>Monat(e)</option>
+                        <option value="Tag(e)" ${item.unit === 'Tag(e)' ? 'selected' : ''}>Tag(e)</option>
+                    `;
 
-                itemsTableBody.appendChild(itemRow);
+                    const isPsch = item.unit === 'Psch';
+                    const quantityValue = isPsch ? '1' : (item.quantity || '');
+                    const formattedQuantityValue = formatNumberToGerman(quantityValue);
+                    const formattedRate = formatNumberToGerman(item.rate || 0);
 
-                // Ensure total updates correctly for percentage-based calculations
-                if (item.unit === '%') {
-                    setTimeout(() => updateTotal(item.id), 100);
+                    const itemRow = document.createElement('tr');
+                    itemRow.innerHTML = `
+                        <td>${sectionIndex + 1},${itemIndex + 1}</td>
+                        <td><input type="text" value="${item.Item_name}" class="input input-bordered w-full" ${itemInvoiced ? 'disabled' : ''}></td>
+                        <td>
+                            <input type="text" name="quantity_${item.id}" value="${formattedQuantityValue}" 
+                                class="input input-bordered w-full" 
+                                ${itemInvoiced ? 'disabled' : (isPsch ? 'readonly' : '')} 
+                                onchange="updateTotal(${item.id})">
+                            <input type="hidden" name="original_quantity_${item.id}" value="${quantityValue}">
+                        </td>
+                        <td>
+                            <select name="unit_${item.id}" class="select select-bordered w-full" ${itemInvoiced ? 'disabled' : ''} onchange="handleUnitChange(this, ${item.id})">
+                                ${unitOptions}
+                            </select>
+                        </td>
+                        <td><input type="text" name="rate_${item.id}" value="${formattedRate}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" ${itemInvoiced ? 'disabled' : ''}></td>
+                        <td id="total_${item.id}">${formatNumberToGerman(item.total || 0)}</td>
+                    `;
 
-                }
+                    itemsTableBody.appendChild(itemRow);
+
+                    // Ensure total updates correctly for percentage-based calculations
+                    if (item.unit === '%') {
+                        setTimeout(() => updateTotal(item.id), 100);
+
+                    }
+                });
+
+                sectionContainer.appendChild(itemsTable); // Append itemsTable to sectionContainer
+                budgetTable.appendChild(sectionContainer); // Append sectionContainer to budgetTable
             });
 
-            sectionContainer.appendChild(itemsTable); // Append itemsTable to sectionContainer
-            budgetTable.appendChild(sectionContainer); // Append sectionContainer to budgetTable
+            // Populate additional fee percentage and disable if any item is invoiced
+            const additionalFeePercentageInput = document.getElementById('additional_fee_percentage');
+            additionalFeePercentageInput.value = data.additional_fee_percentage || 0;
+            if (isContractInvoiced) {
+                additionalFeePercentageInput.readOnly = true;
+                additionalFeePercentageInput.classList.add('border-red-500');
+                nachlass_value.readOnly = true;
+                nachlass_value.classList.add('border-red-500');
+                nachlass_percentage.readOnly = true;
+                nachlass_percentage.classList.add('border-red-500');
+                nachlass_mode_value.readOnly = true;
+            }
+
+
+            document.getElementById('zuschlag_value').value = data.zuschlag_value || 0; // Fetch Zuschlag
+            document.getElementById('nachlass_value').value = data.nachlass_value || 0; 
+            document.getElementById('nachlass_percentage').value = data.nachlass_percentage || 0; 
+
+            console.log('nachlass_value', data.nachlass_value )
+            // Populate VAT percentage and sync select field with hidden input
+            const vatPercentageInput = document.getElementById('id_vat_percentage');
+            const vatPercentageSelect = document.getElementById('vat_percentage_select');
+
+            vatPercentageInput.value = data.vat_percentage || 0;
+            vatPercentageSelect.value = vatPercentageInput.value; // Sync select input with hidden field
+
+            if (isContractInvoiced) {
+                vatPercentageSelect.disabled = true;
+            }
+
+            // Initialize the summary fields
+            updateSummaryFields();
         });
-
-        // Populate additional fee percentage and disable if any item is invoiced
-        const additionalFeePercentageInput = document.getElementById('additional_fee_percentage');
-        additionalFeePercentageInput.value = data.additional_fee_percentage || 0;
-        if (isContractInvoiced) {
-            additionalFeePercentageInput.readOnly = true;
-            additionalFeePercentageInput.classList.add('border-red-500');
-            nachlass_value.readOnly = true;
-            nachlass_value.classList.add('border-red-500');
-            nachlass_percentage.readOnly = true;
-            nachlass_percentage.classList.add('border-red-500');
-            nachlass_mode_value.readOnly = true;
-        }
-
-
-        document.getElementById('zuschlag_value').value = data.zuschlag_value || 0; // Fetch Zuschlag
-        document.getElementById('nachlass_value').value = data.nachlass_value || 0; 
-        document.getElementById('nachlass_percentage').value = data.nachlass_percentage || 0; 
-
-        console.log('nachlass_value', data.nachlass_value )
-        // Populate VAT percentage and sync select field with hidden input
-        const vatPercentageInput = document.getElementById('id_vat_percentage');
-        const vatPercentageSelect = document.getElementById('vat_percentage_select');
-
-        vatPercentageInput.value = data.vat_percentage || 0;
-        vatPercentageSelect.value = vatPercentageInput.value; // Sync select input with hidden field
-
-        if (isContractInvoiced) {
-            vatPercentageSelect.disabled = true;
-        }
-
-        // Initialize the summary fields
-        updateSummaryFields();
-    });
-}
-
-
+    }
 
     function handleUnitChange(selectElement, itemId) {
         const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
@@ -1174,7 +1239,6 @@ function populateBudgetTable(contractId) {
 
         updateTotal(itemId);
     }
-
 
     document.addEventListener('DOMContentLoaded', function() {
         const vatPercentageSelect = document.getElementById('vat_percentage_select');
@@ -1207,7 +1271,6 @@ function populateBudgetTable(contractId) {
         vatPercentageSelect.addEventListener('change', syncVatPercentage);
     });
 
-    
     function populateUsersTable(contractId, projectUsers) {
         fetchData(`/ajax/load-contract-data/?contract_id=${contractId}`, data => {
             const usersTable = document.getElementById('users-table');
@@ -1252,7 +1315,6 @@ function populateBudgetTable(contractId) {
         });
     }
 
-
     function toggleUserCheckboxes(userId, masterCheckbox) {
         const checkboxes = document.querySelectorAll(`.user-checkbox-${userId}`);
         checkboxes.forEach(checkbox => {
@@ -1296,7 +1358,6 @@ function populateBudgetTable(contractId) {
     document.getElementById('add-budget-form').addEventListener('submit', function(event) {
         handleFormSubmission(event, this, this.action);
     });
-
 
     window.openAddUsersModal = function(contractId) {
         document.getElementById('add_users_contract_id').value = contractId;
@@ -1482,7 +1543,29 @@ function populateBudgetTable(contractId) {
 </script>
 
 
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const inputs = document.querySelectorAll('.required-field');
+        const saveButton = document.getElementById('save-settings-button');
 
+        function checkCompletion() {
+            let allHandled = true;
+            inputs.forEach(input => {
+                // Consider empty as "use default", so we allow it
+                if (input.value !== '' && isNaN(parseFloat(input.value))) {
+                    allHandled = false;
+                }
+            });
+            saveButton.disabled = !allHandled;
+        }
+
+        inputs.forEach(input => {
+            input.addEventListener('input', checkCompletion);
+        });
+
+        checkCompletion(); // Initial check
+    });
+</script>
 
 
 {% endblock %}

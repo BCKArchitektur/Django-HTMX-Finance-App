@@ -84,7 +84,9 @@
                 
                 <p><strong>Interpolated Oberer Honorarsatz:</strong> <span id="interpolatedUpper">-</span> €</p>
 
-                <p><strong>Grundhonorar (100%):</strong> <span id="grundhonorar">-</span> €</p>
+                <p><strong>Zuschlag:</strong> <span id="zuschlagAmount">-</span> €</p>
+
+                <p><strong>Grundhonorar(100%) + Zushlag:</strong> <span id="grundhonorar">-</span> €</p>
 
                 <div class="divider"></div>
 
@@ -93,10 +95,9 @@
 
                 <div class="divider"></div>
 
-                <h4 class="font-bold mt-4">Total Fees</h4>
+                <!-- <h4 class="font-bold mt-4">Total Fees</h4> -->
                 <p><strong>Honorarsatz Factor:</strong> <span id="honorarsatzFactor">-</span></p>
                 <p><strong>NebenKosten:</strong> <span id="nebenKostenAmount">-</span> €</p>
-                <p><strong>Zuschlag:</strong> <span id="zuschlagAmount">-</span> €</p>
                 <p><strong>Net Honorarium:</strong> <span id="netHonor">-</span> €</p>
                 <p><strong>VAT:</strong> <span id="vatAmount">-</span> €</p>
 
@@ -349,9 +350,9 @@ function calculateHOAI() {
             return;
         }
 
-        totalPercentage = totalPercentage / 100; // Normalize
+        // totalPercentage = totalPercentage / 100; // Normalize
 
-        let adjustedNetHonor = netHonor * totalPercentage;
+        let adjustedNetHonor = netHonor ;
 
         let zuschlag = (adjustedNetHonor * zuschlagPercentage) / 100;
         adjustedNetHonor+=zuschlag

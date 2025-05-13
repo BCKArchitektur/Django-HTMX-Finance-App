@@ -1,0 +1,17 @@
+# This is a Revit shared parameter file.
+# Do not edit manually.
+*META    VERSION    MINVERSION
+META    2    1
+*GROUP    ID    NAME
+GROUP    1    Project Information
+*PARAM    GUID    NAME    DATATYPE    DATACATEGORY    GROUP    VISIBLE    DESCRIPTION    USERMODIFIABLE    HIDEWHENNOVALUE
+PARAM    fb44c528-1725-4026-ac58-85c9737fc5bd    0    TEXT        1    1        1    0
+PARAM    34f07e6d-68c8-439a-afb4-cfc94fcdba1e    14-016    TEXT        1    1        1    0
+PARAM    f6e259c4-654b-4809-adae-8dbc39ea9654    Lindenstraße 51/ Brandenburger Str. 15    TEXT        1    1        1    0
+PARAM    88925a22-6211-4003-aab7-3cb4c99b9012    Chris Konrad    TEXT        1    1        1    0
+PARAM    f07fb4ed-b57d-4c05-a82e-08525839c28b    ckonrad@egeriagroup.com    TEXT        1    1        1    0
+PARAM    3b988eda-1da9-476a-ae86-b11a85fa9a4b    Default Comment    TEXT        1    1        1    0
+PARAM    3cdc3655-bc34-4a1c-a10c-8d8eb5e1b672    BCK Architecture    TEXT        1    1        1    0
+PARAM    02e3f699-2479-4faf-90bf-e0d2ec0f8674    LIN51 Lindenstr.    TEXT        1    1        1    0
+PARAM    fe7db03d-42a9-4b56-96f8-2e5e7b88a96f    14-016    TEXT        1    1        1    0
+PARAM    dd99d913-fd27-4542-99fc-133f86f56cfa    Architectural Firm    TEXT        1    1        1    0

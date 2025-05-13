@@ -14,3 +14,7 @@ def german_number(value):
         return f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     except (ValueError, TypeError):
         return value  # Return original if conversion fails
+
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key) if dictionary else ''

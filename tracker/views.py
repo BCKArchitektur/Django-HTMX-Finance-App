@@ -36,6 +36,7 @@ from django.http import HttpResponseRedirect
 from django.http import JsonResponse, Http404  # Import Http404
 from decimal import Decimal  # Import Decimal for precision handling
 from datetime import datetime
+from django.db.models import JSONField
 
 @login_required
 def toggle_dark_mode(request):
@@ -110,7 +111,6 @@ def load_tasks(request):
 
 @login_required
 def delete_log(request, log_id):
-
     
     # Force clean up of the log_id to remove commas
     try:
@@ -129,7 +129,6 @@ def delete_log(request, log_id):
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
     else:
         return JsonResponse({'success': False}, status=400)
-
 
 
 @login_required
@@ -183,8 +182,6 @@ def delete_client(request, client_id):
         client.delete()
         return JsonResponse({'status': 'success'})
     return HttpResponseBadRequest("Invalid request")
-
-
 
 
 @login_required
@@ -318,8 +315,6 @@ def handle_project_form(request, project):
     return redirect('edit_project', project_id=project.id)
 
 
-
-
 import json
 from django.shortcuts import redirect
 from django.contrib import messages
@@ -406,14 +401,14 @@ def handle_existing_contract_form(request, project):
                 section.order = section_order  
                 section.save()
             else:
-                print(f"⚠️ Section ID {section_id} provided, but no section found! Creating new.")
+                print(f"Section ID {section_id} provided, but no section found! Creating new.")
                 section = Section.objects.create(
                     section_name=section_name,
                     section_billed_hourly=section_billed_hourly,
                     order=section_order
                 )
         else:
-            print(f"🟡 Creating a new section: {section_name}")
+            print(f"-Creating a new section: {section_name}")
             section = Section.objects.create(
                 section_name=section_name,
                 section_billed_hourly=section_billed_hourly,
@@ -532,7 +527,7 @@ def parse_german_number(number_string):
     try:
         number_string = str(number_string)
         normalized_number = number_string.replace('.', '').replace(',', '.')
-        return Decimal(normalized_number)  # ✅ Now correctly returns Decimal
+        return Decimal(normalized_number)  
     except (ValueError, AttributeError):
         return Decimal(0)
 
@@ -545,7 +540,7 @@ def assign_budget_to_contract(contract, hoai_data):
     If it's an LP section, it assumes only one item inside.
     """
     grundhonorar_raw = hoai_data.get("grundhonorar", "0")
-    grundhonorar = parse_german_number(grundhonorar_raw)  # ✅ Convert to Decimal
+    grundhonorar = parse_german_number(grundhonorar_raw) 
 
     print(f"🔹 Assigning Budget - Grundhonorar: {grundhonorar}")
 
@@ -554,35 +549,35 @@ def assign_budget_to_contract(contract, hoai_data):
     for section in contract.section.all():
         section_name = section.section_name.strip()
 
-        # ✅ Extract LP key from section name
+        # Extract LP key from section name
         lp_match = re.search(r"LP(\d+)", section_name, re.IGNORECASE)
 
         if lp_match:
             lp_key = f"lp{lp_match.group(1)}"  # Convert to format "lp1", "lp2"
             
             if lp_key in hoai_data.get("lp_values", {}):
-                lp_percentage = Decimal(hoai_data["lp_values"][lp_key])  # ✅ Convert float → Decimal
+                lp_percentage = Decimal(hoai_data["lp_values"][lp_key]) 
                 
                 # Process all items in the section
                 items = list(section.Item.all())
                 
                 if items:  # Ensure there are items
                     if len(items) == 1:
-                        item = items[0]  # Only one item in LP section
+                        item = items[0]  
                     else:
-                        print(f"⚠️ Multiple items found in LP section '{section_name}', processing all.")
+                        print(f"!! Multiple items found in LP section !!'{section_name}', processing all.")
 
                     for item in items:
-                        # ✅ Assign Budget Values
+                        # Assign Budget Values
                         item.quantity = lp_percentage
                         item.unit = "%"  
                         item.rate = grundhonorar
-                        item.total = (lp_percentage / Decimal(100)) * grundhonorar  # ✅ Now both are Decimal
+                        item.total = (lp_percentage / Decimal(100)) * grundhonorar  
                         item.save()
 
-                        print(f"✅ Budget Assigned: {item.Item_name} | Qty: {lp_percentage}% | Rate: {grundhonorar} | Total: {item.total}")
+                        print(f"Budget Assigned: {item.Item_name} | Qty: {lp_percentage}% | Rate: {grundhonorar} | Total: {item.total}")
 
-    print("🟢 Budget assignment completed.")
+    print("-Budget assignment completed.")
 
 
 
@@ -617,7 +612,7 @@ def handle_new_contract_form(request, project):
   
     zuschlag_value = hoai_data.get("zuschlag", 0)
 
-    # ✅ Create Contract object
+    # Create Contract object
     contract = Contract.objects.create(
         contract_name=contract_name,
         contract_no=contract_no,
@@ -652,13 +647,14 @@ def handle_new_contract_form(request, project):
                     Item_name = item_data['Item_name']
                     description = item_data.get('description', '')
 
-                    item = Item.objects.create(
+                    item = Item(
                         Item_name=Item_name,
                         description=description
                     )
-                    print("Processed item:", Item_name)  # Debugging
-
+                    item.set_project_context(project)  
+                    item.save()
                     item.users.set(user_ids)
+
 
                     for task_data in item_data.get('tasks', []):
                         task_name = task_data['task_name']
@@ -676,7 +672,7 @@ def handle_new_contract_form(request, project):
 
             messages.success(request, "New contract added successfully.")
 
-            # ✅ Assign Budget if HOAI Mode is Enabled
+            # Assign Budget if HOAI Mode is Enabled
             if hoai_data:
                 assign_budget_to_contract(contract, hoai_data)
 
@@ -687,11 +683,11 @@ def handle_new_contract_form(request, project):
     else:
         messages.error(request, "No contract JSON data provided.")
 
-    # ✅ Return JSON if AJAX request
+    # Return JSON if AJAX request
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({"contract_id": contract.id})
 
-    # ✅ Otherwise, redirect for normal form submission
+    # Otherwise, redirect for normal form submission
     return redirect('edit_project', project_id=project.id)
 
 
@@ -1018,6 +1014,11 @@ def load_contract_data(request):
 
             available_quantity = item.quantity - previous_provided_quantity
 
+            # Calculate hours_logged from Logs model
+            hours_logged = Logs.objects.filter(log_Item=item).aggregate(
+                total_hours=Sum('log_time')
+            )['total_hours'] or 0
+
             item_data.append({
                 'order': getattr(item, 'order', 0),
                 'id': item.id,
@@ -1025,12 +1026,13 @@ def load_contract_data(request):
                 'description': item.description,
                 'quantity': item.quantity,
                 'available_quantity': available_quantity,
-                'previous_provided_quantity': previous_provided_quantity,  # ✅ New field
+                'previous_provided_quantity': previous_provided_quantity,  
                 'unit': item.unit,
                 'rate': item.rate,
                 'total': item.total,
                 'users': list(item.users.values_list('id', flat=True)),
                 'tasks': list(item.tasks.values('id', 'task_name')),
+                'hours_logged': hours_logged,  
             })
 
         section_data.append({
@@ -1055,8 +1057,8 @@ def load_contract_data(request):
         'additional_fee_percentage': contract.additional_fee_percentage,
         'vat_percentage': contract.vat_percentage,
         'invoices_exist': invoices_exist,
-        'is_cumulative': is_cumulative,  # ✅ Include invoice mode
-        'latest_provided_quantities': latest_provided_quantities,  # ✅ Include previous provided quantities
+        'is_cumulative': is_cumulative, 
+        'latest_provided_quantities': latest_provided_quantities,
         'hoai_data': hoai_data,
         'zuschlag_value': zuschlag_value,
         'nachlass_value' : nachlass_value,
@@ -1064,10 +1066,6 @@ def load_contract_data(request):
     }
 
     return JsonResponse(contract_data)
-
-
-
-
 
 
 def check_task_name(request):
@@ -1107,9 +1105,6 @@ def check_contract_name(request):
     return JsonResponse(data)
 
 
-
-
-
 @csrf_exempt
 @login_required
 def add_users(request):
@@ -1142,10 +1137,6 @@ def add_users(request):
         return JsonResponse({'status': 'success'})
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
-
-
-
-
 
 
 @csrf_exempt
@@ -1211,8 +1202,6 @@ def add_budget(request):
         return JsonResponse({'status': 'success'})
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
-
-
 
 
 def load_item_users(request):
@@ -1291,11 +1280,8 @@ def set_bullet(paragraph):
     ind.set(qn("w:hanging"), "360")  # Hanging indent ensures alignment of wrapped text
     pPr.append(ind)
 
-
-
 import requests
 from decimal import Decimal
-
 
 def extract_hoai_details(contract):
     """
@@ -1334,7 +1320,6 @@ def extract_hoai_details(contract):
     upper_bound_von = hoai_interpolation.get("upper_bound_von", "0")
     lower_bound_bis = hoai_interpolation.get("lower_bound_bis", "0")
     upper_bound_bis = hoai_interpolation.get("upper_bound_bis", "0")
-
 
     return {
         "is_hoai_contract": is_hoai_contract,
@@ -1558,7 +1543,7 @@ def generate_word_document(request, contract_id):
     additional_fee_percentage = Decimal(contract.additional_fee_percentage)
 
     if contract.hoai_data:
-        additional_fee_value = (grundhonorar * additional_fee_percentage) / Decimal(100)
+        additional_fee_value = (sum_of_all_lps * additional_fee_percentage) / Decimal(100)
     else:   
         additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
 
@@ -1672,8 +1657,6 @@ def format_german_number(number):
     locale.setlocale(locale.LC_NUMERIC, 'de_DE.UTF-8')  # Set German locale
     return locale.format_string("%.2f", number, grouping=True).replace(',', 'X').replace('.', ',').replace('X', '.')
 
-
-
 from django.contrib import messages
 
 @login_required
@@ -1713,9 +1696,6 @@ def create_invoice(request, project_id):
         'vat_percentage': vat_percentage
     })
 
-
-
-
 def calculate_available_quantity(project, item):
     all_invoices = Invoice.objects.filter(project=project)
     total_quantity_invoiced = sum(
@@ -1723,7 +1703,6 @@ def calculate_available_quantity(project, item):
         for invoice in all_invoices
     )
     return item.quantity - total_quantity_invoiced
-
 
 # View for deleting an invoice
 @login_required
@@ -1735,9 +1714,6 @@ def delete_invoice(request, invoice_id):
     # Redirect to the edit project page with the invoices tab open
     return redirect(reverse('edit_project', args=[project_id]) + '?tab=invoices')
 
-
-
-
 @login_required
 def view_invoice(request, invoice_id):
     try:
@@ -1745,7 +1721,7 @@ def view_invoice(request, invoice_id):
         project = invoice.project
         contract = invoice.contract
 
-        # Assume provided_quantities is a JSON string field in the Invoice model
+        # Parse provided quantities from the invoice
         try:
             provided_quantities_data = invoice.provided_quantities
         except ValueError as e:
@@ -1754,12 +1730,10 @@ def view_invoice(request, invoice_id):
 
         provided_quantities = []
         sum_of_items = Decimal('0.00')
+
         for item_id, details in provided_quantities_data.items():
             try:
-                # Fetch the item using the item ID
                 item = Item.objects.get(id=item_id)
-                
-                # Find the section to which this item belongs within the contract
                 section = Section.objects.filter(Item=item, contract=contract).first()
                 section_name = section.section_name if section else "Unknown Section"
 
@@ -1792,14 +1766,15 @@ def view_invoice(request, invoice_id):
                     'total': str(total),
                 })
 
-        # Calculate the additional fee, invoice net, VAT, and gross invoice values
+        # Base financial calculations
         additional_fee_percentage = Decimal(contract.additional_fee_percentage or 0)
-        vat_percentage = Decimal(contract.vat_percentage ) 
+        vat_percentage = Decimal(contract.vat_percentage or 0)
+        nachlass_percentage = Decimal(contract.nachlass_percentage or 0)
+
         additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
         invoice_net = sum_of_items + additional_fee_value
         tax_value = (invoice_net * vat_percentage) / Decimal(100)
         invoice_gross = invoice_net + tax_value
-        nachlass_percentage = Decimal(contract.nachlass_percentage or 0)
 
         data = {
             'project_name': project.project_name,
@@ -1809,11 +1784,39 @@ def view_invoice(request, invoice_id):
             'invoice_net': str(invoice_net),
             'tax_value': str(tax_value),
             'invoice_gross': str(invoice_gross),
-            'vat_percentage': str(vat_percentage), 
-            'amount_received':invoice.amount_received,
+            'vat_percentage': str(vat_percentage),
+            'amount_received': invoice.amount_received,
             'date_of_payment': invoice.date_of_payment.isoformat() if invoice.date_of_payment else None,
-            'nachlass_percentage':nachlass_percentage
+            'nachlass_percentage': str(nachlass_percentage)
         }
+
+        # 🧮 Adjust for cumulative invoices
+        if invoice.invoice_type in ['AR', 'SR', 'ZR']:
+            previous_invoices = Invoice.objects.filter(
+                project=project,
+                contract=contract,
+                created_at__lt=invoice.created_at,
+                invoice_type__in=['AR', 'SR', 'ZR']
+            )
+
+            total_previous_net = Decimal('0.00')
+            total_previous_tax = Decimal('0.00')
+
+            for prev in previous_invoices:
+                prev_net = Decimal(prev.invoice_net)
+                prev_tax = (prev_net * vat_percentage) / Decimal(100)
+                total_previous_net += prev_net
+                total_previous_tax += prev_tax
+
+            current_invoice_net = invoice_net - total_previous_net
+            current_invoice_tax = tax_value - total_previous_tax
+            current_invoice_gross = current_invoice_net + current_invoice_tax
+
+            data.update({
+                'current_invoice_net': str(current_invoice_net),
+                'current_invoice_tax': str(current_invoice_tax),
+                'current_invoice_gross': str(current_invoice_gross),
+            })
 
         return JsonResponse(data)
 
@@ -1824,8 +1827,7 @@ def view_invoice(request, invoice_id):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
-
-
+        
 from django.utils.dateparse import parse_date
 import pprint
 
@@ -1839,11 +1841,10 @@ def download_invoice(request, invoice_id):
     # Get the template name and date range from the request
     template_name = request.GET.get('invoice_template_name', 'inv_BCK_De.docx')
     print(f"Template name from modal: {template_name}")
-    
+
     from_date_str = request.GET.get('from_date')
     to_date_str = request.GET.get('to_date')
 
-    # Parse the date strings into date objects
     from_date = parse_date(from_date_str) if from_date_str else None
     to_date = parse_date(to_date_str) if to_date_str else None
 
@@ -1856,15 +1857,18 @@ def download_invoice(request, invoice_id):
     zuschlag_amount = float(parse_german_number(hoai_details["zuschlag_amount"]) if hoai_details["zuschlag_amount"] != "0" else Decimal(0))
     grundhonorar_without_zuschlag = float(grundhonorar) - zuschlag_amount
 
-    # Initialize sections
-    contract_sections = []
+    # Build section order mapping from contract
+    section_order = {
+        section.section_name: idx + 1
+        for idx, section in enumerate(contract.section.order_by('order'))
+    }
+
+    # Initialize section storage
+    contract_sections_dict = {}
     lp_sections = []
     sum_of_items = Decimal('0.00')
     sum_of_all_lps = Decimal('0.00')
-    section_counter = 1
-    item_counter = 1  # Initialize item counter
 
-    
     # Process provided quantities
     provided_quantities = invoice.provided_quantities
     for item_id, details in provided_quantities.items():
@@ -1876,15 +1880,15 @@ def download_invoice(request, invoice_id):
         unit = item.unit
         if is_english_template:
             unit = {'Psch': 'Lumpsum', 'Stk': 'Piece', 'Std': 'Hour'}.get(unit, unit)
-        
+
         lp_match = re.search(r"LP(\d+)", section_name, re.IGNORECASE)
         if lp_match:
-            item_counter = 1 
+            section_serial = section_order.get(section_name, 0)
             lp_key = f"lp{lp_match.group(1)}"
             lp_value = hoai_details["lp_values"].get(lp_key, "0")
             actual_lp_value = hoai_details["lp_breakdown_actual"].get(lp_key, "0")
             lp_percentage = Decimal(lp_value) if lp_value != "0" else Decimal(0)
-            lp_amount = (details['quantity'] / Decimal(100)) * grundhonorar
+            lp_amount = (Decimal(details['quantity']) / Decimal(100)) * grundhonorar
             sum_of_all_lps += lp_amount
 
             lp_sections.append({
@@ -1894,73 +1898,86 @@ def download_invoice(request, invoice_id):
                 'actual_lp_value': f"{actual_lp_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'Item': [{
                     'Item_name': item.Item_name,
-                    'Item_serial': f"{section_counter}.{item_counter}",
+                    'Item_serial': f"{section_serial}.1",
                     'unit': unit,
                     'rate': f"{Decimal(details['rate']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                     'quantity': details['quantity'],
                     'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
                 }]
             })
-            item_counter += 1  # Increment item counter
         else:
-            item_counter = 1 
-            contract_sections.append({
-                'section_serial': section_counter,
-                'section_name': section_name,
-                'net_section': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-                'Item': [{
-                    'Item_name': item.Item_name,
-                    'Item_serial': f"{section_counter}.{item_counter}",
-                    'unit': unit,
-                    'rate': f"{Decimal(details['rate']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-                    'quantity': details['quantity'],
-                    'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-                }]
+            section_serial = section_order.get(section_name, 0)
+            if section_name not in contract_sections_dict:
+                contract_sections_dict[section_name] = {
+                    'section_serial': section_serial,
+                    'section_name': section_name,
+                    'net_section': Decimal('0.00'),
+                    'Item': []
+                }
+
+            section_data = contract_sections_dict[section_name]
+            item_serial = f"{section_data['section_serial']}.{len(section_data['Item']) + 1}"
+
+            section_data['Item'].append({
+                'Item_name': item.Item_name,
+                'Item_serial': item_serial,
+                'unit': unit,
+                'rate': f"{Decimal(details['rate']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                'quantity': f"{Decimal(details['quantity']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
             })
-            item_counter += 1  # Increment item counter
+
+            section_data['net_section'] += item_total
             sum_of_items += item_total
-            section_counter += 1
+
+    # Sort and finalize contract sections
+    contract_sections = []
+    for section_name in sorted(contract_sections_dict.keys(), key=lambda n: section_order.get(n, 999)):
+        section = contract_sections_dict[section_name]
+        section['net_section'] = f"{section['net_section']:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        contract_sections.append(section)
 
     # Calculate totals
     additional_fee_percentage = Decimal(contract.additional_fee_percentage)
-    print(contract.additional_fee_percentage)
-    print('additional fee percentage',additional_fee_percentage)
+
+
     if contract.hoai_data:
         additional_fee_value = (sum_of_all_lps * additional_fee_percentage) / Decimal(100)
     else:   
         additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
 
-    invoice_net = sum_of_items + sum_of_all_lps + additional_fee_value
+    nachlass_percentage = Decimal(contract.nachlass_percentage or 0)
+
+    if contract.hoai_data:
+        nachlass_value = (sum_of_all_lps * nachlass_percentage) / Decimal(100)
+    else:   
+        nachlass_value = (sum_of_items * nachlass_percentage) / Decimal(100)
+
+    invoice_net = sum_of_items + sum_of_all_lps + additional_fee_value 
     vat_percentage = Decimal(contract.vat_percentage) / Decimal(100)
     vat_percentage_display = Decimal(contract.vat_percentage)
     tax_value = invoice_net * vat_percentage
     invoice_gross = invoice_net + tax_value
 
-
-    # Fetch all previous invoices for the same project and contract, based on created_at comparison
+    # Calculate cumulative invoice adjustments
     previous_invoices = Invoice.objects.filter(
         project=project,
-        contract=contract,  # Filter by contract as well
-        created_at__lt=invoice.created_at  # Only include invoices created before the current invoice
+        contract=contract,
+        created_at__lt=invoice.created_at
     ).order_by('created_at')
 
-
-    # Prepare previous invoices data and calculate totals
     total_invoice_gross = Decimal('0.00')
-    total_invoice_net = Decimal('0.00') 
+    total_invoice_net = Decimal('0.00')
     total_invoice_tax = Decimal('0.00')
     total_amount_paid = Decimal('0.00')
 
     previous_invoices_data = []
-
     for inv in previous_invoices:
-        if inv.invoice_type not in ['AR', 'SR']:
-            continue  # Only consider cumulative invoices
-
+        if inv.invoice_type not in ['AR', 'SR', 'ZR']:
+            continue
         inv_net = Decimal(inv.invoice_net)
         inv_tax = inv_net * vat_percentage
         inv_gross = inv_net + inv_tax
-
         inv_paid = Decimal(inv.amount_received)
 
         total_invoice_gross += inv_gross
@@ -1979,20 +1996,14 @@ def download_invoice(request, invoice_id):
             'amount_paid': f"{inv_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         })
 
-    # total_invoice_tax = total_invoice_gross-total_invoice_net
-
-    current_invoice_net = invoice_net-total_invoice_net
-    current_invoice_tax = current_invoice_net*vat_percentage
-
-    current_invoice_gross = current_invoice_net+current_invoice_tax
-
-    # Calculate the amount to be paid (excluding the current invoice's amount received)
+    current_invoice_net = invoice_net - total_invoice_net - nachlass_value
+    current_invoice_tax = current_invoice_net * vat_percentage
+    current_invoice_gross = current_invoice_net + current_invoice_tax
     invoice_tobepaid = total_invoice_gross - total_amount_paid
-
-    # Count how many previous invoices are Abschlagsrechnung (AR)
     previous_ar_count = previous_invoices.filter(invoice_type='AR').count()
 
-    # Prepare the context for the template
+
+    # Prepare context for template rendering
     context = {
         'contract_name': contract.contract_name,
         'contract_no' : contract.contract_no,
@@ -2006,9 +2017,12 @@ def download_invoice(request, invoice_id):
         
         'invoice_title': invoice.title,
 
+        "additional_fee_percentage":additional_fee_percentage,
+        "additional_fee_value" :  f"{additional_fee_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+
         'contract_sections': contract_sections,  # Organized by section
         'sum_of_items': f"{sum_of_items:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
-        'sum_of_all_lps': f"{sum_of_all_lps:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  # ✅ LP sum
+        'sum_of_all_lps': f"{sum_of_all_lps:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
         
         'invoice_net': f"{invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
         'tax': f"{tax_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
@@ -2056,48 +2070,23 @@ def download_invoice(request, invoice_id):
         'client_firm': client.firm_name
     }
 
-    # Only include if the current invoice is AR
-    if invoice.invoice_type == 'AR':
+    if nachlass_value != 0:
         context.update({
-            'current_ar_number': previous_ar_count + 1 if previous_ar_count > 0 else ''
+            'nachlass_value' : f"{nachlass_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'nachlass_percentage' : f"{nachlass_percentage:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         })
-
-    if additional_fee_percentage > 0:
-        context.update({
-            'additional_fee_percentage': f"{additional_fee_percentage:.2f}",
-            'additional_fee_value': f"{additional_fee_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-        })
-
-    if lp_sections:
-        context['lp_sections'] = lp_sections
-
-    import pprint
-    pprint.pprint(context)
 
     # Load and render template
     template_path = os.path.join(r'C:\Users\BCK-CustomApp\Documents\GitHub\Django-HTMX-Finance-App\templates\invoices', template_name)
     doc = DocxTemplate(template_path)
     doc.render(context)
-
-
-    # Save and return the document
+    print(context)
+    # Build HTTP response with correct file name
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-   
-    # Extract the first part of the project name (assumes it's separated by spaces)
-    project_short_name = project.project_name.split()[0]  # Gets the first word
-
-    # Determine company identifier
+    project_short_name = project.project_name.split()[0]
     company_identifier = "BCK" if "BCK" in template_name else "KOST"
-
-    # Build the new filename
     new_filename = f"{invoice.title} {company_identifier} {project_short_name} {invoice.invoice_type} {contract.contract_name}.docx"
-
-    # Replace spaces and special characters in filename
-    # new_filename = new_filename.replace(" ", "_").replace("/", "-")
-
-    # Update response with new filename
     response['Content-Disposition'] = f'attachment; filename={new_filename}'
-
     doc.save(response)
 
     return response
@@ -2149,8 +2138,6 @@ def get_new_contract_number(request, project_id):
 
     except Project.DoesNotExist:
         return JsonResponse({"error": "Project not found."}, status=404)
-
-
 
 from bs4 import BeautifulSoup
 
@@ -2220,8 +2207,7 @@ class HOAICalculationView(APIView):
     def post(self, request, *args, **kwargs):
         profile_id = request.data.get('service_profile_id')
         cost_input = float(request.data.get('chargeable_costs'))
-        fee_zone = request.data.get('fee_zone')  # "I", "II", "III", etc.
-
+        fee_zone = request.data.get('fee_zone') 
         profile = get_object_or_404(ServiceProfile, id=profile_id)
         excel_path = profile.excel_file.path
 
@@ -2324,3 +2310,43 @@ def get_first_invoice_mode(request):
                 'is_cumulative': first_invoice.is_cumulative
             })
     return JsonResponse({'first_invoice_exists': False})
+
+# views.py - Add view to save project hourly rates
+from django.views.decorators.http import require_POST
+from django.shortcuts import redirect
+
+@require_POST
+def update_project_settings(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    hourly_fields = [
+        'executive_management_rate', 'specialist_planner_rate', 'project_management_rate',
+        'construction_supervision_rate', 'computational_architect_rate', 'architect_rate',
+        'construction_technician_rate', 'draftsman_rate'
+    ]
+    updated_rates = {}
+    for field in hourly_fields:
+        value = request.POST.get(field)
+        if value:
+            try:
+                updated_rates[field] = float(value)
+            except ValueError:
+                continue
+
+    project.hourly_rates_override = updated_rates
+    project.save()
+    return redirect('edit_project', project_id=project.id)
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+
+@login_required
+def reset_project_hourly_rates(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    print('reset project hours')
+    print(project)
+    if project.hourly_rates_override:
+        project.hourly_rates_override = {}
+        project.save()
+        messages.success(request, 'Die benutzerdefinierten Stundensätze wurden zurückgesetzt.')
+
+    return redirect('edit_project', project_id=project.id)
