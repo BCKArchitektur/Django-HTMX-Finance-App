@@ -761,24 +761,147 @@
         const totalField = document.getElementById(`total_${itemId}`);
         const unitSelect = document.querySelector(`select[name="unit_${itemId}"]`);
 
-        // Parse the quantity and rate inputs
+        // Guard clause to avoid error in invoice modal
+        if (!quantityInput || !rateInput || !unitSelect || !totalField) {
+            // If one of the expected fields is missing, assume this is not a budget context
+            return;
+        }
+
         const quantityValue = parseGermanNumber(quantityInput.value) || 0;
         const rateValue = parseGermanNumber(rateInput.value) || 0;
 
         let totalValue;
 
         if (unitSelect.value === "%") {
-            totalValue = (quantityValue / 100) * rateValue; // Percentage-based calculation
+            totalValue = (quantityValue / 100) * rateValue;
         } else {
-            totalValue = quantityValue * rateValue; // Default multiplication
+            totalValue = quantityValue * rateValue;
         }
 
-        // Update the total field with the formatted result
         totalField.textContent = formatNumberToGerman(totalValue);
 
-        // Update the summary fields
         updateSummaryFields();
     }
+
+    function updateTotalBudget(itemId) {
+        console.log('Updating total budget for item:', itemId);
+        const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
+        const rateInput = document.querySelector(`input[name="rate_${itemId}"]`);
+        const unitSelect = document.querySelector(`select[name="unit_${itemId}"]`);
+        const totalField = document.getElementById(`total_${itemId}`);
+
+        if (!quantityInput || !rateInput || !unitSelect || !totalField) return;
+
+        const quantityValue = parseGermanNumber(quantityInput.value) || 0;
+        const rateValue = parseGermanNumber(rateInput.value) || 0;
+
+        let totalValue = unitSelect.value === "%" 
+            ? (quantityValue / 100) * rateValue 
+            : quantityValue * rateValue;
+
+        totalField.textContent = formatNumberToGerman(totalValue);
+
+        updateSummaryFields(); // or whatever budget summary method
+    }
+
+    function updateTotalInvoice(itemId) {
+        console.log('Updating total invoice for item:', itemId);
+        const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
+        const totalField = document.getElementById(`total_${itemId}`);
+
+        if (!quantityInput || !totalField) return;
+
+        const quantityValue = parseGermanNumber(quantityInput.value) || 0;
+        const rate = parseFloat(quantityInput.dataset.itemRate) || 0;
+        const unit = quantityInput.dataset.itemUnit;
+
+        let totalValue = unit === "%" 
+            ? (quantityValue / 100) * rate 
+            : quantityValue * rate;
+
+        totalField.textContent = totalValue.toFixed(2);
+
+        calculateInvoiceNet(); // or your invoice-specific method
+    }
+
+
+    function calculateInvoiceNet() {
+        console.log('Calculating invoice net...');
+        let sumOfItems = 0;
+        let nachlassApplicableSum = 0;
+
+        document.querySelectorAll('input[name^="quantity_"]').forEach(input => {
+            const itemId = input.dataset.itemId;
+            const row = input.closest('tr');
+
+            if (!itemId || !row) return;
+
+            const totalField = document.getElementById(`total_${itemId}`);
+            const checkbox = row.querySelector(`input[name="select_${itemId}"]`);
+
+            if (!checkbox || !checkbox.checked) {
+                if (totalField) totalField.textContent = '0.00';
+                return;
+            }
+
+            const quantity = parseFloat(input.value.replace(',', '.')) || 0;
+            const rate = parseFloat(input.dataset.itemRate) || 0;
+            const unit = input.dataset.itemUnit;
+            let total = 0;
+
+            if (unit === "%") {
+                total = (quantity / 100) * rate;
+            } else {
+                total = quantity * rate;
+            }
+
+            sumOfItems += total;
+
+            const sectionMeta = row?.closest('tbody')?.querySelectorAll('.section-metadata');
+            let excludeNachlass = false;
+            sectionMeta?.forEach(meta => {
+                const sectionIndex = meta.closest('tr').rowIndex;
+                const rowIndex = row.rowIndex;
+                if (sectionIndex < rowIndex) {
+                    excludeNachlass = meta.dataset.excludeNachlass === "true";
+                }
+            });
+
+
+            if (!excludeNachlass) {
+                nachlassApplicableSum += total;
+            }
+
+            if (totalField) {
+                totalField.textContent = total.toFixed(2);
+            }
+        });
+
+        document.getElementById('id_sum_of_items').value = sumOfItems.toFixed(2);
+
+        const additionalFeePercentage = parseFloat(document.getElementById('id_additional_fee_percentage').value) || 0;
+        const vatPercentage = parseFloat(document.getElementById('vat_percentage').value) || 0;
+        const additionalFee = (sumOfItems * additionalFeePercentage) / 100;
+
+        const nachlassPercentage = parseFloat(document.getElementById('id_nachlass_percentage')?.value) || 0;
+        const nachlass = (nachlassApplicableSum * nachlassPercentage) / 100;
+
+        const nachlassValueInput = document.getElementById('id_nachlass_value');
+        if (nachlassValueInput) {
+            nachlassValueInput.value = nachlass.toFixed(2);
+        }
+
+        const invoiceNet = sumOfItems + additionalFee - nachlass;
+        const vat = (invoiceNet * vatPercentage) / 100;
+        const grossInvoice = invoiceNet + vat;
+
+        document.getElementById('id_additional_fee').value = additionalFee.toFixed(2);
+        document.getElementById('id_invoice_net').value = invoiceNet.toFixed(2);
+        document.getElementById('id_vat').value = vat.toFixed(2);
+        document.getElementById('id_gross_invoice').value = grossInvoice.toFixed(2);
+    }
+
+
 
     // Helper function to parse German-style number inputs
     function parseGermanNumber(numberString) {
@@ -821,15 +944,34 @@
         });
     });
 
+    document.addEventListener('change', function (event) {
+        if (event.target.classList.contains('exclude-nachlass-checkbox')) {
+            updateSummaryFields();
+        }
+    });
+
+
     function updateSummaryFields() {
         console.log('Updating summary fields...');
 
         const itemTotals = document.querySelectorAll('[id^="total_"]');
         let sumOfItems = 0;
+        let nachlassApplicableSum = 0;
         
         itemTotals.forEach(totalField => {
-            // Parse the German formatted total field value
-            sumOfItems += parseGermanNumber(totalField.textContent) || 0;
+            const row = totalField.closest('tr');
+            const sectionContainer = row.closest('.section-container');
+            const checkbox = sectionContainer.querySelector('.exclude-nachlass-checkbox');
+
+            const itemTotal = parseGermanNumber(totalField.textContent) || 0;
+
+            // Always add to full sum
+            sumOfItems += itemTotal;
+
+            // Add to nachlass sum only if not excluded
+            if (!checkbox || !checkbox.checked) {
+                nachlassApplicableSum += itemTotal;
+            }
         });
 
         console.log('Sum of items:', sumOfItems);
@@ -853,12 +995,12 @@
         let nachlassValue = parseFloat(nachlassValueInput.value.replace(',', '.')) || 0;
         let nachlassPercentage = parseFloat(nachlassPercentageInput.value.replace(',', '.')) || 0;
 
-        // Logic based on selected mode
+        // But define `nachlassValue` properly:
         if (mode === 'percentage') {
-            nachlassValue = (sumOfItems * nachlassPercentage) / 100;
+            nachlassValue = (nachlassApplicableSum * nachlassPercentage) / 100;
             nachlassValueInput.value = nachlassValue.toFixed(2);
         } else if (mode === 'value') {
-            nachlassPercentage = (nachlassValue / sumOfItems) * 100;
+            nachlassPercentage = (nachlassValue / nachlassApplicableSum) * 100;
             nachlassPercentageInput.value = nachlassPercentage.toFixed(5);
         }
 
@@ -1085,7 +1227,13 @@
                 sectionHeader.innerHTML = `
                     <div class="section-name font-semibold">${section.section_name}</div>
                     <div>
-                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionUp_budget(this)">
+                        <div class="flex gap-2 items-center">
+                            <label class="label cursor-pointer">
+                                <span class="label-text text-xs mr-1">Exclude from Nachlass</span>
+                                <input type="checkbox" class="checkbox checkbox-sm exclude-nachlass-checkbox" 
+                                    data-section-id="${section.id}" ${section.exclude_from_nachlass ? 'checked' : ''}>
+                            </label>
+                                                    <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionUp_budget(this)">
                             <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <path stroke="none" d="M0 0h24v24H0z" />
                                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -1101,6 +1249,7 @@
                                 <line x1="6" y1="13" x2="12" y2="19" />
                             </svg>
                         </button>
+                        </div>
                     </div>
                 `;
                 sectionContainer.appendChild(sectionHeader);
@@ -1159,7 +1308,7 @@
                             <input type="text" name="quantity_${item.id}" value="${formattedQuantityValue}" 
                                 class="input input-bordered w-full" 
                                 ${itemInvoiced ? 'disabled' : (isPsch ? 'readonly' : '')} 
-                                onchange="updateTotal(${item.id})">
+                                onchange="updateTotalBudget(${item.id})">
                             <input type="hidden" name="original_quantity_${item.id}" value="${quantityValue}">
                         </td>
                         <td>
@@ -1167,7 +1316,7 @@
                                 ${unitOptions}
                             </select>
                         </td>
-                        <td><input type="text" name="rate_${item.id}" value="${formattedRate}" class="input input-bordered w-full" onchange="updateTotal(${item.id})" ${itemInvoiced ? 'disabled' : ''}></td>
+                        <td><input type="text" name="rate_${item.id}" value="${formattedRate}" class="input input-bordered w-full" onchange="updateTotalBudget(${item.id})" ${itemInvoiced ? 'disabled' : ''}></td>
                         <td id="total_${item.id}">${formatNumberToGerman(item.total || 0)}</td>
                     `;
 
@@ -1175,7 +1324,7 @@
 
                     // Ensure total updates correctly for percentage-based calculations
                     if (item.unit === '%') {
-                        setTimeout(() => updateTotal(item.id), 100);
+                        setTimeout(() => updateTotalBudget(item.id), 100);
 
                     }
                     const quotedQty = item.quantity || 0;
@@ -1254,7 +1403,7 @@
                 break;
         }
 
-        updateTotal(itemId);
+        updateTotalBudget(itemId);
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -1343,8 +1492,24 @@
 
     function handleFormSubmission(event, form, url) {
         event.preventDefault();
+
+        // Manually append checkbox states
+        document.querySelectorAll('.exclude-nachlass-checkbox').forEach((checkbox) => {
+            let existingHidden = form.querySelector(`input[name="exclude_section_${checkbox.dataset.sectionId}"]`);
+
+            // Remove if exists
+            if (existingHidden) {
+                existingHidden.remove();
+            }
+
+            let hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = `exclude_section_${checkbox.dataset.sectionId}`;
+            hidden.value = checkbox.checked ? 'on' : 'off';
+            form.appendChild(hidden);
+        });
+
         const formData = new FormData(form);
-        console.log(formData)
 
         fetch(url, {
             method: 'POST',

@@ -1,21 +1,34 @@
 <div id="recordPaymentModal" class="modal">
     <div class="modal-box max-w-5xl">
-        
         <h3 class="font-bold text-lg m-4">Record Payment</h3>
         <form id="record-payment-form" method="post" action="{% url 'record_payment' 0 %}">
             {% csrf_token %}
+
             <div class="form-control">
                 <label class="label">Invoice Net (€)</label>
                 <input type="text" id="payment_invoice_net" class="input input-bordered w-full" readonly>
             </div>
+
             <div class="form-control">
-                <label class="label">VAT (%) (€)</label>
+                <label class="label">Additional Fee (€)</label>
+                <input type="text" id="payment_additional_fee" class="input input-bordered w-full" readonly>
+            </div>
+
+            <div class="form-control">
+                <label class="label">Nachlass (€)</label>
+                <input type="text" id="payment_nachlass" class="input input-bordered w-full" readonly>
+            </div>
+
+            <div class="form-control">
+                <label class="label">VAT (€)</label>
                 <input type="text" id="payment_vat" class="input input-bordered w-full" readonly>
             </div>
+
             <div class="form-control">
                 <label class="label">Invoice Gross (€)</label>
                 <input type="text" id="payment_invoice_gross" class="input input-bordered w-full" readonly>
             </div>
+
             <div class="form-control">
                 <label class="label">Amount Received (€)</label>
                 <div class="flex">
@@ -23,11 +36,12 @@
                     <button type="button" class="btn btn-secondary btn-outline ml-2" onclick="copyGrossInvoice()">Copy from Invoice Gross</button>
                 </div>
             </div>
+
             <div class="form-control mt-4">
                 <label class="label">Date of Payment</label>
                 <input type="date" name="date_of_payment" id="date_of_payment" class="input input-bordered w-full">
             </div>
-            
+
             <div class="modal-action">
                 <button type="submit" class="btn btn-primary">Save Payment</button>
                 <a href="#" class="btn" onclick="closeRecordPaymentModal()">Cancel</a>
@@ -38,46 +52,29 @@
 
 <script>
 function openRecordPaymentModal(invoiceId) {
-    console.log(`Opening Record Payment Modal for Invoice ID: ${invoiceId}`);
-
-    // Fetch invoice data and populate modal
     fetch(`/ajax/view-invoice/${invoiceId}/`)
         .then(response => {
-            console.log(`Received response:`, response);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return response.json();
         })
         .then(data => {
-            console.log(`Fetched data:`, data);
-
-            const vatPercentage = parseFloat(data.vat_percentage) || 0;
-            const invoiceNet = parseFloat(data.invoice_net) || 0;
-
-            let invoiceGross = 0;
-
+            const additionalFee = parseFloat(data.additional_fee_value || 0);
+            const nachlass = parseFloat(data.nachlass_value || 0);
+            const vatPercentage = parseFloat(data.vat_percentage || 0);
+            const invoiceNet = parseFloat(data.invoice_net || 0);
             const taxValue = (invoiceNet * vatPercentage) / 100;
+            const invoiceGross = invoiceNet + taxValue;
 
-            invoiceGross = invoiceNet + taxValue;
+            document.getElementById('payment_invoice_net').value = invoiceNet.toLocaleString("de-DE", { minimumFractionDigits: 2 });
+            document.getElementById('payment_additional_fee').value = additionalFee.toLocaleString("de-DE", { minimumFractionDigits: 2 });
+            document.getElementById('payment_nachlass').value = nachlass.toLocaleString("de-DE", { minimumFractionDigits: 2 });
+            document.getElementById('payment_vat').value = taxValue.toLocaleString("de-DE", { minimumFractionDigits: 2 });
+            document.getElementById('payment_invoice_gross').value = invoiceGross.toLocaleString("de-DE", { minimumFractionDigits: 2 });
 
-            console.log(`Calculated Values - Net: ${invoiceNet}, VAT: ${taxValue}, Gross: ${invoiceGross}`);
-
-            // Format numbers in German format
-            document.getElementById('payment_invoice_net').value = invoiceNet.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            document.getElementById('payment_vat').value = taxValue.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            document.getElementById('payment_invoice_gross').value = invoiceGross.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-            // Populate the existing amount received in the modal
             document.getElementById('amount_received').value = parseFloat(data.amount_received || 0).toFixed(2);
-
-            console.log(document.getElementById('amount_received').value)
             document.getElementById('date_of_payment').value = data.date_of_payment || '';
 
-            const form = document.getElementById('record-payment-form');
-            form.action = `{% url 'record_payment' 0 %}`.replace('0', invoiceId);
-
+            document.getElementById('record-payment-form').action = `{% url 'record_payment' 0 %}`.replace('0', invoiceId);
             openRecordPaymentModalUI();
         })
         .catch(error => {
@@ -86,29 +83,25 @@ function openRecordPaymentModal(invoiceId) {
         });
 }
 
-    
-    function openRecordPaymentModalUI() {
-        console.log(`Opening UI for Record Payment Modal`);
-        document.getElementById('recordPaymentModal').classList.add('modal-open');
-    }
-    
-    function closeRecordPaymentModal() {
-        console.log(`Closing Record Payment Modal`);
-        document.getElementById('recordPaymentModal').classList.remove('modal-open');
-        showInvoices();  // Switch to the Invoices tab after closing the modal
-    }
+function openRecordPaymentModalUI() {
+    document.getElementById('recordPaymentModal').classList.add('modal-open');
+}
 
-    function showInvoices() {
-        document.getElementById('contracts-content').style.display = 'none';
-        document.getElementById('invoices-content').style.display = 'block';
-        document.getElementById('contracts-tab').classList.remove('tab-active');
-        document.getElementById('invoices-tab').classList.add('tab-active');
-    }
+function closeRecordPaymentModal() {
+    document.getElementById('recordPaymentModal').classList.remove('modal-open');
+    showInvoices();
+}
 
-    function copyGrossInvoice() {
-        const formatted = document.getElementById('payment_invoice_gross').value;
-        const normalized = parseFloat(formatted.replace(/\./g, '').replace(',', '.')).toFixed(2);
-        document.getElementById('amount_received').value = normalized;
-    }
+function showInvoices() {
+    document.getElementById('contracts-content').style.display = 'none';
+    document.getElementById('invoices-content').style.display = 'block';
+    document.getElementById('contracts-tab').classList.remove('tab-active');
+    document.getElementById('invoices-tab').classList.add('tab-active');
+}
 
+function copyGrossInvoice() {
+    const formatted = document.getElementById('payment_invoice_gross').value;
+    const normalized = parseFloat(formatted.replace(/\./g, '').replace(',', '.')).toFixed(2);
+    document.getElementById('amount_received').value = normalized;
+}
 </script>

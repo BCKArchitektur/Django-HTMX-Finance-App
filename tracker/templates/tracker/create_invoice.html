@@ -172,13 +172,26 @@ document.addEventListener('DOMContentLoaded', function() {
                         isCumulativeInput.value = isCumulative ? "true" : "false";
 
                         let html = '<table class="table w-full">';
-                            html += '<thead><tr><th>Select</th><th>Section and Item</th><th>Rate</th><th>Hours<br>Logged</th><th>Quantity<br>(Quoted)</th><th>Quantity<br>(Available)</th><th>Quantity<br>(Provided)</th><th>Total</th></tr></thead>';
+                            html += '<thead><tr><th>No.</th><th>Select</th><th>Section and Item</th><th>Rate</th><th>Hours<br>Logged</th><th>Quantity<br>(Quoted)</th><th>Quantity<br>(Available)</th><th>Quantity<br>(Provided)</th><th>Total</th></tr></thead>';
 
                         html += '<tbody>';
 
-                        data.sections.forEach(section => {
-                            html += `<tr><td colspan="7" class="font-bold">${section.section_name}</td></tr>`;
-                            section.items.forEach(item => {
+                        data.sections.forEach((section, sectionIndex) => {
+                            const sectionId = section.id;
+                            const excludeNachlass = section.exclude_from_nachlass;
+
+                            html += `<tr>
+                                <td colspan="9" class="font-bold bg-base-100 text-sm text-zinc-700 px-4 py-2">
+                                    <div class="flex justify-between items-center">
+                                        <span>${sectionIndex + 1}. ${section.section_name}</span>
+                                        ${excludeNachlass ? '<span class="text-xs font-thin text-rose-600 bg-rose-100 border border-rose-200 rounded-md px-2 py-1">Excluded from Nachlass</span>' : ''}
+                                    </div>
+                                    <input type="hidden" class="section-metadata" data-section-id="${sectionId}" data-exclude-nachlass="${excludeNachlass}">
+                                </td>
+                            </tr>`;
+
+
+                            section.items.forEach((item, itemIndex) => {
                                 const quotedQuantity = item.quantity;
                                 const availableQuantity = item.available_quantity;
                                 const previousProvidedQuantity = item.previous_provided_quantity || 0;  // ✅ Get previous invoice quantity
@@ -196,6 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 console.log(`Item ID: ${item.id}, isChecked: ${isChecked}`);
     
                                 html += `<tr>
+                                            <td>${sectionIndex + 1},${itemIndex + 1}</td>
                                             <td>
                                                 <input type="checkbox" name="select_${item.id}" ${isChecked ? 'checked="checked"' : ''} data-item-id="${item.id}" class="checkbox" />
                                             </td>
@@ -210,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                     data-item-id="${item.id}" 
                                                     data-item-rate="${item.rate}"
                                                     data-item-unit="${item.unit}" 
-                                                    onchange="updateTotal(${item.id})"
+                                                    onchange="updateTotalInvoice(${item.id})"
                                                     value="${isCumulative ? previousProvidedQuantity : ''}"
                                                     placeholder="${isCumulative ? previousProvidedQuantity : ''}" 
                                                     ${isChecked ? '' : 'disabled'} />
@@ -271,82 +285,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function calculateInvoiceNet() {
-        let sumOfItems = 0;
-
-        document.querySelectorAll('input[name^="quantity_"]').forEach(input => {
-            const itemId = input.dataset.itemId;
-
-            if (!itemId) {
-                console.warn('Item ID is undefined for an input element:', input);
-                return;
-            }
-
-            const totalField = document.getElementById(`total_${itemId}`);
-            const checkbox = input.closest('tr').querySelector(`input[name="select_${itemId}"]`);
-
-            if (!checkbox) {
-                console.warn(`Checkbox not found for item ID ${itemId}`);
-                if (totalField) {
-                    totalField.textContent = '0.00';
-                }
-                return;
-            }
-
-            if (checkbox.checked) {
-                const quantity = parseFloat(input.value.replace(',', '.')) || 0;
-
-                const rate = parseFloat(input.dataset.itemRate) || 0;
-                let total;
-                const unit = input.dataset.itemUnit;  
-                console.log('unit:',unit)
-                if (unit === "%") {
-                    total = (quantity / 100) * rate;  
-                } else if (unit === "Psch") {
-                    total = quantity * rate;  
-                } else {
-                    total = quantity * rate;  
-                }
 
 
-                sumOfItems += total;
 
-                if (totalField) {
-                    totalField.textContent = total.toFixed(2);
-                }
-            } else {
-                if (totalField) {
-                    totalField.textContent = '0.00';
-                }
-            }
-        });
-
-        document.getElementById('id_sum_of_items').value = sumOfItems.toFixed(2);
-
-        const additionalFeePercentage = parseFloat(document.getElementById('id_additional_fee_percentage').value) || 0;
-        const vatPercentage = parseFloat(document.getElementById('vat_percentage').value) || 0;
-        const additionalFee = (sumOfItems * additionalFeePercentage) / 100;
-
-        const nachlassPercentage = parseFloat(document.getElementById('id_nachlass_percentage')?.value) || 0;
-        const nachlass = (sumOfItems * nachlassPercentage) / 100;
-
-        // Optionally update the € field if it exists
-        const nachlassValueInput = document.getElementById('id_nachlass_value');
-        if (nachlassValueInput) {
-            nachlassValueInput.value = nachlass.toFixed(2);
-        }
-
-        const invoiceNet = sumOfItems + additionalFee - nachlass;
-
-
-        const vat = invoiceNet * vatPercentage / 100;
-        const grossInvoice = invoiceNet + vat;
-
-        document.getElementById('id_additional_fee').value = additionalFee.toFixed(2);
-        document.getElementById('id_invoice_net').value = invoiceNet.toFixed(2);
-        document.getElementById('id_vat').value = vat.toFixed(2);
-        document.getElementById('id_gross_invoice').value = grossInvoice.toFixed(2);
-    }
 
     const invoiceForm = document.querySelector('#invoice-form');
     if (invoiceForm) {
@@ -411,7 +352,7 @@ document.addEventListener('DOMContentLoaded', function () {
         clearTimeout(quantityAlertTimeout);
 
         const previousProvidedQuantity = parseFloat(input.placeholder) || 0;
-        const quotedQuantity = parseFloat(input.closest('tr').querySelector('td:nth-child(5)').textContent) || 0;
+        const quotedQuantity = parseFloat(input.closest('tr').querySelector('td:nth-child(6)').textContent) || 0;
         let enteredValue = parseFloat(input.value) || 0;
 
         // Delay the validation and alert
@@ -423,8 +364,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 input.classList.remove("input-error");
             }
 
-            updateTotal(input.dataset.itemId);
-        }, 500); // 500ms delay
+            updateTotalInvoice(input.dataset.itemId);
+        }, 100); // 500ms delay
     }
 
 
@@ -434,6 +375,9 @@ document.addEventListener('DOMContentLoaded', function () {
             validateQuantityInput(event.target);
         }
     });
+
+
+
 });
 
 

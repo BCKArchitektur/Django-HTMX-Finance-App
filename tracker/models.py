@@ -117,12 +117,17 @@ class Item(models.Model):
             print("Project context is set.")
             print("hourly_rates_override:", self._project.hourly_rates_override)
 
-            override_rate = self._project.hourly_rates_override.get(rate_field)
-            if override_rate is not None:
-                print(f"Found override rate: {override_rate}")
-                return float(override_rate)
+            override_data = getattr(self._project, "hourly_rates_override", None)
+            if isinstance(override_data, dict):
+                override_rate = override_data.get(rate_field)
+                if override_rate is not None:
+                    print(f"Found override rate: {override_rate}")
+                    return float(override_rate)
+                else:
+                    print("No override rate found for this field.")
             else:
-                print("No override rate found for this field.")
+                print("hourly_rates_override is None or not a dictionary.")
+
         else:
             print("No project context provided.")
 
@@ -153,6 +158,10 @@ class Item(models.Model):
         print(f"Total calculated: {self.total}")
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return self.Item_name
+
+
 
 
 #Creating Section model
@@ -163,6 +172,7 @@ class Section(models.Model):
     Item = models.ManyToManyField(Item)
     section_billed_hourly = models.BooleanField(default='False')
     order = models.IntegerField(default=0) 
+    exclude_from_nachlass = models.BooleanField(default=False)
 
     def __str__(self):
         return self.section_name

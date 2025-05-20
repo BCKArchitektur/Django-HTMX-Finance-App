@@ -1,166 +1,151 @@
 <div id="viewInvoiceModal" class="modal">
     <div class="modal-box max-w-5xl">
-        <button class="btn btn-sm btn-circle btn-ghost position:absolute; top-0; right-0; " onclick="closeViewInvoiceModal()">✕</button>
-
-        <h3 class="font-bold text-lg m-4">View Invoice</h3>
-        <div class="form-control">
-            <label class="label">Project</label>
-            <input type="text" id="view_project_name" class="input input-bordered w-full" disabled>
-        </div>
-        <div class="form-control">
-            <label class="label">Contract</label>
-            <input type="text" id="view_contract_name" class="input input-bordered w-full" disabled>
-        </div>
-        <div class="form-control">
-            <label class="label">Provided Quantities</label>
-            <div id="view_provided_quantities_table"></div>
-        </div>
-        <div class="overflow-x-auto mt-4">
-            <table class="table w-full">
-                <tbody>
-                    <tr>
-                        <td class="text-right font-thin w-1/6">Sum of Items €</td>
-                        <td><input type="text" id="view_sum_of_items" class="input input-bordered input-sm w-1/4" readonly></td>
-                    </tr>
-                    <tr>
-                        <td class="text-right font-thin w-1/6">Additional Fee %</td>
-                        <td><input type="text" id="view_additional_fee_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
-                    </tr>
-                    <tr>
-                        <td class="text-right font-thin w-1/6">Additional Fee €</td>
-                        <td><input type="text" id="view_additional_fee" class="input input-bordered input-sm w-1/4" readonly></td>
-                    </tr>
-                    <tr>
-                        <td class="text-right font-thin w-1/6">Nachlass %</td>
-                        <td><input type="text" id="view_nachlass_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
-                    </tr>
-                    <tr>
-                        <td class="text-right font-thin w-1/6">Nachlass €</td>
-                        <td><input type="text" id="view_nachlass_value" class="input input-bordered input-sm w-1/4" readonly></td>
-                    </tr>
-                    
-                    <tr>
-                        <td class="text-right font-bold w-1/6">Invoice Net €</td>
-                        <td><input type="text" id="view_invoice_net" class="input input-bordered input-sm w-1/4" readonly></td>
-                    </tr>
-                    <tr>
-                        <td class="text-right font-thin w-1/6">VAT (%)</td>
-                        <td><input type="text" id="view_vat_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
-                    </tr>
-                    <tr>
-                        <td class="text-right font-thin w-1/6">VAT €</td>
-                        <td><input type="text" id="view_vat" class="input input-bordered input-sm w-1/4" readonly></td>
-                    </tr>
-                    <tr>
-                        <td class="text-right font-bold w-1/6">Gross Invoice €</td>
-                        <td><input type="text" id="view_gross_invoice" class="input input-bordered input-sm w-1/4" readonly></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="modal-action">
-            <a href="#" class="btn" onclick="closeViewInvoiceModal()">Close</a>
-        </div>
+      <button class="btn btn-sm btn-circle btn-ghost absolute top-2 right-2" onclick="closeViewInvoiceModal()">✕</button>
+  
+      <h3 class="font-bold text-lg m-4">View Invoice</h3>
+  
+      <div class="form-control">
+        <label class="label">Project</label>
+        <input type="text" id="view_project_name" class="input input-bordered w-full" disabled>
+      </div>
+  
+      <div class="form-control">
+        <label class="label">Contract</label>
+        <input type="text" id="view_contract_name" class="input input-bordered w-full" disabled>
+      </div>
+  
+      <div class="form-control">
+        <label class="label">Provided Quantities</label>
+        <div id="view_provided_quantities_table"></div>
+      </div>
+  
+      <div class="overflow-x-auto mt-4">
+        <table class="table w-full">
+          <tbody>
+            <tr>
+              <td class="text-right font-thin w-1/6">Sum of Items €</td>
+              <td><input type="text" id="view_sum_of_items" class="input input-bordered input-sm w-1/4" readonly></td>
+            </tr>
+            <tr>
+              <td class="text-right font-thin w-1/6">Additional Fee %</td>
+              <td><input type="text" id="view_additional_fee_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
+            </tr>
+            <tr>
+              <td class="text-right font-thin w-1/6">Additional Fee €</td>
+              <td><input type="text" id="view_additional_fee" class="input input-bordered input-sm w-1/4" readonly></td>
+            </tr>
+            <tr>
+              <td class="text-right font-thin w-1/6">Nachlass %</td>
+              <td><input type="text" id="view_nachlass_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
+            </tr>
+            <tr>
+              <td class="text-right font-thin w-1/6">Nachlass €</td>
+              <td><input type="text" id="view_nachlass_value" class="input input-bordered input-sm w-1/4" readonly></td>
+            </tr>
+            <tr>
+              <td class="text-right font-bold w-1/6">Invoice Net €</td>
+              <td><input type="text" id="view_invoice_net" class="input input-bordered input-sm w-1/4" readonly></td>
+            </tr>
+            <tr>
+              <td class="text-right font-thin w-1/6">VAT (%)</td>
+              <td><input type="text" id="view_vat_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
+            </tr>
+            <tr>
+              <td class="text-right font-thin w-1/6">VAT €</td>
+              <td><input type="text" id="view_vat" class="input input-bordered input-sm w-1/4" readonly></td>
+            </tr>
+            <tr>
+              <td class="text-right font-bold w-1/6">Gross Invoice €</td>
+              <td><input type="text" id="view_gross_invoice" class="input input-bordered input-sm w-1/4" readonly></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+  
+      <div class="modal-action">
+        <a href="#" class="btn" onclick="closeViewInvoiceModal()">Close</a>
+      </div>
     </div>
-</div>
-
-<script>
+  </div>
+  
+  <script>
     function openViewInvoiceModal() {
-        document.getElementById('viewInvoiceModal').classList.add('modal-open');
+      document.getElementById('viewInvoiceModal').classList.add('modal-open');
     }
-    
+  
     function closeViewInvoiceModal() {
-        document.getElementById('viewInvoiceModal').classList.remove('modal-open');
+      document.getElementById('viewInvoiceModal').classList.remove('modal-open');
     }
-    
+  
     function viewInvoice(invoiceId) {
-    fetch(`/ajax/view-invoice/${invoiceId}/`)
+      fetch(`/ajax/view-invoice/${invoiceId}/`)
         .then(response => response.json())
         .then(data => {
-            // Set project and contract names
-            document.getElementById('view_project_name').value = data.project_name || 'N/A';
-            document.getElementById('view_contract_name').value = data.contract_name || 'N/A';
-
-            // Set additional fee percentage
-            const additionalFeePercentage = parseFloat(data.additional_fee_percentage || 0);
-            document.getElementById('view_additional_fee_percentage').value = additionalFeePercentage.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-            // Get the VAT percentage from the contract data
-            const vatPercentage = parseFloat(data.vat_percentage || 0);
-            document.getElementById('view_vat_percentage').value = vatPercentage.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-            // Generate the provided quantities table
-            let html = '<table class="table w-full">';
-            html += '<thead><tr><th>Section and Item</th><th>Rate(€)</th><th>Quantity(Provided)</th><th>Total €</th></tr></thead>';
-            html += '<tbody>';
-            let sumOfItems = 0;
-            let currentSection = '';
-
-            data.provided_quantities.forEach(item => {
-                const sectionName = item.section_name || 'Unknown Section';
-                const itemName = item.item_name || 'Unknown Item';
-                const rate = parseFloat(item.rate || 0);
-                const unit = item.unit || 'unit';
-                const quantity = parseFloat(item.quantity || 0);
-                let total = 0;
-
-                // Calculate total based on unit type
-                if (unit === "%") {
-                    total = (quantity / 100) * rate;
-                } else if (unit === "Psch") {
-                    total = quantity * rate;
-                } else {
-                    total = quantity * rate;
-                }
-
-                sumOfItems += total;
-
-                // Check if we need to print a new section header
-                if (currentSection !== sectionName) {
-                    currentSection = sectionName;
-                    html += `<tr><td colspan="4" class="font-bold">${currentSection}</td></tr>`;
-                }
-
-                html += `<tr>
-                            <td class="pl-8">${itemName}</td>
-                            <td>${rate.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
-                            <td>${quantity.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}(${unit})</td>
-                            <td>${total.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                         </tr>`;
-            });
-
-            html += '</tbody></table>';
-            document.getElementById('view_provided_quantities_table').innerHTML = html;
-
-            // Calculate the totals
-            document.getElementById('view_sum_of_items').value = sumOfItems.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-            const additionalFee = (sumOfItems * additionalFeePercentage) / 100;
-            
-            const nachlassPercentage = parseFloat(data.nachlass_percentage || 0);
-            const nachlass = (sumOfItems * nachlassPercentage) / 100;
-            console.log('data',data)
-
-            document.getElementById('view_nachlass_percentage').value = nachlassPercentage.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            document.getElementById('view_nachlass_value').value = nachlass.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-            const invoiceNet = sumOfItems + additionalFee - nachlass;
-            const vat = invoiceNet * vatPercentage / 100;
-            const grossInvoice = invoiceNet + vat;
-
-
-            document.getElementById('view_additional_fee').value = additionalFee.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            document.getElementById('view_invoice_net').value = invoiceNet.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            document.getElementById('view_vat').value = vat.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            document.getElementById('view_gross_invoice').value = grossInvoice.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-            openViewInvoiceModal();
+          document.getElementById('view_project_name').value = data.project_name || 'N/A';
+          document.getElementById('view_contract_name').value = data.contract_name || 'N/A';
+  
+          const additionalFeePercentage = parseFloat(data.additional_fee_percentage || 0);
+          const vatPercentage = parseFloat(data.vat_percentage || 0);
+          const nachlassPercentage = parseFloat(data.nachlass_percentage || 0);
+  
+          const additionalFee = parseFloat(data.additional_fee_value || 0);
+          const nachlass = parseFloat(data.nachlass_value || 0);
+          const invoiceNet = parseFloat(data.invoice_net || 0);
+          const vat = parseFloat(data.tax_value || 0);
+          const grossInvoice = parseFloat(data.invoice_gross || 0);
+  
+          document.getElementById('view_additional_fee_percentage').value = additionalFeePercentage.toLocaleString("de-DE", { minimumFractionDigits: 2 });
+          document.getElementById('view_vat_percentage').value = vatPercentage.toLocaleString("de-DE", { minimumFractionDigits: 2 });
+          document.getElementById('view_nachlass_percentage').value = nachlassPercentage.toLocaleString("de-DE", { minimumFractionDigits: 2 });
+  
+          document.getElementById('view_additional_fee').value = additionalFee.toLocaleString("de-DE", { minimumFractionDigits: 2 });
+          document.getElementById('view_nachlass_value').value = nachlass.toLocaleString("de-DE", { minimumFractionDigits: 2 });
+          document.getElementById('view_invoice_net').value = invoiceNet.toLocaleString("de-DE", { minimumFractionDigits: 2 });
+          document.getElementById('view_vat').value = vat.toLocaleString("de-DE", { minimumFractionDigits: 2 });
+          document.getElementById('view_gross_invoice').value = grossInvoice.toLocaleString("de-DE", { minimumFractionDigits: 2 });
+  
+          // Render the provided quantities table
+          let html = '<table class="table w-full">';
+          html += '<thead><tr><th>Section and Item</th><th>Rate(€)</th><th>Quantity(Provided)</th><th>Total €</th></tr></thead><tbody>';
+  
+          let currentSection = '';
+          let sumOfItems = 0;
+  
+          data.provided_quantities.forEach(item => {
+            const sectionName = item.section_name || 'Unknown Section';
+            const itemName = item.item_name || 'Unknown Item';
+            const rate = parseFloat(item.rate || 0);
+            const unit = item.unit || 'unit';
+            const quantity = parseFloat(item.quantity || 0);
+            const total = rate * quantity;
+  
+            sumOfItems += total;
+  
+            if (currentSection !== sectionName) {
+              currentSection = sectionName;
+              html += `<tr><td colspan="4" class="font-bold">${currentSection}</td></tr>`;
+            }
+  
+            html += `<tr>
+                      <td class="pl-8">${itemName}</td>
+                      <td>${rate.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €</td>
+                      <td>${quantity.toLocaleString("de-DE", { minimumFractionDigits: 2 })} (${unit})</td>
+                      <td>${total.toLocaleString("de-DE", { minimumFractionDigits: 2 })}</td>
+                    </tr>`;
+          });
+  
+          html += '</tbody></table>';
+          document.getElementById('view_provided_quantities_table').innerHTML = html;
+  
+          // Display pre-computed total of sum of items
+          document.getElementById('view_sum_of_items').value = sumOfItems.toLocaleString("de-DE", { minimumFractionDigits: 2 });
+  
+          openViewInvoiceModal();
         })
         .catch(error => {
-            console.error('Error fetching invoice:', error);
-            alert('Error fetching invoice: ' + error.message);
+          console.error('Error fetching invoice:', error);
+          alert('Error fetching invoice: ' + error.message);
         });
-}
-
-
-</script>
+    }
+  </script>
+  

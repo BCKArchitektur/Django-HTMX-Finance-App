@@ -1040,6 +1040,7 @@ def load_contract_data(request):
             'id': section.id,
             'section_name': section.section_name,
             'section_billed_hourly': section.section_billed_hourly,
+            'exclude_from_nachlass': section.exclude_from_nachlass,
             'items': item_data,
         })
 
@@ -1178,6 +1179,10 @@ def add_budget(request):
 
         # Handle the sections and items
         for section in contract.section.all():
+            field_name = f'exclude_section_{section.id}'
+            section.exclude_from_nachlass = bool(request.POST.get(field_name) == 'on')
+            print(f"Section {section.id}- {section.section_name}  exclude_from_nachlass: {section.exclude_from_nachlass}") 
+            section.save()
             for item in section.Item.all():
                 quantity_key = f'quantity_{item.id}'
                 unit_key = f'unit_{item.id}'
@@ -1479,6 +1484,11 @@ def generate_word_document(request, contract_id):
     section_counter = 1
     is_english_template = template_name in ['BCK_En.docx', 'Kost_En.docx']
 
+    sum_of_items_for_nachlass = Decimal(0)  # Tracks only eligible totals
+    nachlass_item_serials = []              # Stores item serials as strings
+
+
+
     hoai_details = extract_hoai_details(contract)
     grundhonorar = parse_german_number(hoai_details["grundhonorar"]) if hoai_details["grundhonorar"] != "0" else Decimal(0)
 
@@ -1506,6 +1516,10 @@ def generate_word_document(request, contract_id):
                 'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
             })
             section_total += item_total
+            if not section.exclude_from_nachlass:
+                sum_of_items_for_nachlass += item_total
+                nachlass_item_serials.append(f"{section_counter}.{item_counter}")
+
             item_counter += 1
 
         # **If Section Name Contains "LP", Store in LP Sections**
@@ -1551,12 +1565,12 @@ def generate_word_document(request, contract_id):
 
     grundhonorar_without_zuschlag = float(grundhonorar) - zuschlag_amount
 
-    nachlass_value = Decimal(contract.nachlass_value or 0)
-    
     nachlass_percentage = Decimal(contract.nachlass_percentage or 0)
 
     errechnetes_Gesamthonorar  = sum_of_items + sum_of_all_lps + additional_fee_value 
+    nachlass_value = (nachlass_percentage / Decimal(100)) * sum_of_items_for_nachlass
     net_contract = sum_of_items + sum_of_all_lps + additional_fee_value - nachlass_value
+
 
     vat_percentage = float(contract.vat_percentage) / 100
     tax = float(net_contract) * vat_percentage
@@ -1620,6 +1634,8 @@ def generate_word_document(request, contract_id):
         context.update({
             'nachlass_value' : f"{nachlass_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
             'nachlass_percentage' : f"{nachlass_percentage:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'nachlass_applied_items': ", ".join(nachlass_item_serials),
+
         })
          
     if lp_sections:
@@ -1730,6 +1746,8 @@ def view_invoice(request, invoice_id):
 
         provided_quantities = []
         sum_of_items = Decimal('0.00')
+        nachlass_applicable_sum = Decimal('0.00')
+
 
         for item_id, details in provided_quantities_data.items():
             try:
@@ -1740,6 +1758,9 @@ def view_invoice(request, invoice_id):
                 rate = Decimal(details['rate'])
                 quantity = Decimal(details['quantity'])
                 total = rate * quantity
+                if section and not section.exclude_from_nachlass:
+                    nachlass_applicable_sum += total
+
                 sum_of_items += total
 
                 provided_quantities.append({
@@ -1749,6 +1770,7 @@ def view_invoice(request, invoice_id):
                     'rate': str(rate),
                     'quantity': str(quantity),
                     'total': str(total),
+                    'exclude_from_nachlass': section.exclude_from_nachlass if section else False,
                 })
             except Item.DoesNotExist:
                 print(f"Item with id {item_id} does not exist.")
@@ -1768,11 +1790,13 @@ def view_invoice(request, invoice_id):
 
         # Base financial calculations
         additional_fee_percentage = Decimal(contract.additional_fee_percentage or 0)
+        additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
         vat_percentage = Decimal(contract.vat_percentage or 0)
         nachlass_percentage = Decimal(contract.nachlass_percentage or 0)
 
         additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
-        invoice_net = sum_of_items + additional_fee_value
+        nachlass_value = (nachlass_applicable_sum * nachlass_percentage) / Decimal(100)
+        invoice_net = sum_of_items + additional_fee_value - nachlass_value
         tax_value = (invoice_net * vat_percentage) / Decimal(100)
         invoice_gross = invoice_net + tax_value
 
@@ -1780,6 +1804,7 @@ def view_invoice(request, invoice_id):
             'project_name': project.project_name,
             'contract_name': contract.contract_name,
             'additional_fee_percentage': str(additional_fee_percentage),
+            'additional_fee_value': str(additional_fee_value),
             'provided_quantities': provided_quantities,
             'invoice_net': str(invoice_net),
             'tax_value': str(tax_value),
@@ -1787,10 +1812,11 @@ def view_invoice(request, invoice_id):
             'vat_percentage': str(vat_percentage),
             'amount_received': invoice.amount_received,
             'date_of_payment': invoice.date_of_payment.isoformat() if invoice.date_of_payment else None,
-            'nachlass_percentage': str(nachlass_percentage)
+            'nachlass_percentage': str(nachlass_percentage),
+            'nachlass_value': str(nachlass_value),
         }
 
-        # 🧮 Adjust for cumulative invoices
+        #  Adjust for cumulative invoices
         if invoice.invoice_type in ['AR', 'SR', 'ZR']:
             previous_invoices = Invoice.objects.filter(
                 project=project,
@@ -1871,12 +1897,27 @@ def download_invoice(request, invoice_id):
     sum_of_items = Decimal('0.00')
     sum_of_all_lps = Decimal('0.00')
 
+    # Initialize invoice data
+    nachlass_applicable_sum = Decimal('0.00')
+    nachlass_item_serials = []
+
+    # Build item order mapping per section
+    section_item_order = {
+        section.id: {
+            item.id: idx + 1
+            for idx, item in enumerate(section.Item.order_by('order'))
+        }
+        for section in contract.section.all()
+    }
+
     # Process provided quantities
     provided_quantities = invoice.provided_quantities
     for item_id, details in provided_quantities.items():
         item = get_object_or_404(Item, id=item_id)
         section = item.section_set.first()
         section_name = section.section_name if section else "Unknown Section"
+        exclude_from_nachlass = section.exclude_from_nachlass if section else False  # 💡 Key line
+        section_serial = section_order.get(section_name, 0)
         item_total = Decimal(details['quantity']) * Decimal(details['rate'])
 
         unit = item.unit
@@ -1885,13 +1926,20 @@ def download_invoice(request, invoice_id):
 
         lp_match = re.search(r"LP(\d+)", section_name, re.IGNORECASE)
         if lp_match:
-            section_serial = section_order.get(section_name, 0)
             lp_key = f"lp{lp_match.group(1)}"
             lp_value = hoai_details["lp_values"].get(lp_key, "0")
             actual_lp_value = hoai_details["lp_breakdown_actual"].get(lp_key, "0")
             lp_percentage = Decimal(lp_value) if lp_value != "0" else Decimal(0)
             lp_amount = (Decimal(details['quantity']) / Decimal(100)) * grundhonorar
             sum_of_all_lps += lp_amount
+
+            item_index = section_item_order.get(section.id, {}).get(item.id, 0)
+            item_serial = f"{section_serial}.{item_index}"
+
+            # Apply Nachlass check for LP items (if ever needed)
+            if not exclude_from_nachlass:
+                nachlass_applicable_sum += lp_amount
+                nachlass_item_serials.append(item_serial)
 
             lp_sections.append({
                 'lp_name': section_name,
@@ -1900,7 +1948,7 @@ def download_invoice(request, invoice_id):
                 'actual_lp_value': f"{actual_lp_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'Item': [{
                     'Item_name': item.Item_name,
-                    'Item_serial': f"{section_serial}.1",
+                    'Item_serial': item_serial,
                     'unit': unit,
                     'rate': f"{Decimal(details['rate']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                     'quantity': details['quantity'],
@@ -1908,7 +1956,6 @@ def download_invoice(request, invoice_id):
                 }]
             })
         else:
-            section_serial = section_order.get(section_name, 0)
             if section_name not in contract_sections_dict:
                 contract_sections_dict[section_name] = {
                     'section_serial': section_serial,
@@ -1918,7 +1965,9 @@ def download_invoice(request, invoice_id):
                 }
 
             section_data = contract_sections_dict[section_name]
-            item_serial = f"{section_data['section_serial']}.{len(section_data['Item']) + 1}"
+            item_index = section_item_order.get(section.id, {}).get(item.id, 0)
+            item_serial = f"{section_serial}.{item_index}"
+            # item_serial = f"{section_data['section_serial']}.{len(section_data['Item']) + 1}"
 
             section_data['Item'].append({
                 'Item_name': item.Item_name,
@@ -1931,6 +1980,11 @@ def download_invoice(request, invoice_id):
 
             section_data['net_section'] += item_total
             sum_of_items += item_total
+
+            # Track for Nachlass only if not excluded
+            if not exclude_from_nachlass:
+                nachlass_applicable_sum += item_total
+                nachlass_item_serials.append(item_serial)
 
     # Sort and finalize contract sections
     contract_sections = []
@@ -1950,10 +2004,7 @@ def download_invoice(request, invoice_id):
 
     nachlass_percentage = Decimal(contract.nachlass_percentage or 0)
 
-    if contract.hoai_data:
-        nachlass_value = (sum_of_all_lps * nachlass_percentage) / Decimal(100)
-    else:   
-        nachlass_value = (sum_of_items * nachlass_percentage) / Decimal(100)
+    nachlass_value = (nachlass_applicable_sum * nachlass_percentage) / Decimal(100)
 
     invoice_net = sum_of_items + sum_of_all_lps + additional_fee_value 
     vat_percentage = Decimal(contract.vat_percentage) / Decimal(100)
@@ -2024,6 +2075,7 @@ def download_invoice(request, invoice_id):
 
         'contract_sections': contract_sections,  # Organized by section
         'sum_of_items': f"{sum_of_items:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
+        'lp_sections': lp_sections,  # Organized by LP
         'sum_of_all_lps': f"{sum_of_all_lps:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
         
         'invoice_net': f"{invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
@@ -2072,11 +2124,18 @@ def download_invoice(request, invoice_id):
         'client_firm': client.firm_name
     }
 
+    # Sort nachlass_item_serials numerically
+    sorted_nachlass_items = sorted(
+        nachlass_item_serials,
+        key=lambda x: tuple(map(int, x.split('.')))
+    )
     if nachlass_value != 0:
         context.update({
-            'nachlass_value' : f"{nachlass_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-            'nachlass_percentage' : f"{nachlass_percentage:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'nachlass_value': f"{nachlass_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'nachlass_percentage': f"{nachlass_percentage:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'nachlass_applied_items': ", ".join(sorted_nachlass_items)
         })
+
 
     # Load and render template
     template_path = os.path.join(r'C:\Users\BCK-CustomApp\Documents\GitHub\Django-HTMX-Finance-App\templates\invoices', template_name)
