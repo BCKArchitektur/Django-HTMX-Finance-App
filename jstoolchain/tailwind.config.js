@@ -2,7 +2,11 @@
 module.exports = {
   content: ["../**/templates/**/*.html"],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        neue: ['"Neue Hans Kendrick Regular"', 'sans-serif'],
+      },
+    },
   },
   plugins: [
     require('daisyui'),
