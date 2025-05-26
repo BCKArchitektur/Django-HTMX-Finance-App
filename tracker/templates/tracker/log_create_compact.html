@@ -38,7 +38,7 @@
     <div class="divider lg:divider-horizontal"></div>
     
     {% for preset in project_presets %}
-    <div class="indicator w-96 h-56 mb-4">
+    <div class="indicator  w-[95%] h-56 mb-4">
         {% if preset.default_section.section_billed_hourly %}
         <div class=" tooltip-left" data-tip="Billed Hourly">
             <span class="indicator-item badge badge-secondary badge-outline flex items-center justify-center p-1 pt-0 ">⧗</span>
@@ -131,8 +131,8 @@
     
 </div>
 
-<div id="log-container" class="overflow-x-auto mt-8 h-48">
-    <table class="table table-xs table-pin-rows table-pin-cols w-full">
+<div id="log-container" class="overflow-x-auto  w-[95%] h-[30vh] mx-auto mt-4">
+    <table class="table table-xs table-pin-rows table-pin-cols w-full table-zebra">
         <thead>
             <tr>
                 <th>Timestamps</th>
@@ -281,12 +281,18 @@ $(document).ready(function () {
 
     // Populate tasks in preset cards
     function populateTasks(card) {
-        const ItemId = card.data('item-id');
+        // convert to string
+        const ItemId = String(card.data('item-id'));
         console.log(ItemId);
+        // remove decimal seperators for item id
+        if (typeof ItemId === 'string') {
+            ItemId2 = ItemId.replace(/,/g, '');
+        }
+        console.log(ItemId2);
 
         if (ItemId) {
             $.ajax({
-                url: `/ajax/load-tasks/?Item_id=${ItemId}`,
+                url: `/ajax/load-tasks/?Item_id=${ItemId2}`,
                 method: 'GET',
                 success: function(data) {
                     if (data.tasks && data.tasks.length > 0) {

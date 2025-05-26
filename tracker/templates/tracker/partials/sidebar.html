@@ -1,0 +1,93 @@
+{% load static %}
+{% load custom_filters %}
+
+<aside
+  class="leftbar bg-black text-white fixed z-50 flex flex-row lg:flex-col items-center justify-between
+         w-full lg:w-20 h-16 lg:h-screen top-0 left-0 px-4 lg:px-0 shadow-md transition-all duration-300">
+
+  <!-- Top Section: Logo + Profile -->
+  <div class="flex items-center gap-4 lg:flex-col lg:gap-6 mt-2 lg:mt-6">
+    
+
+
+    <!-- Profile Dropdown below logo -->
+     <!-- only show if user is_authenticated -->
+
+    {% if user.is_authenticated %}
+
+      <div class="dropdown dropdown-bottom lg:dropdown-right dropdown-hover">
+        <label tabindex="0" class="cursor-pointer">
+          <div class="avatar placeholder">
+            <div class="bg-white text-black rounded-full w-9 h-9 flex items-center justify-center text-xs lg:text-sm font-bold shadow-md">
+              {{ user.username }}
+            </div>
+          </div>
+        </label>
+
+        <ul tabindex="0" class="menu dropdown-content mt-2 lg:mt-4 w-48 rounded-box bg-white text-black shadow-md p-2 space-y-1" role="menu">
+          <li>
+            <a href="/admin/" class="hover:bg-gray-200 rounded px-2 py-1 flex items-center gap-2">
+              <iconify-icon icon="lucide:settings" height="16"></iconify-icon>
+              Admin
+            </a>
+          </li>
+          <hr class="-mx-2 my-1 border-black/10" />
+          <li>
+            <a href="{% url 'account_logout' %}" class="text-red-500 hover:bg-red-100 rounded px-2 py-1 flex items-center gap-2">
+              <iconify-icon icon="lucide:log-out" height="16"></iconify-icon>
+              Logout
+            </a>
+          </li>
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Navigation Icons -->
+  <div class="flex-1 flex flex-row lg:flex-col items-center justify-center gap-4 lg:gap-6 mt-0 lg:mt-4 leftmenu-wrapper" data-simplebar>
+
+    {% if user|has_group:'employees' or user|has_group:'managers' %}
+    <a href="{% url 'log_create_compact' %}"
+       class="menu group flex justify-center items-center w-10 h-10 lg:w-12 lg:h-12 rounded-xl hover:bg-white hover:text-black transition duration-300 ease-in-out
+              {% if request.path == '/log_create_compact/' %}bg-white text-black{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 lg:w-6 lg:h-6 transition-transform duration-300 group-hover:scale-110" fill="none"
+             viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+    </a>
+
+    <a href="{% url 'log_create' %}"
+       class="menu group flex justify-center items-center w-10 h-10 lg:w-12 lg:h-12 rounded-xl hover:bg-white hover:text-black transition duration-300 ease-in-out
+              {% if request.path == '/log_create/' %}bg-white text-black{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 lg:w-6 lg:h-6 transition-transform duration-300 group-hover:scale-110" fill="none"
+             viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+    </a>
+    {% endif %}
+
+    {% if user|has_group:'managers' %}
+    <a href="{% url 'projects' %}"
+       class="menu group flex justify-center items-center w-10 h-10 lg:w-12 lg:h-12 rounded-xl hover:bg-white hover:text-black transition duration-300 ease-in-out
+              {% if request.path == '/projects/' %}bg-white text-black{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 lg:w-6 lg:h-6 transition-transform duration-300 group-hover:scale-110" fill="none"
+             viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+    </a>
+    {% endif %}
+  </div>
+  <!-- Bottom Section: BCK Logo -->
+  <div class="flex items-center justify-center lg:justify-start mt-4 lg:mt-auto mb-2 lg:mb-6">
+  <!-- BCK Logo -->
+      <!-- BCK Logo in a circle -->
+      <a href="/log_create_compact/" class="avatar placeholder">
+        <div class="bg-white text-black rounded-full w-9 h-9 lg:w-9 lg:h-9 flex items-center justify-center text-xl font-bold shadow-md">
+          <img src="https://i.ibb.co/fkSb1NL/BCK-icon.png" alt="BCK Logo" class="w-6 h-6" />
+        </div>
+      </a>
+  </div>
+</aside>

@@ -1,69 +1,97 @@
 {% load static %}
-{% load l10n %}  <!-- Load localization support -->
-
-
-
+{% load l10n %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"
+      data-theme="{% if user.is_authenticated and user.dark_mode %}dark{% else %}light{% endif %}"
+      data-leftbar-type="full">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <link rel="icon" href="https://i.ibb.co/fkSb1NL/BCK-icon.png" type="image/x-icon"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>
-        {% block head_title %}
-            BCK Tracker
-        {% endblock %}
-    </title>
+    <title>{% block head_title %}BCK Tracker{% endblock %}</title>
 
-    <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
-    
-    <!-- Custom CSS -->
+    <!-- HTMX & CSS -->
+    <script src="https://unpkg.com/htmx.org@1.9.10" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
-    
-    <!-- Tom Select CSS -->
+    <script src="{% static 'js/components/table.js' %}"></script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Tom Select -->
     <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
-
-    <!-- Tom Select JS -->
     <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
-
-    {% block extra_head %}
-    {% endblock %}
+    {% block extra_head %}{% endblock %}
 </head>
-<body class="{% if user.is_authenticated and user.dark_mode %}dark{% endif %}">
 
-    {% include 'tracker/partials/navbar.html' %}
-    
-    {% if messages %}
-        <div id="alert-container">
+<body class="{% if user.is_authenticated and user.dark_mode %}dark{% endif %}">
+    {% include 'tracker/partials/sidebar.html' %}
+    <!-- Loading Overlay -->
+    <div id="page-loader" class="fixed inset-0 z-[10] flex items-center justify-center bg-black/50 transition-opacity duration-800">
+        <span class="loading loading-dots loading-xl text-white"></span>
+    </div>
+
+    <div class="lg:ml-20 min-h-screen transition-all duration-100">
+        {% include 'tracker/partials/navbar.html' %}
+
+        {% if messages %}
+        <div id="alert-container" class="fixed top-16 right-4 z-50">
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }}">{{ message }}</div>
             {% endfor %}
         </div>
-    {% endif %}
+        {% endif %}
 
-    <div class="max-w-screen-lg mx-auto p-4">
-        {% block content %}
-        {% endblock %}
+        <main class="w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 2xl:pt-20 md:pt-8 sm:pt-14 xs:pt-16 pt-20">
+            {% block content %}{% endblock %}
+        </main>
     </div>
-    {% if user.is_authenticated %}
-        {% include 'tracker/partials/btmbar.html' %}
-    {% endif %}
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
+    <!-- jQuery for message fading -->
     <script>
-        $(document).ready(function() {
-            setTimeout(function() {
-                $('#alert-container .alert').fadeOut('slow', function() {
-                    $(this).remove();
-                });
-            }, 2000);
+        $(document).ready(function () {
+            setTimeout(() => $('#alert-container .alert').fadeOut('slow', function () {
+                $(this).remove();
+            }), 2000);
         });
     </script>
+<script>
+    const loader = document.getElementById('page-loader');
+  
+    // Show loader on full page load
+    window.addEventListener('load', () => {
+      if (loader) {
+        loader.classList.add('opacity-0');
+        setTimeout(() => loader.remove(), 800);
+      }
+    });
+  
+    // Show loader on link clicks or form submits
+    document.addEventListener('DOMContentLoaded', function () {
+      const triggerLoader = () => {
+        if (!loader) return;
+        loader.classList.remove('hidden', 'opacity-0');
+        loader.classList.add('flex');
+      };
+  
+      // Handle anchor clicks (not HTMX)
+      document.querySelectorAll('a[href]:not([href^="#"]):not([data-no-loader])').forEach(anchor => {
+        anchor.addEventListener('click', e => {
+          // Prevent for middle-click or Ctrl+click (new tab)
+          if (e.ctrlKey || e.metaKey || e.button === 1) return;
+          triggerLoader();
+        });
+      });
+  
+      // Handle form submits
+      document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', () => {
+          triggerLoader();
+        });
+      });
+    });
+  </script>
+  
 
-    {% block extra_scripts %}
-    {% endblock %}
+    {% block extra_scripts %}{% endblock %}
 </body>
 </html>
-

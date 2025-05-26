@@ -2,10 +2,3 @@
 @tailwind components;
 @tailwind utilities;
 
-
-@font-face {
-    font-family: 'Neue Hans Kendrick Regular';
-    font-style: normal;
-    font-weight: normal;
-    src: local('Neue Hans Kendrick Regular'), url('/fonts/NeueHansKendrick-Regular.woff') format('woff');
-}

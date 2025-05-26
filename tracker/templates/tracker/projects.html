@@ -1,4 +1,6 @@
 {% extends 'tracker/base.html' %}
+{% load static %}
+
 
 {% block title %}Projects{% endblock %}
 
@@ -13,15 +15,17 @@
                 <button class="btn btn-sm btn-accent" onclick="openProjectModal()">+ New Project</button>
             </div>
         </div>
-        <div class="overflow-x-auto h-96">
-            <table class="table" id="project-table">
+
+
+        <div class="overflow-x-auto h-[70vh] w-auto ">
+            <table class="table table-zebra" id="project-table">
               <!-- head -->
               <thead>
                 <tr>
                   <th>#</th>
                   <th>Project Name</th>
                   <th>Client Name</th>
-                  <th>Contracts</th>
+                  <th>Status</th>
                   <th>Team</th>
                   <th>Actions</th>
                 </tr>
@@ -39,12 +43,16 @@
                             {{ project.client_name.firm_name }}
                     </td>
                     <td>
-                        {% if project.contract.exists %}
-                            <div class="badge badge-success badge-outline badge-md">Assigned</div>
+                        {% if project.status == '0' %}
+                            <span class="badge badge-info badge-outline badge-md">InProgress</span>
+                        {% elif project.status == '1' %}
+                            <span class="badge badge-warning text-black badge-outline badge-md">On Hold</span>
+                        {% elif project.status == '2' %}
+                            <span class="badge badge-success badge-outline badge-md">Completed</span>
                         {% else %}
-                            <div class="badge badge-error badge-outline badge-md">Unassigned</div>
+                            <span class="badge badge-error badge-outline badge-md">Unknown</span>
                         {% endif %}
-                    </td>
+                    </td>                    
                     <td>
                         {% for user in project.user.all %}
                             {{ user.username }}{% if not forloop.last %}, {% endif %}
@@ -79,8 +87,8 @@
                 <button class="btn btn-sm btn-accent" onclick="openClientModal()">+ New Client</button>
             </div>
         </div>
-        <div class="overflow-x-auto h-96 justify-center">
-            <table class="table" id="client-table">
+        <div class="overflow-x-auto h-[70vh]  w-auto">
+            <table class="table table-zebra" id="client-table">
               <!-- head -->
               <thead>
                 <tr>
@@ -487,6 +495,8 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
     </script>
-    
+
+
+        
     
 {% endblock extra_scripts %}

@@ -58,6 +58,7 @@ urlpatterns = [
     path('project/<int:project_id>/update-settings/', views.update_project_settings, name='update_project_settings'),
     path('projects/<int:project_id>/reset-hourly-rates/', views.reset_project_hourly_rates, name='reset_project_hourly_rates'),
 
+
 ]
 
     

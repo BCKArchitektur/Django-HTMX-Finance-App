@@ -747,7 +747,7 @@ def get_berlin_time():
 def log_create_compact(request):
     projects = Project.objects.filter(user=request.user)
     project_presets = ProjectPreset.objects.filter(user=request.user)
-    logs = Logs.objects.filter(user=request.user).order_by('-log_timestamps')
+    logs = Logs.objects.filter(user=request.user).order_by('-log_timestamps')[:100]
 
     today = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).strftime('%Y-%m-%d')
     logs_today = Logs.objects.filter(user=request.user, log_timestamps__startswith=today)
@@ -822,7 +822,7 @@ def log_create_compact(request):
 @login_required
 def log_create(request):
     projects = Project.objects.filter(user=request.user)
-    logs = Logs.objects.filter(user=request.user).order_by('-log_timestamps')
+    logs = Logs.objects.filter(user=request.user).order_by('-log_timestamps')[:100]
     today = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).strftime('%Y-%m-%d')
     logs_today = Logs.objects.filter(user=request.user, log_timestamps__startswith=today)
     total_hours_today = logs_today.annotate(
