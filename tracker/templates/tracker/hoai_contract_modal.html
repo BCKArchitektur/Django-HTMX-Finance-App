@@ -10,21 +10,21 @@
         <div class="grid grid-cols-3 gap-6">
             
             <!-- Left Section: Inputs -->
-            <div class="border rounded-lg p-4 bg-gray-100">
-                <h4 class="text-l font-bold mb-4">HOAI Berechnung</h4>
+            <div class="border rounded-lg p-4">
+                <h4 class="text-l font-medium mb-4">HOAI Berechnung</h4>
 
-                <label class="block">Service Profile:</label>
-                <select class="input input-bordered w-full mb-2" id="serviceProfile">
+                <label class="block font-extralight">Service Profile:</label>
+                <select class="input input-bordered w-full mb-2 font-extralight" id="serviceProfile">
                     <option value="">Select a Profile</option>
                 </select>
 
-                <label class="block">Honorarzone:</label>
-                <select class="input input-bordered w-full mb-2" id="honorarzone">
+                <label class="block font-extralight">Honorarzone:</label>
+                <select class="input input-bordered w-full mb-2 font-extralight" id="honorarzone">
                     <!-- Options will be populated dynamically -->
                 </select>
                 
-                <label class="block">Honorarsatz:</label>
-                <select class="input input-bordered w-full mb-2" id="honorarsatz">
+                <label class="block font-extralight">Honorarsatz:</label>
+                <select class="input input-bordered w-full mb-2 font-extralight" id="honorarsatz">
                     <option value="Basishonorarsatz">Basishonorarsatz</option>
                     <option value="Viertelsatz">Viertelsatz</option>
                     <option value="Mittelsatz">Mittelsatz</option>
@@ -32,53 +32,46 @@
                     <option value="Oberer Honorarsatz">Oberer Honorarsatz</option>
                 </select>
                 
-                <label class="block">Bauwerk-Baukonstruktionen(€):</label>
-                <input type="number" id="baukonstruktionen" class="input input-success input-bordered w-full mb-2" value="1000000">
+                <label class="block font-extralight">Bauwerk-Baukonstruktionen(€):</label>
+                <input type="number" id="baukonstruktionen" class="input input-success input-bordered w-full mb-2 font-extralight" value="1000000">
                 
-                <label class="block">Bauwerk-Technische Anlagen(€):</label>
-                <input type="number" id="technischeAnlagen" class="input input-success input-bordered w-full mb-2" value="250000">
+                <label class="block font-extralight">Bauwerk-Technische Anlagen(€):</label>
+                <input type="number" id="technischeAnlagen" class="input input-success input-bordered w-full mb-2 font-extralight" value="250000">
                 
-                <label class="block">Anrechenbare Kosten (€):</label>
-                <input type="number" id="anrechenbareKosten" class="input input-bordered w-full mb-2" value="1250000" readonly>
+                <label class="block font-extralight">Anrechenbare Kosten (€):</label>
+                <input type="number" id="anrechenbareKosten" class="input input-bordered w-full mb-2 font-extralight" value="1250000" readonly>
                 
 
-                <label class="block">NebenKosten (%):</label>
-                <input type="number" id="nebenKosten" class="input input-bordered w-full mb-2" value="0" step="0.01">
+                <label class="block font-extralight">NebenKosten (%):</label>
+                <input type="number" id="nebenKosten" class="input input-bordered w-full mb-2 font-extralight" value="0" step="0.01">
 
-                <label class="block">Zuschlag (%):</label>
-                <input type="number" id="zuschlag" class="input input-bordered w-full mb-2" value="0" step="0.01">
+                <label class="block font-extralight">Zuschlag (%):</label>
+                <input type="number" id="zuschlag" class="input input-bordered w-full mb-2 font-extralight" value="0" step="0.01">
 
 
-                <label class="block">VAT (%):</label>
-                <input type="number" name="vat" id="vt" class="input input-bordered w-full mb-2" value="19" step="0.01">
+                <label class="block font-extralight">VAT (%):</label>
+                <input type="number" name="vat" id="vt" class="input input-bordered w-full mb-2 font-extralight" value="19" step="0.01">
         
             </div>
 
             <!-- Middle Section: LP Customization -->
-            <div class="border rounded-lg p-4 bg-gray-100">
-                <h4 class="text-l font-bold mb-4">Leistungsphasen (LP)</h4>
+            <div class="border rounded-lg p-4">
+                <h4 class="text-l mb-4 font-medium">Leistungsphasen (LP)</h4>
 
                 <div id="lpInputs">
                     <div class="grid grid-cols-1 gap-2" id="lpContainer">
                         <!-- LP inputs will be inserted dynamically -->
                     </div>
                 </div>
+                <div class="divider"></div>
+                <h4 class="text-l mb-4 font-medium">Berechnung</h4>
+                <p>(UW)     :<span id="lower_bound_cost">-</span> €</p>
+                <p>(HUWmin) :<span id="lower_bound_von">-</span> €</p>
+                <p>(HUWmax) :<span id="lower_bound_bis">-</span> €</p>
 
-                <!-- <button type="button" class="btn btn-secondary mt-4 w-full" onclick="calculateHOAI(event)">Calculate</button> -->
-
-            </div>
-
-
-
-            <!-- Right Section: Results -->
-            <div class="border rounded-lg p-4 bg-gray-50">
-                <h4 class="text-l font-bold mb-4">Calculation Results</h4>
-                <p>lower_bound_cost :<span id="lower_bound_cost">-</span> €</p>
-                <p>upper_bound_cost :<span id="upper_bound_cost">-</span> €</p>
-                <p>lower_bound_von :<span id="lower_bound_von">-</span> €</p>
-                <p>upper_bound_von :<span id="upper_bound_von">-</span> €</p>
-                <p>lower_bound_bis :<span id="lower_bound_bis">-</span> €</p>
-                <p>upper_bound_bis :<span id="upper_bound_bis">-</span> €</p>
+                <p>(OW)     :<span id="upper_bound_cost">-</span> €</p>
+                <p>(HOWmin) :<span id="upper_bound_von">-</span> €</p>
+                <p>(HOWmax) :<span id="upper_bound_bis">-</span> €</p>
 
                 <p><strong>Interpolated Basishonorarsatz:</strong> <span id="interpolatedBase">-</span> €</p>
                 
@@ -88,7 +81,13 @@
 
                 <p><strong>Grundhonorar(100%) + Zushlag:</strong> <span id="grundhonorar">-</span> €</p>
 
-                <div class="divider"></div>
+            </div>
+
+
+
+            <!-- Right Section: Results -->
+            <div class="border rounded-lg p-4">
+                
 
                 <h4 class="font-bold mt-4">Fee Breakdown</h4>
                 <ul id="feeBreakdown" class="list-disc pl-5 text-sm"></ul>
@@ -105,7 +104,7 @@
 
                 <p class="text-md font-bold"><strong>Total Gross Honorarium:</strong> <span id="grossHonor">-</span> €</p>
                 
-                <button type="button" class="btn btn-primary mt-4 w-full" onclick="loadSectionsFromLP()">Load Sections from LP</button>
+                <button type="button" class="btn btn-primary btn-outline mt-4 w-full" onclick="loadSectionsFromLP()">Load Sections from LP</button>
 
             </div>
         </div>

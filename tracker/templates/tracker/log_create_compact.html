@@ -3,21 +3,32 @@
 {% block title %}Create Log{% endblock %}
 
 {% block content %}
+<style>
+.card-title {
+    white-space: nowrap;       /* Prevents text from wrapping */
+    overflow: hidden;          /* Hides text overflow */
+    text-overflow: ellipsis;   /* Adds "..." at the end of overflow text */
+    display: block;            /* Ensures proper ellipsis behavior */
+    max-width: 100%;           /* Optional: adjust or constrain width */
+}
+
+
+</style>
 <!-- Alert Container -->
 <div id="alert-container" class="mb-4 fixed top-4 left-1/2 transform -translate-x-1/2 z-50"></div>
 
 <div id="preset-container" class="flex flex-col lg:flex-row justify-center items-center space-y-4 lg:space-y-0 lg:space-x-4">
     <!-- Fixed Preset Card -->
-    <div class="fixed_preset card bg-base-100 shadow-md" id="fixed_preset" 
+    <div class="fixed_preset card  bg-slate-300 shadow-md h-56 max-w-56 p-4" id="fixed_preset" 
         data-project-name="Büro" 
         data-contract-id="1" 
         data-section-id="193" 
         data-Item-name="Allgemein" 
         data-Item-id="292" 
         data-task-id="1">
-        <div class="card-body">
+        <div class="card-body p-0">
             <div class="tooltip" data-tip="Fills up the rest.">
-                <h2 class="card-title font-bold">Büro ⓘ</h2>
+                <h2 class="card-title font-bold mt-0 ">Büro ⓘ</h2>
             </div>
             <div class="task-container flex flex-wrap gap-2 overflow-y-auto"></div>
             <input class="input input-bordered input-xs w-full text-xs" type="text" name="custom_tasks" id="custom-tasks-fixed" placeholder="Custom tasks">
@@ -30,7 +41,7 @@
                     </div>
                 {% endfor %}
                 <input type="hidden" name="log_time" value="">
-                <button type="submit" class="btn btn-xs w-max btn-primary">Fill in the rest</button>
+                <button type="submit" class="btn btn-xs w-max btn-primary">Den Rest ausfüllen</button>
             </form>
         </div>
     </div>
@@ -38,13 +49,13 @@
     <div class="divider lg:divider-horizontal"></div>
     
     {% for preset in project_presets %}
-    <div class="indicator  w-[95%] h-56 mb-4">
+    <div class="indicator  w-[95%] h-56 max-w-56  mb-4">
         {% if preset.default_section.section_billed_hourly %}
         <div class=" tooltip-left" data-tip="Billed Hourly">
-            <span class="indicator-item badge badge-secondary badge-outline flex items-center justify-center p-1 pt-0 ">⧗</span>
+            <span class="indicator-item indicator-start badge badge-secondary badge-outline flex items-center justify-center p-1 pt-0 ">⧗</span>
         </div>
         {% endif %}
-        <div class="card bg-base-100 w-full h-full shadow-md preset-card" id="preset-{{ preset.id }}" 
+        <div class="card bg-base-100 max-w-56 h-full shadow-md preset-card" id="preset-{{ preset.id }}" 
             data-project-name="{{ preset.project.project_name }}" 
             data-contract-name="{{ preset.default_contract.contract_name }}" 
             data-contract-id="{{preset.default_contract.id}}"
@@ -54,7 +65,7 @@
             data-Item-id="{{ preset.default_Item.id }}" 
             data-task-id="{{ preset.default_task.id }}">
         
-            <div class="card-body p-2">
+            <div class="card-body max-w-56 p-2">
                 <div class="join"> 
                     <h2 class="card-title font-semibold text-lg p-0">{{ preset.project.project_name }}</h2>
                 </div>
@@ -70,10 +81,10 @@
                 </div>
                 <div class="task-container flex flex-wrap gap-1 mb-0"></div>
 
-                    <input class="input input-bordered input-xs text-xs mb-0.25" type="text" name="custom_tasks" id="custom-tasks-{{ forloop.counter }}" placeholder="Custom tasks">
+                    <input class="input input-bordered input-xs text-xs mb-0.25" type="text" name="custom_tasks" id="custom-tasks-{{ forloop.counter }}" placeholder="Andere Aufgaben">
                     <div class="mb-0.25">
                         <select id="time-select-{{ forloop.counter }}" name="time-select-{{ forloop.counter }}" class="select select-xs select-bordered w-full text-xs m-">
-                            <option value="">Time</option>
+                            <option value="">--Zeit--</option>
                             <option value="0.25">15min</option>
                             <option value="0.50">30min</option>
                             <option value="0.75">45min</option>
@@ -117,7 +128,7 @@
                             {{ field }}
                         </div>
                     {% endfor %}
-                    <button type="submit" class="btn btn-xs btn-primary w-full m-0">Submit</button>
+                    <button type="submit" class="btn btn-xs btn-primary w-full mt-4">Submit</button>
                 </form>
             </div>
         </div>
@@ -131,18 +142,18 @@
     
 </div>
 
-<div id="log-container" class="overflow-x-auto  w-[95%] h-[30vh] mx-auto mt-4">
-    <table class="table table-xs table-pin-rows table-pin-cols w-full table-zebra">
+<div id="log-container" class="overflow-x-auto  w-[95%] h-[30vh] mx-auto mt-16">
+    <table class="table table-xs table-pin-rows table-pin-cols w-full">
         <thead>
             <tr>
-                <th>Timestamps</th>
-                <th>Project Name</th>
-                <th>Contract</th>
-                <th>Section</th>
-                <th>Item</th>
-                <th>Task</th>
-                <th>Time</th>
-                <th>Action</th>
+                <th>Zeitstempel</th>
+                <th>Projektname</th>
+                <th>Vertrag</th>
+                <th>Abschnitt</th>
+                <th>Artikel</th>
+                <th>Aufgaben</th>
+                <th>Zeit</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -172,7 +183,8 @@
     </table>
 </div>
 <div class="progress-container mt-4 text-center">
-    <h3 class="text-lg font-medium">Hours Logged Today: <span id="total-hours-today">{{ total_hours_today }}</span> / {{ hours_assigned_today }} hours</h3>
+    <h3 class="text-lg font-medium">Heute erfasste Stunden: <span id="total-hours-today">{{ total_hours_today }}</span> / {{ hours_assigned_today }} 
+        Std.</h3>
     <progress id="progressbar" class="progress progress-accent w-56" value="{{ total_hours_today }}" max="{{ hours_assigned_today }}"></progress>
 </div>
 {% endblock %}
@@ -269,7 +281,7 @@ $(document).ready(function () {
 
         $('.fixed_preset').each(function() {
             $(this).find('input[name="log_time"]').val(remainingTimeFormatted);
-            $(this).find('input[name="log_project_name"]').val($(this).data('project-name'));
+            $(this).find('input[name="log_project_name" ]').val($(this).data('project-name'));
             $(this).find('input[name="log_contract"]').val($(this).data('contract-id'));
             $(this).find('input[name="log_section"]').val($(this).data('section-id'));
             $(this).find('input[name="log_Item"]').val($(this).data('item-id'));
@@ -316,7 +328,7 @@ $(document).ready(function () {
                         convertToDropdownIfNeeded();
                         
                     } else {
-                        card.find('.task-container').html("<p>No tasks available</p>");
+                        card.find('.task-container').html("<p>N/A</p>");
                     }
                 },
                 error: function(error) {
@@ -358,7 +370,7 @@ $(document).ready(function () {
         if (card.data('section-name').toLowerCase().includes('hourly')) {
             card.find('.card-body').prepend(`
                 <div class="indicator">
-                    <span class="indicator-item badge badge-primary">
+                    <span class="  indicator-item indicator-start badge badge-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -387,7 +399,7 @@ $(document).ready(function () {
             const selectedOptionValue = selectedOption.val();
 
             // Ensure the selected option is valid (i.e., not the default 'Select Task')
-            if (selectedOptionValue !== '' && selectedOptionText !== 'Select Task') {
+            if (selectedOptionValue !== '' && selectedOptionText !== 'Aufgabe') {
                 selectedTasks.push(selectedOptionText);
             }
         }
@@ -425,7 +437,7 @@ $(document).ready(function () {
                 const dropdown = $('<select>').addClass('select select-xs select-bordered w-full text-xs task-dropdown');
 
                 // Add the default "Select Task" option and disable it
-                const defaultOption = $('<option>').val('').text('Select Task').prop('disabled', true).prop('selected', true);
+                const defaultOption = $('<option>').val('').text('--Aufgabe--').prop('disabled', true).prop('selected', true);
                 dropdown.append(defaultOption);
 
                 taskButtons.each(function () {

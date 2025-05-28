@@ -10,6 +10,14 @@
     <link rel="icon" href="https://i.ibb.co/fkSb1NL/BCK-icon.png" type="image/x-icon"/>
     <title>{% block head_title %}BCK Tracker{% endblock %}</title>
 
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.53.0/apexcharts.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.53.0/apexcharts.min.js"></script>
+    
+    <meta name="view-transition" content="same-origin">
+
+
     <!-- HTMX & CSS -->
     <script src="https://unpkg.com/htmx.org@1.9.10" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
@@ -40,10 +48,12 @@
             {% endfor %}
         </div>
         {% endif %}
-
-        <main class="w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 2xl:pt-20 md:pt-8 sm:pt-14 xs:pt-16 pt-20">
+        <div style="view-transition-name: main-content">
+          <main class="w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 2xl:pt-20 md:pt-8 sm:pt-14 xs:pt-16 pt-20">
             {% block content %}{% endblock %}
         </main>
+        </div>
+
     </div>
 
     <!-- jQuery for message fading -->
@@ -90,8 +100,17 @@
       });
     });
   </script>
-  
-
-    {% block extra_scripts %}{% endblock %}
+<script>
+  function navigateWithTransition(url) {
+    if (!document.startViewTransition) {
+      window.location.href = url;
+    } else {
+      document.startViewTransition(() => {
+        window.location.href = url;
+      });
+    }
+  }
+</script>
+ {% block extra_scripts %}{% endblock %}
 </body>
 </html>

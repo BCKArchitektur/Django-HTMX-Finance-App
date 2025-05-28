@@ -11,7 +11,7 @@ class LogForm(forms.ModelForm):
     log_tasks = forms.CharField(widget=forms.HiddenInput(), label="Tasks", required=True)
 
     TIME_CHOICES = (
-        ('', 'Select Time'),
+        ('', '--Zeit--'),
         ('0.25', '15min'),
         ('0.50', '30min'),
         ('0.75', '45min'),
@@ -57,7 +57,7 @@ class LogForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super(LogForm, self).__init__(*args, **kwargs)
         if user:
-            self.fields['log_project_name'].queryset = Project.objects.filter(user=user)
+            self.fields['log_project_name'].queryset = Project.objects.filter(user=user, status='0')
             if self.is_bound:
                 project_id = self.data.get('log_project_name')
                 contract_id = self.data.get('log_contract')
@@ -113,6 +113,10 @@ class ProjectForm(forms.ModelForm):
         model = Project
         fields = ['project_name', 'project_address', 'client_name', 'project_no', 'status', 'user']
 
+    def __init__(self, *args, **kwargs):
+        super(ProjectForm, self).__init__(*args, **kwargs)
+        # Filter active users only
+        self.fields['user'].queryset = User.objects.filter(is_active=True)
 
 
 class ClientForm(forms.ModelForm):

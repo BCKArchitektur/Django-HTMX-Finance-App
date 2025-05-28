@@ -14,7 +14,7 @@
             <div class="basis-1/4">
                 {{ form.log_project_name.errors }}
                 <select id="id_log_project_name" name="{{ form.log_project_name.name }}" class="select select-bordered w-full">
-                    <option value="">Select Project</option>
+                    <option value="">--Projekt--</option>
                     {% for project in form.log_project_name.field.queryset %}
                         <option value="{{ project.id }}" {% if project.id == form.log_project_name.value %}selected{% endif %}>{{ project }}</option>
                     {% endfor %}
@@ -25,21 +25,21 @@
             <div class="basis-1/4">
                 {{ form.log_contract.errors }}
                 <select id="id_log_contract" name="{{ form.log_contract.name }}" class="select select-bordered w-full">
-                    <option value="">Select Contract</option>
+                    <option value="">--Vertrag--</option>
                     {% for contract in form.log_contract.field.queryset %}
                         <option value="{{ contract.id }}" {% if contract.id == form.log_contract.value %}selected{% endif %}>{{ contract }}</option>
                     {% endfor %}
                 </select>
                 {{ form.log_section.errors }}
                 <select id="id_log_section" name="{{ form.log_section.name }}" class="select select-bordered w-full mt-2">
-                    <option value="">Select Section</option>
+                    <option value="">--Abschnitt--</option>
                     {% for section in form.log_section.field.queryset %}
                         <option value="{{ section.id }}" {% if section.id == form.log_section.value %}selected{% endif %}>{{ section }}</option>
                     {% endfor %}
                 </select>
                 {{ form.log_Item.errors }}
                 <select id="id_log_Item" name="{{ form.log_Item.name }}" class="select select-bordered w-full mt-2">
-                    <option value="">Select Item</option>
+                    <option value="">--Artikel--</option>
                     {% for item in form.log_Item.field.queryset %}
                         <option value="{{ item.id }}" {% if item.id == form.log_Item.value %}selected{% endif %}>{{ item }}</option>
                     {% endfor %}
@@ -51,7 +51,7 @@
                 {{ form.log_tasks.errors }}
                 {{ form.log_tasks }}
                 <div id="task-buttons-container" class="task-buttons flex flex-wrap gap-2"></div>
-                <input class="input input-bordered w-full mt-2" type="text" id="custom-tasks" placeholder="Add custom tasks">
+                <input class="input input-bordered w-full mt-2" type="text" id="custom-tasks" placeholder="Andere Aufgaben">
             </div>
         </div>
 
@@ -60,7 +60,7 @@
             <div class="basis-1/4">
                 {{ form.log_time.errors }}
                 <select id="id_log_time" name="{{ form.log_time.name }}" class="select select-bordered w-full mt-2">
-                    <option value="">Select Time</option>
+                    <option value="">--Zeit--</option>
                     {% for value, label in form.log_time.field.choices %}
                         <option value="{{ value }}" {% if value == form.log_time.value %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
@@ -82,17 +82,17 @@
 
 
 <div id="log-container"  class="overflow-x-auto  w-[95%] h-[30vh] mx-auto mt-4">
-    <table class="table table-xs table-pin-rows table-pin-cols table-zebra">
+    <table class="table table-xs table-pin-rows table-pin-cols">
         <thead>
             <tr>
-                <th>Timestamps</th>
-                <th>Project Name</th>
-                <th>Contract</th>
-                <th>Section</th>
-                <th>Item</th>
-                <th>Task</th>
-                <th>Time</th>
-                <th>Action</th>
+                <th>Zeitstempel</th>
+                <th>Projektname</th>
+                <th>Vertrag</th>
+                <th>Abschnitt</th>
+                <th>Artikel</th>
+                <th>Aufgaben</th>
+                <th>Zeit</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -123,7 +123,7 @@
 
 </div>
 <div class="progress-container mt-4 text-center">
-    <h3 class="text-lg font-medium">Hours Logged Today: <span id="total-hours-today">{{ total_hours_today }}</span> / {{ hours_assigned_today }} hours</h3>
+    <h3 class="text-lg font-medium">Heute erfasste Stunden:<span id="total-hours-today">{{ total_hours_today }}</span> / {{ hours_assigned_today }} Std.</h3>
     <progress id="progressbar"class="progress progress-accent w-56" value="{{ total_hours_today }}" max="{{ hours_assigned_today }}"></progress>
 </div>
 {% endblock %}
@@ -261,17 +261,38 @@
                 },
                 success: function (response) {
                     console.log('Form submitted successfully:', response);
+                    // Get the new log entry HTML
+                    var newLog = $(response).find('#log-container').html();
                     // Update the log container with the new log entry
-                    $('#log-container').html($(response).find('#log-container').html());
+                    $('#log-container').html(newLog);
+
+                    // Apply the fade-in and color fade effect to the new log row
+                    var newLogEntry = $('.log-entry:last');
+                    
+                    // Set the initial faint background color (you can adjust the color to your preference)
+                    newLogEntry.css('background-color', '#f7f7f7');  // Light grey or any faint color
+                    
+                    // Fade in the log entry
+                    newLogEntry.hide().fadeIn(1000);
+
+                    // After 2 seconds, gradually fade out the background color
+                    setTimeout(function() {
+                        newLogEntry.animate({
+                            backgroundColor: '#ffffff'  // Reset to the original color (white in this case)
+                        }, 1500);  // Adjust the fade-out duration if needed
+                    }, 2000);  // Wait for 2 seconds before starting to fade the color
+                    
                     // Reset the form
                     $('#log-form')[0].reset();
                     // Reset task buttons and custom tasks input
                     $('#task-buttons-container').empty();
                     $('#custom-tasks').val('');
                     $('#id_log_tasks').val(''); // Reset hidden input for tasks
+                    
                     // Update the total hours today and progress bar
                     totalHoursToday = parseFloat($(response).find('#total-hours-today').text());
                     updateProgressBar(totalHoursToday);
+
                     // Display success alert
                     displayAlert("Log has been successfully added!");
                 },
@@ -411,6 +432,7 @@
             loadTasks(ItemId);
         });
     });
+
 </script>
 {% endblock %}
 

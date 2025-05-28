@@ -8,7 +8,6 @@ from django.utils import timezone
 from decimal import Decimal
 import os
 from django.db.models import JSONField
-from phonenumber_field.modelfields import PhoneNumberField 
 from django.core.exceptions import ObjectDoesNotExist
 
 

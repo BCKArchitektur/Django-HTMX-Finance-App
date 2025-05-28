@@ -44,7 +44,9 @@ ALLOWED_HOSTS = ['192.168.1.134',
 
 INSTALLED_APPS = [
     'jazzmin',
+    # 'django_daisy',
     "django.contrib.admin",
+    'django.contrib.humanize',  # Required for django-daisy
     'django_addanother',
     "django.contrib.auth",
     "django.contrib.contenttypes",

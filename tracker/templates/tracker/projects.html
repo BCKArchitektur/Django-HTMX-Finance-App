@@ -5,39 +5,56 @@
 {% block title %}Projects{% endblock %}
 
 {% block content %}
-<div role="tablist" class="tabs tabs-bordered align-middle items-center">
+<div role="tablist" class="tabs tabs-bordered align-middle items-center overflow-x-auto  w-[95%] mx-auto">
     <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Projects" checked="checked"/>
     <div role="tabpanel" class="tab-content p-10">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold">Projects ({{ projects.count }})</h2>
             <div class="flex items-center gap-2">
+                <label for="toggleAllProjects" class="text-sm mr-2">All Projects</label>
+                <label class="toggle text-base-content">
+                    <input type="checkbox" class="toggle" id="toggleAllProjects" onchange="toggleProjectStatus()"/>
+                    <span class="toggle-label"></span> 
+                </label>
                 <input type="text" id="project-search" placeholder="Search Projects..." class="input input-bordered input-sm" onkeyup="filterTable('project-search', 'project-table')">
                 <button class="btn btn-sm btn-accent" onclick="openProjectModal()">+ New Project</button>
-            </div>
+            </div>            
         </div>
+        
 
 
         <div class="overflow-x-auto h-[70vh] w-auto ">
-            <table class="table table-zebra" id="project-table">
+            <table class="table" id="project-table">
               <!-- head -->
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Project Name</th>
-                  <th>Client Name</th>
-                  <th>Status</th>
-                  <th>Team</th>
-                  <th>Actions</th>
+                    <th onclick="sortTable(0, 'project-table')" data-column="0">#
+                        <span class="sort-indicator"></span>
+                    </th>
+                    <th onclick="sortTable(1, 'project-table')" data-column="1">Project Name
+                        <span class="sort-indicator"></span>
+                    </th>
+                    <th onclick="sortTable(2, 'project-table')" data-column="2">Client Name
+                        <span class="sort-indicator"></span>
+                    </th>
+                    <th onclick="sortTable(3, 'project-table')" data-column="3">Status
+                        <span class="sort-indicator"></span>
+                    </th>
+                    <th>Team</th>
+                    <th>Actions</th>
                 </tr>
-              </thead>
+            </thead>            
               <tbody>
                 {% for project in projects %}
-                <tr class="hover">
-                    <th>{{ project.project_no }}</th>
+                <tr class="hover:bg-base-300">
+                    <td>
+                        {{ project.project_no }}</td>
                     <td>
                         <a href="{% url 'edit_project' project.id %}" class=" font-semibold  hover:text-secondary">
                             {{ project.project_name }}
                         </a>
+                        </div>
+
                     </td>
                     <td>
                             {{ project.client_name.firm_name }}
@@ -88,28 +105,41 @@
             </div>
         </div>
         <div class="overflow-x-auto h-[70vh]  w-auto">
-            <table class="table table-zebra" id="client-table">
+            <table class="table" id="client-table">
               <!-- head -->
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Firm Name</th>
-                  <th>Client Name</th>
-                  <th>Client Address</th>
-                  <th>City</th>
-                  <th>Country</th>
-                  <th>Actions</th>
+                    <th onclick="sortTable(0, 'client-table')" data-column="0">#
+                        <span class="sort-indicator"></span>
+                    </th>
+                    <th onclick="sortTable(1, 'client-table')" data-column="1">Firm Name
+                        <span class="sort-indicator"></span>
+                    </th>
+                    <th onclick="sortTable(2, 'client-table')" data-column="2">Client Name
+                        <span class="sort-indicator"></span>
+                    </th>
+                    <th onclick="sortTable(3, 'client-table')" data-column="3">Client Address
+                        <span class="sort-indicator"></span>
+                    </th>
+                    <th onclick="sortTable(4, 'client-table')" data-column="4">City
+                        <span class="sort-indicator"></span>
+                    </th>
+                    <th onclick="sortTable(5, 'client-table')" data-column="5">Country
+                        <span class="sort-indicator"></span>
+                    </th>
+                    <th>Actions</th>
                 </tr>
-              </thead>
+            </thead>
+            
               <tbody>
                 {% for client in clients %}
-                <tr class="hover">
-                    <th>{{ forloop.counter }}</th>
-                    <th>
+                <tr class="hover:bg-base-300">
+                    <td>{{ forloop.counter }}</td>
+                    <td>
                         <a href="{% url 'edit_client' client.id %}" class=" font-semibold hover:text-secondary">
                             {{ client.firm_name }}
                         </a>
-                    </th>
+                    </td>
                     <td>{{ client.client_name }}</td>
                     <td>{{ client.street_address }}</td>
                     <td>{{ client.city }}</td>
@@ -472,15 +502,17 @@ document.addEventListener("DOMContentLoaded", function() {
 }
 </script>
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      new TomSelect("#id_user", {
-        plugins: ['remove_button'],
-        maxItems: null,
-        create: false,
-        searchField: 'text',
-        placeholder: "Search Users...",
-      });
-    });
+document.addEventListener("DOMContentLoaded", function () {
+  new TomSelect("#id_user", {
+    plugins: ['remove_button'],
+    maxItems: null,
+    create: false,
+    searchField: 'text',
+    placeholder: "Search Users...",
+    dropdownDirection: 'up'  // This ensures the dropdown opens upwards
+  });
+});
+
 
 </script>
 <script>
@@ -494,7 +526,107 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         }
     });
+
+    let lastSortedColumn = null;
+    let lastSortDirection = 'asc'; // Track the last sort direction (asc/desc)
+
+    function sortTable(columnIndex, tableId) {
+        const table = document.getElementById(tableId);
+        const rows = Array.from(table.getElementsByTagName('tr')).slice(1); // Get all rows except the header
+        const isNumericColumn = rows.every(row => !isNaN(row.cells[columnIndex].innerText.trim()));
+
+        // Determine the sort direction (ascending/descending)
+        let sortDirection = 'asc'; // Default to ascending
+        if (lastSortedColumn === columnIndex && lastSortDirection === 'asc') {
+            sortDirection = 'desc';
+        }
+
+        // Sort rows
+        rows.sort((rowA, rowB) => {
+            const cellA = rowA.cells[columnIndex].innerText.trim();
+            const cellB = rowB.cells[columnIndex].innerText.trim();
+
+            if (isNumericColumn) {
+                return sortDirection === 'asc' ? parseFloat(cellA) - parseFloat(cellB) : parseFloat(cellB) - parseFloat(cellA);
+            } else {
+                return sortDirection === 'asc' ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+            }
+        });
+
+        // Reattach rows in sorted order
+        rows.forEach(row => table.appendChild(row));
+
+        // Update sorting indicators
+        updateSortIndicators(columnIndex, sortDirection, tableId);
+
+        lastSortedColumn = columnIndex; // Store the last sorted column index
+        lastSortDirection = sortDirection; // Store the last sort direction
+    }
+
+    function updateSortIndicators(columnIndex, direction, tableId) {
+        // Remove indicators from all th elements within the table
+        const headers = document.querySelectorAll(`#${tableId} th`);
+        headers.forEach(header => {
+            const indicator = header.querySelector('.sort-indicator');
+            if (indicator) {
+                indicator.textContent = ''; // Remove the arrow
+            }
+        });
+
+        // Add the appropriate indicator to the sorted column
+        const sortedHeader = document.querySelector(`#${tableId} th[data-column="${columnIndex}"] .sort-indicator`);
+        if (sortedHeader) {
+            sortedHeader.textContent = direction === 'asc' ? '↑' : '↓'; // Add ascending/descending arrow
+        }
+    }
+
+    function toggleProjectStatus() {
+        const isChecked = document.getElementById("toggleAllProjects").checked;
+        const table = document.getElementById("project-table");
+        const rows = table.getElementsByTagName('tr');
+        
+        // Loop through the rows and filter based on the project status
+        for (let i = 1; i < rows.length; i++) { // Skip header row
+            const cells = rows[i].getElementsByTagName('td');
+            const statusCell = cells[3]; // Assuming the status is in the 3rd column
+            
+            if (statusCell) {
+                const status = statusCell.textContent.trim();
+                
+                if (isChecked) {
+                    rows[i].style.display = ''; // Show all projects
+                } else {
+                    if (status === "Completed" || status === "On Hold") {
+                        rows[i].style.display = 'none'; // Hide Completed and On Hold projects
+                    } else {
+                        rows[i].style.display = ''; // Show only In Progress projects
+                    }
+                }
+            }
+        }
+    }
+
+    // Call this function on page load to set the initial visibility
+    document.addEventListener("DOMContentLoaded", function() {
+        toggleProjectStatus(); // Ensure that only In Progress projects are shown initially
+    });
+
+
     </script>
+    <style>
+        /* Make text non-selectable */
+        th {
+            cursor: pointer;
+            user-select: none;  /* Prevent text selection */
+        }
+
+        /* Add hover effect with smooth transition */
+        th:hover {
+            background-color: #f0f0f0; /* Light background on hover */
+            transition: background-color 0.3s ease; /* Smooth transition for background */
+        }
+
+    </style>
 
 
         

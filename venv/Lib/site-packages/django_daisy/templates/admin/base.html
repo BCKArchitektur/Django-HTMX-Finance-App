@@ -1,0 +1,195 @@
+{% load i18n %}
+{% load static %}
+{% load dash_tags %}
+{% get_current_language as LANGUAGE_CODE %}{% get_current_language_bidi as LANGUAGE_BIDI %}
+
+<!DOCTYPE html>
+<html data-use-i18n="{{ use_i18n|yesno:'1,0' }}" data-theme="" class="custom-scrollbars"
+      lang="{{ LANGUAGE_CODE|default:"en-us" }}"
+      {% if LANGUAGE_BIDI %}dir="rtl"
+      {% else %}dir="ltr"{% endif %}>
+
+<head>
+    <script>
+        /* set selected theme before everything
+        * to avoid color flash on refresh
+        *  */
+        function getSystemColorScheme() {
+            try {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    return 'dark';
+                } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                    return 'light';
+                } else {
+                    return 'light';  // In case the user's preference is not explicitly set.
+                }
+            } catch (e) {
+                return 'light'
+            }
+        }
+
+        document.documentElement.setAttribute(
+            'data-theme', localStorage.getItem('theme') || getSystemColorScheme()
+        )
+
+        {% if change_language_url %}
+            function switchLanguage(elem) {
+                let lang_id = $(elem).find('span.lang-id').html();
+                $("form#setlang input[name='language']").val(lang_id);
+                $("form#setlang").submit();
+            }
+        {% endif %}
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        {% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+    </title>
+
+    {% if CUSTOM_DAISYUI_BUILD_PATH %}
+        <link rel="stylesheet" href="{{ CUSTOM_DAISYUI_BUILD_PATH }}">
+    {% endif %}
+
+    {% if LOAD_FULL_STYLES %}
+        <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.13/dist/full.min.css" rel="stylesheet"
+              type="text/css"/>
+        <script src="{% static "admin/js/tailwind-3.4.5.js" %}"></script>
+    {% else %}
+        <link href="{% static 'admin/css/base_tailwind.css' %}" rel="stylesheet">
+    {% endif %}
+
+    <link href="{% static 'admin/css/customized_tailwind.css' %}?v=2" rel="stylesheet">
+    <link href="{% static 'admin/css/calendar.css' %}" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'admin/fonts/fontawesome-free-6.6.0-web/css/all.min.css' %}"/>
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.css" rel="stylesheet">
+
+    {% block body_font %}
+        <style>
+            @font-face {
+                font-family: 'rtl-font';
+                src: url("{% static 'admin/fonts/Vazir.woff2' %}") format('woff');
+                font-weight: normal;
+                font-style: normal;
+            }
+
+            @font-face {
+                font-family: 'body-font';
+                src: local('Ubuntu'), local('Ubuntu-Regular'), url("{% static 'admin/fonts/Ubuntu/Ubuntu-Regular.ttf' %}") format('truetype');
+                font-weight: normal;
+                font-style: normal;
+            }
+
+            /* Bold */
+            @font-face {
+                font-family: 'body-font';
+                src: local('Ubuntu-Medium'), url("{% static 'admin/fonts/Ubuntu/Ubuntu-Medium.ttf' %}") format('truetype');
+                font-weight: bold;
+                font-style: normal;
+            }
+        </style>
+    {% endblock %}
+
+
+    {% block extrahead %}{% endblock %}
+    {% block extrastyle %}{% endblock %}
+
+    {% for custom_style_link in EXTRA_STYLES %}
+        <link rel="stylesheet" href="{{ custom_style_link }}">
+    {% endfor %}
+</head>
+
+<body class="bg-base-200 {% if LANGUAGE_BIDI %}font-vazir{% else %}font-cantarell{% endif %} ">
+
+<div class="flex">
+    {% if not is_popup and is_nav_sidebar_enabled %}
+        {% block nav-sidebar %}
+            {% include "admin/parts/sidebar.html" with app_list=available_apps %}
+        {% endblock %}
+    {% endif %}
+    <!-- Main content -->
+
+
+    <div id="content"
+         class="content-wrapper w-full flex flex-col min-h-screen  main-wrapper transition-all duration-200 ease-in-out">
+        {% block top-navbar %}
+            {% if not is_popup %}
+                {% include 'admin/parts/navbar.html' %}
+            {% endif %}
+        {% endblock %}
+        <div class="flex items-center max-md:p-3 p-5 pb-0 flex-wrap justify-between">
+            {% comment %}<h3 class="text-lg font-medium">
+                        {% block content_title %}{{ cl.opts.app_config.verbose_name }}{% endblock %}
+                    </h3>{% endcomment %}
+
+            {% block breadcrumbs %}{% endblock %}
+
+        </div>
+
+        <div class="main-content h-full max-md:p-3 p-5 pt-2 pb-0">
+            {% block messages %}
+                {% if messages %}
+                    <div class="toast z-20 whitespace-normal toast-top toast-end">
+                        {% for message in messages %}
+                            <div class="alert alert-info info-content
+                        {% if message.tags %}alert-{{ message.tags }} {{ message.tags }}-content{% endif %} shadow-lg mb-2 relative">
+                            <div class="p-1 pe-2">
+                                <span>{{ message|capfirst }}</span>
+                            </div>
+                            <button class="btn btn-xs btn-circle absolute top-2 ltr:right-2 rtl:left-2"
+                                    onclick="this.parentElement.remove();">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endblock messages %}
+
+            {% block content %}
+                {{ content }}
+            {% endblock %}
+        </div>
+    </div>
+
+</div>
+<form id="logout-form" class="hidden" method="post" action="{% url 'admin:logout' %}">
+    {% csrf_token %}
+    <button type="submit"></button>
+</form>
+
+{% if change_language_url %}
+    <form id="setlang" class="hidden" action="{{ change_language_url }}" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="language" value="">
+        <input type="submit" value="Go"/>
+    </form>
+{% endif %}
+
+<input type="checkbox" id="generalModal" class="modal-toggle"/>
+<dialog class="modal generalModal">
+    <div class="modal-box w-11/12 max-w-5xl h-full p-0 flex justify-center items-center">
+        <button class="btn">
+            <span class="loading loading-spinner"></span>
+            loading
+        </button>
+    </div>
+    <label class="modal-backdrop" for="generalModal">Close</label>
+</dialog>
+
+
+<script src="{% static "admin/js/vendor/jquery/jquery.min.js" %}"></script>
+<script src="{% static "admin/js/jquery.init.js" %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+<script src="{% static "admin/js/theme-change.js" %}"></script>
+<script defer src="{% static 'admin/js/SelectBox.js' %}"></script>
+<script src="{% static 'admin/js/admin/dashboard.js' %}"></script>
+{% for custom_script_link in EXTRA_SCRIPTS %}
+    <script src="{{ custom_script_link }}"></script>
+{% endfor %}
+{% block scripts %}
+
+{% endblock %}
+
+</body>
+</html>

@@ -18,6 +18,7 @@ urlpatterns = [
     path('ajax/load-tasks/', views.load_tasks, name='ajax_load_tasks'),
     path('ajax/load-contract-data/', views.load_contract_data, name='ajax_load_contract_data'),  # New URL
     path('delete-log/<str:log_id>/', views.delete_log, name='delete_log'),
+    path('ajax/get-scope/<int:contract_id>/', views.get_contract_scope, name='get_contract_scope'),
 
     path('toggle-dark-mode/', views.toggle_dark_mode, name='toggle_dark_mode'),
     path('project-details/<int:project_id>/', views.project_details, name='project_details'),

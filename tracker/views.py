@@ -183,10 +183,12 @@ def delete_client(request, client_id):
         return JsonResponse({'status': 'success'})
     return HttpResponseBadRequest("Invalid request")
 
-
 @login_required
 def edit_project(request, project_id):
     project = get_object_or_404(Project, id=project_id)
+
+    # Store the old project name for later use (if the project name is updated)
+    old_project_name = project.project_name
 
     # Fetch all projects to pass to the context
     all_projects = Project.objects.all()
@@ -200,6 +202,16 @@ def edit_project(request, project_id):
 
     if request.method == 'POST':
         if 'project_name' in request.POST:
+            # Handle project name update
+            new_project_name = request.POST.get('project_name')
+            if old_project_name != new_project_name:  # Only proceed if the name has actually changed
+                # Update the project name
+                project.name = new_project_name
+                project.save()
+
+                # Find all logs with the old project name and update them
+                Logs.objects.filter(log_project_name=old_project_name).update(log_project_name=new_project_name)
+
             return handle_project_form(request, project)
         elif 'contract_name' in request.POST and not request.POST.get('contract_id'):
             return handle_new_contract_form(request, project)
@@ -227,6 +239,7 @@ def edit_project(request, project_id):
         'all_projects': all_projects
     }
     return render(request, 'tracker/edit_project.html', context)
+
 
 
 
@@ -821,7 +834,7 @@ def log_create_compact(request):
 
 @login_required
 def log_create(request):
-    projects = Project.objects.filter(user=request.user)
+    projects = Project.objects.filter(user=request.user, status='0')
     logs = Logs.objects.filter(user=request.user).order_by('-log_timestamps')[:100]
     today = timezone.now().astimezone(pytz.timezone('Europe/Berlin')).strftime('%Y-%m-%d')
     logs_today = Logs.objects.filter(user=request.user, log_timestamps__startswith=today)
@@ -974,6 +987,13 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from .models import Contract, Invoice, User
 
+def get_contract_scope(request, contract_id):
+    contract = get_object_or_404(Contract, id=contract_id)
+    return JsonResponse({
+        'contract_id': contract.id,
+        'scope': contract.scope_of_work if contract.scope_of_work else ''
+    })
+
 def load_contract_data(request):
     contract_id = request.GET.get('contract_id')
     contract = get_object_or_404(Contract, id=contract_id)
@@ -1064,6 +1084,7 @@ def load_contract_data(request):
         'zuschlag_value': zuschlag_value,
         'nachlass_value' : nachlass_value,
         'nachlass_percentage' : nachlass_percentage,
+
     }
 
     return JsonResponse(contract_data)
@@ -1507,9 +1528,12 @@ def generate_word_document(request, contract_id):
             if is_english_template:
                 unit = {'Psch': 'Lumpsum', 'Stk': 'Piece', 'Std': 'Hour'}.get(unit, unit)
 
+            if item.description:
+                description = item.description,
             items.append({
                 'Item_serial': f"{section_counter}.{item_counter}",
                 'Item_name': item.Item_name,
+                'description': item.description if item.description else '',
                 'quantity': f"{item.quantity:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'unit': unit,
                 'rate': f"{Decimal(item.rate):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),

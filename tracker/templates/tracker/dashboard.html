@@ -2,6 +2,443 @@
 {% load static %}
 
 {% block content %}
+<div class="mt-6">
 
+  <!--  Start: Dashboard Counter Widget -->
+  <div class="grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
+                      <div aria-label="Card" class="card bg-base-200 shadow">
+                        <div class="card-body gap-2">
+                          <div class="flex items-start justify-between gap-2 text-sm">
+                            <div>
+                              <p class="font-medium text-base-content/70">Revenue</p>
+                              <div class="mt-4 flex items-center gap-2">
+                                <h5 class="inline text-2xl/none font-semibold">$587.54</h5>
+                                <div
+                                  aria-label="Badge"
+                                  class="badge badge-sm gap-1 border-0 bg-success/10 py-3 text-xs font-semibold text-success">
+                                  <iconify-icon icon="lucide:arrow-up" height="14"></iconify-icon>
+                                  10.8%
+                                </div>
+                              </div>
+                            </div>
+                            <div class="rounded bg-base-200 p-2">
+                              <iconify-icon
+                                icon="lucide:circle-dollar-sign"
+                                height="20"
+                                class="text-base-content/80"></iconify-icon>
+                            </div>
+                          </div>
+                          <p class="text-sm font-medium">
+                            <span class="text-success">+$112.58</span>
+                            <span class="ms-1.5 text-base-content/60">than past week</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div aria-label="Card" class="card bg-base-200 shadow">
+                        <div class="card-body gap-2">
+                          <div class="flex items-start justify-between gap-2 text-sm">
+                            <div>
+                              <p class="font-medium text-base-content/70">Sales</p>
+                              <div class="mt-4 flex items-center gap-2">
+                                <h5 class="inline text-2xl/none font-semibold">4500</h5>
+                                <div
+                                  aria-label="Badge"
+                                  class="badge badge-sm gap-1 border-0 bg-success/10 py-3 text-xs font-semibold text-success">
+                                  <iconify-icon icon="lucide:arrow-up" height="14"></iconify-icon>
+
+                                  21.2%
+                                </div>
+                              </div>
+                            </div>
+                            <div class="rounded bg-base-200 p-2">
+                              <iconify-icon
+                                icon="lucide:package"
+                                height="20"
+                                class="text-base-content/80"></iconify-icon>
+                            </div>
+                          </div>
+                          <p class="text-sm font-medium">
+                            <span class="text-success">+25</span>
+                            <span class="ms-1.5 text-base-content/60">than past week</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div aria-label="Card" class="card bg-base-200 shadow">
+                        <div class="card-body gap-2">
+                          <div class="flex items-start justify-between gap-2 text-sm">
+                            <div>
+                              <p class="font-medium text-base-content/70">Customer</p>
+                              <div class="mt-4 flex items-center gap-2">
+                                <h5 class="inline text-2xl/none font-semibold">2200</h5>
+                                <div
+                                  aria-label="Badge"
+                                  class="badge badge-sm gap-1 border-0 bg-error/10 py-3 text-xs font-semibold text-error">
+                                  <iconify-icon icon="lucide:arrow-down" height="14"></iconify-icon>
+                                  10.2%
+                                </div>
+                              </div>
+                            </div>
+                            <div class="rounded bg-base-200 p-2">
+                              <iconify-icon
+                                icon="lucide:users"
+                                height="20"
+                                class="text-base-content/80"></iconify-icon>
+                            </div>
+                          </div>
+                          <p class="text-sm font-medium">
+                            <span class="text-error">-312</span>
+                            <span class="ms-1.5 text-base-content/60">than past week</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div aria-label="Card" class="card bg-base-200 shadow">
+                        <div class="card-body gap-2">
+                          <div class="flex items-start justify-between gap-2 text-sm">
+                            <div>
+                              <p class="font-medium text-base-content/70">Spending</p>
+                              <div class="mt-4 flex items-center gap-2">
+                                <h5 class="inline text-2xl/none font-semibold">$112.54</h5>
+                                <div
+                                  aria-label="Badge"
+                                  class="badge badge-sm gap-1 border-0 bg-success/10 py-3 text-xs font-semibold text-success">
+                                  <iconify-icon icon="lucide:arrow-up" height="14"></iconify-icon>
+
+                                  8.5%
+                                </div>
+                              </div>
+                            </div>
+                            <div class="rounded bg-base-200 p-2">
+                              <iconify-icon
+                                icon="lucide:eraser"
+                                height="20"
+                                class="text-base-content/80"></iconify-icon>
+                            </div>
+                          </div>
+                          <p class="text-sm font-medium">
+                            <span class="text-success">+$54.65</span>
+                            <span class="ms-1.5 text-base-content/60">than past week</span>
+                          </p>
+                        </div>
+                      </div>
+  </div>
+  <!--  End: Dashboard Counter Widget -->
+  <!--  Start: Customer Acquisition -->
+  <div aria-label="Card" class="card card-bordered bg-base-200 mt-4">
+      <div class="card-body p-0">
+        <div class="flex items-center justify-between px-5 pt-4">
+          <span class="font-medium">Customer Acquisition</span>
+        </div>
+        <div class="mt-2 border-y border-base-content/10 py-2">
+          <div class="grid grid-cols-3 gap-5 divide-x divide-base-content/10">
+            <div class="text-center">
+              <p class="text-base font-medium">Users</p>
+              <p class="mt-1 text-2xl font-semibold">427</p>
+              <div class="mt-1 inline-flex items-center gap-1 text-success">
+                <iconify-icon icon="lucide:arrow-up" height="16"></iconify-icon>
+
+                <p class="text-sm">3.15%</p>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-base font-medium">Sessions</p>
+              <p class="mt-1 text-2xl font-semibold">34</p>
+              <div class="mt-1 inline-flex items-center gap-1 text-error">
+                <iconify-icon icon="lucide:arrow-down" height="16"></iconify-icon>
+
+                <p class="text-sm">-2.78%</p>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-base font-medium">Bounce Rate</p>
+              <p class="mt-1 text-2xl font-semibold">40.5%</p>
+              <div class="mt-1 inline-flex items-center gap-1 text-success">
+                <iconify-icon icon="lucide:arrow-up" height="16"></iconify-icon>
+
+                <p class="text-sm">5.14%</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="p-5">
+          <div class="overflow-hidden rounded-lg">
+            <div id="customer_acquisition_chart"></div>
+          </div>
+        </div>
+      </div>
+  </div>
+
+</div>
+
+  <!--  End: Customer Acquisition -->
+  <!--  Start: Top Countries -->
+  <div aria-label="Card" class="card card-bordered bg-base-200 mt-4">
+    <div class="card-body gap-0 p-0">
+      <div class="flex items-center gap-3 px-5 pt-5">
+        <iconify-icon
+          icon="lucide:globe-2"
+          height="16"
+          class="text-base-content/80"></iconify-icon>
+        <span class="grow font-medium">Top Countries (% in Sales)</span>
+        <button class="btn btn-ghost btn-sm gap-2 bg-base-content/5">
+          <iconify-icon icon="lucide:eye" height="16"></iconify-icon>
+          Overview
+        </button>
+      </div>
+      <div class="mb-3 me-5">
+        <div id="top_countries_chart"></div>
+      </div>
+    </div>
+  </div>
+  <!--  End: Top Countries -->
+<script>
+  let customerAcquisitionChart = null
+  let topCountriesChart = null
+
+  const initCustomerAcquisitionChart = () => {
+      if (!window.ApexCharts) return
+      var options = {
+
+        chart: {
+          events: {
+            mounted: (c) => c.windowResizeHandler(),
+          },
+          height: 210,
+          fontFamily: "DM Sans",
+          type: "area",
+          background: "transparent",
+          sparkline: {
+            enabled: true,
+          },
+          toolbar: {
+            show: false,
+          },
+        },
+        dataLabels: {
+          enabled: false,
+        },
+        grid: {
+          show: false,
+        },
+    
+        stroke: {
+          curve: ["smooth", "straight"],
+          width: 2,
+          dashArray: [0, 6],
+        },
+        series: [
+          {
+            name: "Sessions",
+            type: "area",
+            data: [10, 14, 16, 14, 12, 15, 18, 21, 24, 23, 21, 17, 19, 22],
+          },
+        ],
+        legend: {
+          show: false,
+        },
+        xaxis: {
+          categories: [],
+          tooltip: {
+            enabled: false,
+          },
+          axisBorder: {
+            show: false,
+          },
+          labels: {
+            show: false,
+            formatter: (val) => {
+              return `Day ${val}`
+            },
+          },
+          axisTicks: {
+            show: false,
+          },
+        },
+        yaxis: {
+          labels: {
+            show: false,
+          },
+        },
+    
+        fill: {
+          type: "gradient",
+          opacity: 1,
+          gradient: {
+            shadeIntensity: 1,
+    
+            type: "horizontal",
+            colorStops: [
+              {
+                offset: 0,
+                color: "rgba(75,134,255,0.1)",
+                opacity: 1,
+              },
+              {
+                offset: 30,
+                color: "rgba(255,54,54,0.1)",
+                opacity: 1,
+              },
+              {
+                offset: 35,
+                color: "rgba(255,54,138,0.08)",
+                opacity: 1,
+              },
+              {
+                offset: 50,
+                color: "rgba(51,84,250,0.2)",
+                opacity: 1,
+              },
+              {
+                offset: 80,
+                color: "rgba(64,96,255,0.16)",
+                opacity: 1,
+              },
+              {
+                offset: 100,
+                color: "rgba(75,99,255,0.1)",
+                opacity: 1,
+              },
+            ],
+          },
+        },
+      }
+    
+      customerAcquisitionChart = new ApexCharts(
+        document.querySelector("#customer_acquisition_chart"),
+        options
+      )
+    
+      customerAcquisitionChart.render()
+    }
+
+  const initTopCountriesChart = () => {
+      if (!window.ApexCharts) return
+      const topCountries = [
+        {
+          name: "Turkey",
+          orders: 10,
+        },
+        {
+          name: "Canada",
+          orders: 15,
+        },
+        {
+          name: "India",
+          orders: 14,
+        },
+        {
+          name: "Netherlands",
+          orders: 18,
+        },
+        {
+          name: "Italy",
+          orders: 25,
+        },
+        {
+          name: "France",
+          orders: 16,
+        },
+      ]
+
+      var options = {
+        chart: {
+          events: {
+            mounted: (c) => c.windowResizeHandler(),
+          },
+          height: 290,
+          fontFamily: "DM Sans",
+          type: "bar",
+          parentHeightOffset: 0,
+          background: "transparent",
+          toolbar: {
+            show: false,
+          },
+        },
+        plotOptions: {
+          bar: {
+            horizontal: true,
+            borderRadius: 4,
+            distributed: true,
+            borderRadiusApplication: "end",
+          },
+        },
+        dataLabels: {
+          enabled: true,
+          textAnchor: "start",
+          style: {
+            colors: ["#fff"],
+          },
+          formatter: function (val, opt) {
+            return opt.w.globals.labels[opt.dataPointIndex] + ":  " + val
+          },
+          offsetX: -10,
+          dropShadow: {
+            enabled: false,
+          },
+        },
+        series: [
+          {
+            data: topCountries.map((country) => country.orders),
+          },
+        ],
+        legend: {
+          show: false,
+        },
+        stroke: {
+          width: 0,
+          colors: ["#fff"],
+        },
+        xaxis: {
+          categories: topCountries.map((country) => country.name),
+        },
+        yaxis: {
+          labels: {
+            show: false,
+          },
+        },
+        grid: {
+          borderColor: "transparent",
+          padding: {
+            top: -16,
+          },
+        },
+
+        tooltip: {
+          theme: "dark",
+          x: {
+            show: false,
+          },
+          y: {
+            formatter: (val, opts) => `${val}%`,
+            title: {
+              formatter: () => "",
+            },
+          },
+        },
+        colors: [
+          "#3e60d5",
+          "#47ad77",
+          "#fa5c7c",
+          "#6c757d",
+          "#39afd1",
+          "#2b908f",
+          "#ffbc00",
+          "#90ee7e",
+          "#f48024",
+          "#212730",
+        ],
+      }
+
+      topCountriesChart = new ApexCharts(document.querySelector("#top_countries_chart"), options)
+
+      topCountriesChart.render()
+    }
+  
+    document.addEventListener("DOMContentLoaded", function () {
+      initCustomerAcquisitionChart()
+      initTopCountriesChart()
+    })
+  </script>
+  
+  
 
 {% endblock content %}
