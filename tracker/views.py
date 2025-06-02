@@ -1632,7 +1632,8 @@ def generate_word_document(request, contract_id):
         "honorarsatz": hoai_details["honorarsatz"],
         "honorarsatz_factor": hoai_details["honorarsatz_factor"],
         "baukonstruktionen": format_german_number(hoai_details["baukonstruktionen"]),
-        "technische_anlagen": format_german_number(hoai_details["technische_anlagen"]),
+        "technische_anlagen": format_german_number(hoai_details.get("technische_anlagen", "0")),
+
         "anrechenbare_kosten": format_german_number(hoai_details["anrechenbare_kosten"]),
         "interpolated_basishonorarsatz": hoai_details["interpolated_basishonorarsatz"],
         "interpolated_oberer_honorarsatz": hoai_details["interpolated_oberer_honorarsatz"],
@@ -1687,12 +1688,10 @@ def generate_word_document(request, contract_id):
 import locale
 
 def format_german_number(number):
-
     """
     Converts a number into German locale format.
     Example: 1000000 → "1.000.000,00"
     """
-
     number = Decimal(number)
     locale.setlocale(locale.LC_NUMERIC, 'de_DE.UTF-8')  # Set German locale
     return locale.format_string("%.2f", number, grouping=True).replace(',', 'X').replace('.', ',').replace('X', '.')
@@ -1975,7 +1974,7 @@ def download_invoice(request, invoice_id):
                     'Item_serial': item_serial,
                     'unit': unit,
                     'rate': f"{Decimal(details['rate']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-                    'quantity': details['quantity'],
+                    'quantity': f"{details['quantity']:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                     'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
                 }]
             })

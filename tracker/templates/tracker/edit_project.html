@@ -5,33 +5,38 @@
 {% block content %}
 <div class="container mx-auto p-4" x-data="{ showForm: false }">
     <div class="flex justify-between items-center mb-4">
+        <div class="flex items-center gap-2">
+            <!-- Back Arrow Button -->
+            <button class="btn btn-circle btn-outline" onclick="window.location.href='{% url 'projects' %}';">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+        </div>
         <div class="join align-middle justify-center items-center">
-            <h2 class="text-lg font-thin">Edit - </h2>
+            <h2 class="text-lg font-thin"></h2>
             <h2 class="text-2xl font-semibold m-2">{{ project.project_name }}</h2>
         </div>
         <div class="flex items-center gap-2">
+            <!-- Toggle Button -->
             <button class="btn btn-circle btn-outline" @click="showForm = !showForm">
                 <svg xmlns="http://www.w3.org/2000/svg" :class="{ 'rotate-180': showForm }" class="h-5 w-5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
-            <button class="btn btn-circle btn-outline btn-error" onclick="window.location.href='{% url 'projects' %}';">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
         </div>
     </div>
+    
 
     <div x-show="showForm" class="transition-all duration-300 ease-in-out">
         <form method="post" action="{% url 'edit_project' project.id %}">
             {% csrf_token %}
             <div class="grid grid-cols-3 gap-4">
                 <div class="form-control">
-                    <input type="text" name="project_name" value="{{ project.project_name }}" placeholder="Project Name" class="input input-bordered m-1" id="id_project_name">
+                    <input type="text" name="project_name" value="{{ project.project_name }}" placeholder="Projektname" class="input input-bordered m-1" id="id_project_name">
                 </div>
                 <div class="form-control">
-                    <input type="text" name="project_address" value="{{ project.project_address }}" placeholder="Project Address" class="input input-bordered m-1" id="id_project_address">
+                    <input type="text" name="project_address" value="{{ project.project_address }}" placeholder="Projektadresse" class="input input-bordered m-1" id="id_project_address">
                 </div>
                 <div class="form-control">
                     <select name="client_name" class="select select-bordered m-1" id="id_client_name">
@@ -41,7 +46,7 @@
                     </select>
                 </div>
                 <div class="form-control">
-                    <input type="text" name="project_no" value="{{ project.project_no }}" placeholder="Project Number" class="input input-bordered m-1" id="id_project_no">
+                    <input type="text" name="project_no" value="{{ project.project_no }}" placeholder="Projektnummer" class="input input-bordered m-1" id="id_project_no">
                 </div>
                 <div class="form-control">
                     <select name="status" class="select select-bordered m-1" id="id_status">
@@ -56,7 +61,7 @@
                 </div>                
             </div>
             <div class="modal-action">
-                <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+                <button type="submit" class="btn btn-primary btn-sm btn-outline">Speichern</button>
             </div>
         </form>
     </div>
@@ -64,66 +69,66 @@
     <div class="divider lg:divider-neutral"></div>
 
     <div role="tablist" class="tabs tabs-bordered overflow-x-auto  w-[95%] mx-auto">
-        <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Contracts" id="contracts-tab" checked="checked" />
+        <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Verträge" id="contracts-tab" checked="checked" />
         <div role="tabpanel" class="tab-content p-10" id="contracts-content">
           <div class="flex justify-between items-center mb-4">
-              <h2 class="text-xl font-semibold">Manage Contracts</h2>
+              <h2 class="text-xl font-semibold">Verträge verwalten</h2>
               <div class="join gap-4">
-                <input type="text" id="contract-search" placeholder="Search Contracts..." class="input input-bordered input-sm" onkeyup="filterTable('contract-search', 'contract-table')">
-              <button class="btn btn-sm btn-accent" onclick="openContractModal({{ project.id }})">+ New Contract</button>
+                <input type="text" id="contract-search" placeholder="Verträge suchen..." class="input input-bordered input-sm" onkeyup="filterTable('contract-search', 'contract-table')">
+              <button class="btn btn-sm btn-accent" onclick="openContractModal({{ project.id }})">+ Neuer Vertrag</button>
             </div>  
             </div>
           <div class="animate-table-fade-in overflow-x-auto h-[50vh]" >
               <table class="table" id="contract-table">
                 <thead>
                     <tr>
-                        <th>
-                        </th>
-                        <th onclick="sortTable(1, 'contract-table')" data-column="1">
-                            Contract No
+                        <th onclick="sortTable(0, 'contract-table')" data-column="0">
+                            Vertrag Nr.
                             <span class="sort-indicator"></span>
                         </th>
-                        <th> HOAI
+                        <th > HOAI
                         </th>
                         <th onclick="sortTable(2, 'contract-table')" data-column="2">
-                            Contract Name
+                            Vertrag
                             <span class="sort-indicator"></span>
                         </th>
                         <th>
-                            Users
+                            Benutzer
                         </th>
                         <th>
-                            Actions
+                            Aktionen
+                        </th>
+                        <th>
+                            
                         </th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for contract in contracts %}
                     <tr class="hover:bg-base-300">
-                        <td class="w-1/12">
-                            <form method="post" action="{% url 'delete_contract' contract.id %}" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-circle btn-error btn-outline p-1 m-1" onclick="return confirm('Are you sure you want to delete this contract?');">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
-                            </form>
-                        </td>
-                        <td class="w-1/4">
+                        <td class="w-1/6">
                             <a href="javascript:void(0);" onclick="openEditContractModal({{ contract.id }})" class="font-semibold hover:text-secondary">
                                 {{ contract.contract_no}}
                             </a>
                           
                         </td>
                         <!-- if contrract is hoai show it as status  -->
-                        <td class="w-1/4">
+                        <td class="w-1/8">
                             {% if contract.hoai_data %}
-                                <span class="badge badge-success badge-outline">Yes</span>
+                                <span class="badge badge-success badge-outline">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </span>
                             {% else %}
-                                <span class="badge badge-error badge-outline">No</span>
+                                <span class="badge badge-error badge-outline">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </span>
                             {% endif %}
                         </td>
+                        
                         <td class="w-1/4">
                             <a href="javascript:void(0);" onclick="openEditContractModal({{ contract.id }})" class="font-semibold hover:text-secondary">
                                 {{ contract.contract_name }}
@@ -149,31 +154,37 @@
                                 {% endfor %}
                             </div>                            
                         </td>
-                        <td class="w-1/2 flex flex-col gap-0.5 items-center justify-center">
-                            <button class="btn btn-xs btn-primary btn-outline m-1 h-10" onclick="openAddUsersModal({{ contract.id }})">
-                                ✎ Users
-                            </button>
-                            <button class="btn btn-xs btn-primary btn-outline m-1 h-10" onclick="openAddBudgetModal({{ contract.id }})">
-                                ✎ Budget
-                            </button>
-                            <button
-                                class="btn btn-xs btn-primary btn-outline m-1 h-10"
-                                onclick="openScopeModal({{ contract.id }})">
-                                ✎ Scope
-                            </button>                        
-                            <button
-                                class="btn btn-xs btn-secondary btn-outline m-1 h-10"
-                                onclick="openTemplateModal({{ contract.id }})">
-                                🖪 Estimate
-                            </button>
-
+                        <td class="w-1/2">
+                            <div class="flex flex-col items-center justify-center h-full gap-1 py-2">
+                                <button class="btn btn-xs btn-primary btn-outline h-10 w-24" onclick="openAddUsersModal({{ contract.id }})">
+                                    ✎ Benutzer
+                                </button>
+                                <button class="btn btn-xs btn-primary btn-outline h-10 w-24" onclick="openAddBudgetModal({{ contract.id }})">
+                                    ✎  Budget
+                                </button>
+                                <button class="btn btn-xs btn-primary btn-outline h-10 w-24" onclick="openScopeModal({{ contract.id }})">
+                                    ✎    Scope 
+                                </button>
+                                <button class="btn btn-xs btn-secondary btn-outline h-10 w-24" onclick="openTemplateModal({{ contract.id }})">
+                                    🖪 Angebot
+                                </button>
+                            </div>
+                        </td>
                         
-
-                        </td>                        
+                            <td class="w-1/12">
+                                <form method="post" action="{% url 'delete_contract' contract.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-circle btn-error btn-outline p-1 m-1" onclick="return confirm('Are you sure you want to delete this contract?');">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            </td>                        
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="4" class="text-center">No contracts have been added yet.</td>
+                        <td colspan="4" class="text-center">Es sind noch keine Verträge hinzugefügt worden.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -182,49 +193,51 @@
           </div>
         </div>
       
-        <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Invoices" id="invoices-tab" />
+        <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Rechnungen" id="invoices-tab" />
         <div role="tabpanel" class="tab-content p-10" id="invoices-content">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-semibold">Manage Invoices</h2>
+                <h2 class="text-xl font-semibold">Rechnungen verwalten</h2>
                 <div class="join gap-4">
-                    <input type="text" id="invoice-search" placeholder="Search Invoices..." class="input input-bordered input-sm" onkeyup="filterTable('invoice-search', 'invoice-table')">
-                    <button class="btn btn-sm btn-accent" onclick="openInvoiceModal()">+ New Invoice</button>
+                    <input type="text" id="invoice-search" placeholder="Rechnungen suchen..." class="input input-bordered input-sm" onkeyup="filterTable('invoice-search', 'invoice-table')">
+                    <button class="btn btn-sm btn-accent" onclick="openInvoiceModal()">+ Neue Rechnung</button>
                 </div>
             </div>
             <div class="animate-table-fade-in overflow-x-auto h-[50vh]" >
                 <table class="table" id="invoice-table">
                     <thead>
-                        <tr>
+                        <tr class="hover:bg-base-300">
                             <th onclick="sortTable(0, 'invoice-table')" data-column="0">
-                                Invoice Number
+                                Rechnungsnummer
                                 <span class="sort-indicator"></span>
                             </th>
                             <th onclick="sortTable(1, 'invoice-table')" data-column="1">
-                                Type
+                                Typ
                                 <span class="sort-indicator"></span>
                             </th>
                             <th onclick="sortTable(2, 'invoice-table')" data-column="2">
-                                Contract
+                                Vertrag
                                 <span class="sort-indicator"></span>
                             </th>
                             <th onclick="sortTable(3, 'invoice-table')" data-column="3">
-                                Date Issued
+                                Ausgabedatum
                                 <span class="sort-indicator"></span>
                             </th>
                             <th onclick="sortTable(4, 'invoice-table')" data-column="4">
-                                Net (€)
+                                Netto (€)
                                 <span class="sort-indicator"></span>
                             </th>
                             <th onclick="sortTable(5, 'invoice-table')" data-column="5">
-                                Gross (€)
+                                Brutto (€)
                                 <span class="sort-indicator"></span>
                             </th>
                             <th onclick="sortTable(6, 'invoice-table')" data-column="6">
-                                Amount Received (€)
+                                Erhaltener<br>Betrag (€)
                                 <span class="sort-indicator"></span>
                             </th>
                             <th >
-                                Actions
+                                Aktionen
+                            </th>
+                            <th >
                             </th>
                         </tr>
                     </thead>
@@ -243,25 +256,32 @@
                             <td>{{ invoice.created_at  }}</td>
                             <td data-value="{{ invoice.invoice_net }}">{{ invoice.invoice_net|german_number }}</td>
                             <td data-value="{{ invoice.invoice_gross }}">{{ invoice.invoice_gross |german_number}}</td>
-                            <td data-value="{{ invoice.amount_received }}">
+                            <td  class="w-1/12" data-value="{{ invoice.amount_received }}">
                                 {{ invoice.amount_received|german_number }} €
                                 {% if invoice.date_of_payment %}
                                     <br><span class="text-xs text-gray-500">({{ invoice.date_of_payment }})</span>
                                 {% endif %}
                             </td>                            
-                            <td>
+                            <td class="w-1/12">
+
+                                <button class="btn btn-xs btn-primary btn-outline m-1  h-10 w-24" onclick="openRecordPaymentModal({{ invoice.id }})">Payment</button> <!-- New Button -->
+                                <a href="javascript:void(0);" onclick="openInvoiceTemplateModal({{ invoice.id }})" class="btn btn-xs btn-secondary btn-outline m-1 p-1  h-10 w-24">🖪 Invoice</a>
+                            
+                            </td>
+                            <td class="w-1/20" >
                                 <form method="post" action="{% url 'delete_invoice' invoice.id %}" style="display:inline;" onsubmit="return confirmDelete();">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-xs btn-error btn-outline m-1 p-1">Delete</button>
+                                    <button type="submit" class="btn btn-sm btn-circle btn-error btn-outline m-1 p-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
                                 </form>
-                                
-                                <a href="javascript:void(0);" onclick="openInvoiceTemplateModal({{ invoice.id }})" class="btn btn-xs btn-secondary btn-outline m-1 p-1">🖪 Invoice</a>
-                                <button class="btn btn-xs btn-primary btn-outline m-1" onclick="openRecordPaymentModal({{ invoice.id }})">Payment</button> <!-- New Button -->
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center">No invoices have been added yet.</td>
+                            <td colspan="7" class="text-center">Es wurden noch keine Rechnungen hinzugefügt.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -269,12 +289,12 @@
             </div>
         </div>
 
-        <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Settings" id="settings-tab" />
+        <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Einstellungen" id="settings-tab" />
         <div role="tabpanel" class="tab-content p-10" id="settings-content">
-            <h2 class="text-xl font-semibold mb-4">Settings</h2>
+            <h2 class="text-xl font-semibold mb-4">Einstellungen</h2>
 
             <div class="alert alert-info mb-6"  id="settings-note">
-              <span class="font-semibold">Note:</span> The values entered here will override the default hourly rates. Leave fields empty to use the default hourly rates.
+              <span class="font-semibold"></span> Die hier eingegebenen Werte setzen die Standardstundensätze außer Kraft. Lassen Sie die Felder leer, um die Standardstundensätze zu verwenden.
             </div>
             
             <form id="project-settings-form" method="post" action="{% url 'update_project_settings' project.id %}">
@@ -1842,7 +1862,7 @@
             maxItems: null,
             create: false,
             searchField: 'text',
-            placeholder: "Search Users...",
+            placeholder: "Benutzer suchen...",
           });
         });
 

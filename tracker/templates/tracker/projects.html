@@ -6,18 +6,18 @@
 
 {% block content %}
 <div role="tablist" class="tabs tabs-bordered align-middle items-center overflow-x-auto  w-[95%] mx-auto">
-    <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Projects" checked="checked"/>
+    <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Projekte" checked="checked"/>
     <div role="tabpanel" class="tab-content p-10">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold">Projects ({{ projects.count }})</h2>
+            <h2 class="text-xl font-semibold">Projekte ({{ projects.count }})</h2>
             <div class="flex items-center gap-2">
-                <label for="toggleAllProjects" class="text-sm mr-2">All Projects</label>
+                <label for="toggleAllProjects" class="text-sm mr-2">"Alle Projekte"</label>
                 <label class="toggle text-base-content">
                     <input type="checkbox" class="toggle" id="toggleAllProjects" onchange="toggleProjectStatus()"/>
                     <span class="toggle-label"></span> 
                 </label>
-                <input type="text" id="project-search" placeholder="Search Projects..." class="input input-bordered input-sm" onkeyup="filterTable('project-search', 'project-table')">
-                <button class="btn btn-sm btn-accent" onclick="openProjectModal()">+ New Project</button>
+                <input type="text" id="project-search" placeholder="Projekte suchen..." class="input input-bordered input-sm" onkeyup="filterTable('project-search', 'project-table')">
+                <button class="btn btn-sm btn-accent" onclick="openProjectModal()">+ Neues Projekt</button>
             </div>            
         </div>
         
@@ -31,17 +31,17 @@
                     <th onclick="sortTable(0, 'project-table')" data-column="0">#
                         <span class="sort-indicator"></span>
                     </th>
-                    <th onclick="sortTable(1, 'project-table')" data-column="1">Project Name
+                    <th onclick="sortTable(1, 'project-table')" data-column="1">Projektname
                         <span class="sort-indicator"></span>
                     </th>
-                    <th onclick="sortTable(2, 'project-table')" data-column="2">Client Name
+                    <th onclick="sortTable(2, 'project-table')" data-column="2">Klientname
                         <span class="sort-indicator"></span>
                     </th>
                     <th onclick="sortTable(3, 'project-table')" data-column="3">Status
                         <span class="sort-indicator"></span>
                     </th>
                     <th>Team</th>
-                    <th>Actions</th>
+                    <th></th>
                 </tr>
             </thead>            
               <tbody>
@@ -77,9 +77,9 @@
                     </td>
                     <td>
                         <div class="tooltip" data-tip="Delete">
-                            <button class="btn btn-circle btn-outline btn-xs" onclick="deleteProject({{ project.id }}, '{{ csrf_token }}')">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            <button class="btn btn-circle btn-error btn-outline btn-xs" onclick="deleteProject({{ project.id }}, '{{ csrf_token }}')">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                             </button>
                         </div>
@@ -95,13 +95,13 @@
         </div>
     </div>
 
-    <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Clients" />
+    <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Klienten" />
     <div role="tabpanel" class="tab-content p-10">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold">Clients ({{ clients.count }})</h2>
+            <h2 class="text-xl font-semibold">Klienten ({{ clients.count }})</h2>
             <div class="flex items-center gap-2">
-                <input type="text" id="client-search" placeholder="Search Clients..." class="input input-bordered input-sm" onkeyup="filterTable('client-search', 'client-table')">
-                <button class="btn btn-sm btn-accent" onclick="openClientModal()">+ New Client</button>
+                <input type="text" id="client-search" placeholder="Klienten suchen..." class="input input-bordered input-sm" onkeyup="filterTable('client-search', 'client-table')">
+                <button class="btn btn-sm btn-accent" onclick="openClientModal()">+ Neuer Klient</button>
             </div>
         </div>
         <div class="overflow-x-auto h-[70vh]  w-auto">
@@ -112,22 +112,22 @@
                     <th onclick="sortTable(0, 'client-table')" data-column="0">#
                         <span class="sort-indicator"></span>
                     </th>
-                    <th onclick="sortTable(1, 'client-table')" data-column="1">Firm Name
+                    <th onclick="sortTable(1, 'client-table')" data-column="1">Firmenname
                         <span class="sort-indicator"></span>
                     </th>
-                    <th onclick="sortTable(2, 'client-table')" data-column="2">Client Name
+                    <th onclick="sortTable(2, 'client-table')" data-column="2">KlientName
                         <span class="sort-indicator"></span>
                     </th>
-                    <th onclick="sortTable(3, 'client-table')" data-column="3">Client Address
+                    <th onclick="sortTable(3, 'client-table')" data-column="3">KlientAdresse
                         <span class="sort-indicator"></span>
                     </th>
-                    <th onclick="sortTable(4, 'client-table')" data-column="4">City
+                    <th onclick="sortTable(4, 'client-table')" data-column="4">Stadt
                         <span class="sort-indicator"></span>
                     </th>
-                    <th onclick="sortTable(5, 'client-table')" data-column="5">Country
+                    <th onclick="sortTable(5, 'client-table')" data-column="5">Land
                         <span class="sort-indicator"></span>
                     </th>
-                    <th>Actions</th>
+                    <th></th>
                 </tr>
             </thead>
             
@@ -146,9 +146,9 @@
                     <td>{{ client.country.name }}</td>
                     <td>
                         <div class="tooltip" data-tip="Delete">
-                            <button class="btn btn-circle btn-outline btn-xs" onclick="deleteClient({{ client.id }}, '{{ csrf_token }}')">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            <button class="btn btn-circle btn-error btn-outline btn-xs" onclick="deleteClient({{ client.id }}, '{{ csrf_token }}')">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                             </button>
                         </div>
@@ -169,20 +169,20 @@
 
 <div id="projectModal" class="modal">
     <div class="modal-box">
-        <h3 class="font-bold text-lg mb-6">Add a New Project</h3>
+        <h3 class="font-bold text-lg mb-6">Neues Projekt hinzufügen</h3>
         <form id="project-form" method="post" action="{% url 'projects' %}">
             {% csrf_token %}
             
             <!-- Project Name -->
             <div class="form-control mb-4">
                 <label for="id_project_name" class="label">
-                    <span class="label-text">Project Name</span>
+                    <span class="label-text">Projektname</span>
                 </label>
                 <input 
                     type="text" 
                     name="project_name" 
                     id="id_project_name" 
-                    placeholder="Enter Project Name" 
+                    placeholder="Projektname eingeben" 
                     class="input input-bordered w-full"
                 />
             </div>
@@ -190,13 +190,13 @@
             <!-- Project Address -->
             <div class="form-control mb-4">
                 <label for="id_project_address" class="label">
-                    <span class="label-text">Project Address</span>
+                    <span class="label-text">Projektadresse</span>
                 </label>
                 <input 
                     type="text" 
                     name="project_address" 
                     id="id_project_address" 
-                    placeholder="Enter Project Address" 
+                    placeholder="Projektadresse eingeben" 
                     class="input input-bordered w-full"
                 />
             </div>
@@ -204,14 +204,14 @@
             <!-- Client Selection -->
             <div class="form-control mb-4">
                 <label for="id_client_name" class="label">
-                    <span class="label-text">Client</span>
+                    <span class="label-text">Klient</span>
                 </label>
                 <select 
                     name="client_name" 
                     id="id_client_name" 
                     class="select select-bordered w-full"
                 >
-                    <option value="" disabled selected>Select Client</option>
+                    <option value="" disabled selected>Klient auswählen</option>
                     {% for client in clients %}
                         <option value="{{ client.id }}">{{ client.firm_name }}</option>
                     {% endfor %}
@@ -228,13 +228,13 @@
             <!-- Project Number -->
             <div class="form-control mb-4">
                 <label for="id_project_no" class="label">
-                    <span class="label-text">Project Number</span>
+                    <span class="label-text">Projektnummer</span>
                 </label>
                 <input 
                     type="text" 
                     name="project_no" 
                     id="id_project_no" 
-                    placeholder="Enter Project Number" 
+                    placeholder="Projektnummer eingeben" 
                     class="input input-bordered w-full"
                 />
             </div>
@@ -249,7 +249,7 @@
                     id="id_status" 
                     class="select select-bordered w-full"
                 >
-                    <option value="" disabled selected>Select Status</option>
+                    <option value="" disabled selected>Status auswählen</option>
                     {% for choice in project_form.status.field.choices %}
                         <option value="{{ choice.0 }}" {% if project_form.status.value == choice.0 %}selected{% endif %}>
                             {{ choice.1 }}
@@ -261,7 +261,7 @@
             <!-- Assigned User -->
             <div class="form-control mb-4">
                 <label for="id_user" class="label">
-                    <span class="label-text">Assign Users</span>
+                    <span class="label-text">Team zuweisen</span>
                 </label>
                 {{ project_form.user }}
             </div>
@@ -269,7 +269,7 @@
 
             <!-- Actions -->
             <div class="modal-action">
-                <button type="submit" class="btn btn-secondary">Save</button>
+                <button type="submit" class="btn btn-secondary">Speichern</button>
                 <button type="button" class="btn btn-outline" onclick="closeProjectModal()">Cancel</button>
             </div>
         </form>
@@ -280,41 +280,41 @@
 <!-- Client Modal -->
 <div id="clientModal" class="modal">
     <div class="modal-box">
-        <h3 class="font-bold text-lg m-4">Add a New Client</h3>
+        <h3 class="font-bold text-lg m-4">Neuen Klienten hinzufügen</h3>
         <form id="client-form" method="post" acstion="{% url 'projects' %}?tab=client">
             {% csrf_token %}
             <div class="form-control w-full max-w-xs">
-                <input type="text" name="firm_name" placeholder="Firm Name" class="input input-bordered w-full max-w-xs m-2" id="id_firm_name">
+                <input type="text" name="firm_name" placeholder="FirmenName" class="input input-bordered w-full max-w-xs m-2" id="id_firm_name">
             </div>
             
             <div class="form-control w-full max-w-xs">
-                <input type="text" name="client_name" placeholder="Client Name" class="input input-bordered w-full max-w-xs m-2" id="id_client_name">
+                <input type="text" name="client_name" placeholder="KlientName" class="input input-bordered w-full max-w-xs m-2" id="id_client_name">
             </div>
             
             <div class="form-control w-full max-w-xs">
-                <input type="email" name="client_mail" placeholder="Client Email" class="input input-bordered w-full max-w-xs m-2" id="id_client_mail">
+                <input type="email" name="client_mail" placeholder="KlientEmail" class="input input-bordered w-full max-w-xs m-2" id="id_client_mail">
             </div>
             
             <div class="form-control w-full max-w-xs">
-                <input type="text" name="client_phone" placeholder="Phone Number" class="input input-bordered w-full max-w-xs m-2" id="id_client_phone">
+                <input type="text" name="client_phone" placeholder="Rufnummer" class="input input-bordered w-full max-w-xs m-2" id="id_client_phone">
             </div>
             
             
             <div class="form-control w-full max-w-xs">
-                <input type="text" name="street_address" placeholder="Street Address" class="input input-bordered w-full max-w-xs m-2" id="id_street_address">
+                <input type="text" name="street_address" placeholder="Straße und Hausnummer" class="input input-bordered w-full max-w-xs m-2" id="id_street_address">
             </div>
             
             <div class="form-control w-full max-w-xs">
-                <input type="text" name="postal_code" placeholder="Postal Code" class="input input-bordered w-full max-w-xs m-2" id="id_postal_code">
+                <input type="text" name="postal_code" placeholder="Postleitzahl" class="input input-bordered w-full max-w-xs m-2" id="id_postal_code">
             </div>
             
             <div class="form-control w-full max-w-xs">
-                <input type="text" name="city" placeholder="City" class="input input-bordered w-full max-w-xs m-2" id="id_city">
+                <input type="text" name="city" placeholder="Stadt" class="input input-bordered w-full max-w-xs m-2" id="id_city">
             </div>
             
             <div class="form-control w-full max-w-xs">
                 <select name="country" class="select select-bordered w-full max-w-xs m-2">
-                    <option disabled selected>Select Country</option>
+                    <option disabled selected>Land</option>
                     {% for choice in client_form.country.field.choices %}
                         <option value="{{ choice.0 }}" {% if client_form.country.value == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
                     {% endfor %}
@@ -322,7 +322,7 @@
             </div>
             
             <div class="modal-action">
-                <button type="submit" class="btn btn-secondary btn-sm">Save</button>
+                <button type="submit" class="btn btn-secondary btn-sm">Sprechen</button>
                 <a href="#" class="btn btn-sm" onclick="closeClientModal()">Cancel</a>
             </div>
         </form>
@@ -508,7 +508,7 @@ document.addEventListener("DOMContentLoaded", function () {
     maxItems: null,
     create: false,
     searchField: 'text',
-    placeholder: "Search Users...",
+    placeholder: "Benutzer suchen...",
     dropdownDirection: 'up'  // This ensures the dropdown opens upwards
   });
 });

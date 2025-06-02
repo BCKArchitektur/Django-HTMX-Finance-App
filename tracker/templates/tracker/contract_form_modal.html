@@ -11,12 +11,12 @@
             </label>
         </div>
 
-        <h3 class="font-bold text-lg m-4" id="contractModalTitle">Add a New Contract</h3>
+        <h3 class="font-bold text-lg m-4" id="contractModalTitle">Neuen Vertrag hinzufügen</h3>
         <!-- Add this button to trigger file upload -->
         <input type="file" id="uploadExcel" accept=".xlsx" style="display:none" onchange="handleFileUpload(event)">
-        <button type="button" class="btn btn-xs btn-outline" onclick="document.getElementById('uploadExcel').click()">Import from Excel</button>
+        <button type="button" class="btn btn-xs btn-outline" onclick="document.getElementById('uploadExcel').click()">Aus Excel importieren</button>
         <!-- Duplicate Existing Contract -->
-        <button type="button" class="btn btn-xs btn-outline" onclick="openDuplicateContractModal()">Duplicate Existing Contract</button>
+        <button type="button" class="btn btn-xs btn-outline" onclick="openDuplicateContractModal()">Vorhandenen Vertrag duplizieren</button>
 
 
         <form id="contract-form" method="post" action="{% url 'edit_project' project.id %}">
@@ -29,16 +29,16 @@
                 <!-- Contract Number Display -->
                 <label class="form-control w-full max-w-xs">
                     <div class="label mb-0 "">
-                        <span class="label-text">Contract Number</span>
+                        <span class="label-text">Vertrag Nr.</span>
                     </div>
                     <input type="text" name="contract_no" id="id_contract_no" 
                         class="input input-bordered w-full m-0" value="{{ contract.contract_no }}" >
                 </label>
                 <label class="form-control w-full max-w-xs">
                     <div class="label mb-0">
-                        <span class="label-text">Contract Name</span>
+                        <span class="label-text">Vertrag Name</span>
                     </div>
-                    <input type="text" name="contract_name" placeholder="Contract Name" class="input input-bordered w-full m-0" id="id_contract_name">
+                    <input type="text" name="contract_name" placeholder="Vertrag Name" class="input input-bordered w-full m-0" id="id_contract_name">
                     <div class="label mt-0">
                         <span id="contract-name-error" class="label-text-alt"></span>
                     </div>
@@ -57,7 +57,7 @@
                     {% include 'tracker/hoai_contract_modal.html' %}
                 </div>
             <div class="mb-4">
-                <button type="button" class="btn btn-sm btn-secondary mb-2" onclick="addSection()">+ New Section</button>
+                <button type="button" class="btn btn-sm btn-secondary mb-2" onclick="addSection()">+ Neue Sektion</button>
             </div>
             <div id="sections-container"></div>
             <div class="modal-action">
@@ -96,7 +96,7 @@
 <!-- Duplicate Contract Modal -->
 <div id="duplicateContractModal" class="modal">
     <div class="modal-box max-w-5xl">
-        <h3 class="font-bold text-lg m-4">Select a Contract to Duplicate</h3>
+        <h3 class="font-bold text-lg m-4">Wählen Sie einen zu duplizierenden Vertrag</h3>
         <div class="accordion" id="projectAccordion">
             {% for project in all_projects %}
             <div class="accordion-item">
@@ -250,7 +250,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Function to open the contract modal
     window.openContractModal = function(projectId) {
-        document.getElementById('contractModalTitle').innerText = 'Add a New Contract';
+        document.getElementById('contractModalTitle').innerText = 'Neuen Vertrag hinzufügen';
         document.getElementById('contract_id').value = '';
         document.getElementById('id_contract_name').value = '';
         document.getElementById('sections-container').innerHTML = ''; // Clear previous sections if any
@@ -282,7 +282,7 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('contractModal').classList.remove('modal-open');
         // Clear form data
         document.getElementById('contract-form').reset();
-        document.getElementById('contractModalTitle').innerText = 'Add a New Contract';
+        document.getElementById('contractModalTitle').innerText = 'Neuen Vertrag hinzufügen';
         document.getElementById('contract_id').value = '';
         document.getElementById('sections-container').innerHTML = '';
 
@@ -978,7 +978,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         </label>
                     </div>
                     <div class="w-full">
-                        <input type="text" name="sections[${sectionId}][section_name]" placeholder="Section Name" class="input input-sm input-bordered w-full m-2 p-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
+                        <input type="text" name="sections[${sectionId}][section_name]" placeholder="Sektion Name" class="input input-sm input-bordered w-full m-2 p-2 section-name" hx-get="{% url 'check_section_name' %}" hx-trigger="blur" hx-target="#section-name-error-${sectionId}" hx-swap="innerHTML">
                     </div>
                     <div class="flex space-x-2">
                         <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionUp(this)">

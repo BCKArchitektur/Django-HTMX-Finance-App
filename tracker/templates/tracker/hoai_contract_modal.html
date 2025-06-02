@@ -3,9 +3,6 @@
     <div>
         <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 
-        <!-- <button class="btn btn-sm btn-circle btn-ghost absolute top-2 right-2" onclick="closeHOAIContractModal()">✕</button> -->
-        <h3 class="font-bold text-lg mb-4">New HOAI Contract</h3>
-
         <!-- Content Section -->
         <div class="grid grid-cols-3 gap-6">
             
@@ -13,9 +10,9 @@
             <div class="border rounded-lg p-4">
                 <h4 class="text-l font-medium mb-4">HOAI Berechnung</h4>
 
-                <label class="block font-extralight">Service Profile:</label>
+                <label class="block font-extralight">Tabelle :</label>
                 <select class="input input-bordered w-full mb-2 font-extralight" id="serviceProfile">
-                    <option value="">Select a Profile</option>
+                    <option value="">Tabelle :</option>
                 </select>
 
                 <label class="block font-extralight">Honorarzone:</label>
@@ -33,10 +30,10 @@
                 </select>
                 
                 <label class="block font-extralight">Bauwerk-Baukonstruktionen(€):</label>
-                <input type="number" id="baukonstruktionen" class="input input-success input-bordered w-full mb-2 font-extralight" value="1000000">
+                <input type="number" id="baukonstruktionen" class="input input-success input-bordered w-full mb-2 font-extralight" value="1000000" required>
                 
-                <label class="block font-extralight">Bauwerk-Technische Anlagen(€):</label>
-                <input type="number" id="technischeAnlagen" class="input input-success input-bordered w-full mb-2 font-extralight" value="250000">
+                <label class="block font-extralight" >Bauwerk-Technische Anlagen(€):</label>
+                <input type="number" id="technischeAnlagen" class="input input-success input-bordered w-full mb-2 font-extralight" value="250000" required>
                 
                 <label class="block font-extralight">Anrechenbare Kosten (€):</label>
                 <input type="number" id="anrechenbareKosten" class="input input-bordered w-full mb-2 font-extralight" value="1250000" readonly>
@@ -65,21 +62,22 @@
                 </div>
                 <div class="divider"></div>
                 <h4 class="text-l mb-4 font-medium">Berechnung</h4>
-                <p>(UW)     :<span id="lower_bound_cost">-</span> €</p>
-                <p>(HUWmin) :<span id="lower_bound_von">-</span> €</p>
-                <p>(HUWmax) :<span id="lower_bound_bis">-</span> €</p>
-
-                <p>(OW)     :<span id="upper_bound_cost">-</span> €</p>
-                <p>(HOWmin) :<span id="upper_bound_von">-</span> €</p>
-                <p>(HOWmax) :<span id="upper_bound_bis">-</span> €</p>
-
-                <p><strong>Interpolated Basishonorarsatz:</strong> <span id="interpolatedBase">-</span> €</p>
+                <p><strong>UW   : </strong><span id="lower_bound_cost">-</span> €</p>
+                <p><strong>HUWmin:</strong> <span id="lower_bound_von">-</span> €</p>
+                <p><strong>HUWmax:</strong> <span id="lower_bound_bis">-</span> €</p>
+                <p>----------</p>
+                <p><strong>OW   :</strong><span id="upper_bound_cost">-</span> €</p>
+                <p><strong>HOWmin:</strong> <span id="upper_bound_von">-</span> €</p>
+                <p><strong>HOWmax:</strong> <span id="upper_bound_bis">-</span> €</p>
+                <p>----------</p>
+                <p><strong> HUW:</strong> <span id="interpolatedBase">-</span> €</p>
                 
-                <p><strong>Interpolated Oberer Honorarsatz:</strong> <span id="interpolatedUpper">-</span> €</p>
+                <p><strong>HOW:</strong> <span id="interpolatedUpper">-</span> €</p>
+                <p>----------</p>
 
                 <p><strong>Zuschlag:</strong> <span id="zuschlagAmount">-</span> €</p>
 
-                <p><strong>Grundhonorar(100%) + Zushlag:</strong> <span id="grundhonorar">-</span> €</p>
+                <p><strong>Grundhonorar(100%)+Zushlag:</strong> <span id="grundhonorar">-</span> €</p>
 
             </div>
 
@@ -89,21 +87,26 @@
             <div class="border rounded-lg p-4">
                 
 
-                <h4 class="font-bold mt-4">Fee Breakdown</h4>
+                <h4 class="text-l mb-4 font-medium">Berechnung der Grundleistungen</h4>
                 <ul id="feeBreakdown" class="list-disc pl-5 text-sm"></ul>
 
                 <div class="divider"></div>
 
                 <!-- <h4 class="font-bold mt-4">Total Fees</h4> -->
                 <p><strong>Honorarsatz Factor:</strong> <span id="honorarsatzFactor">-</span></p>
-                <p><strong>NebenKosten:</strong> <span id="nebenKostenAmount">-</span> €</p>
-                <p><strong>Net Honorarium:</strong> <span id="netHonor">-</span> €</p>
-                <p><strong>VAT:</strong> <span id="vatAmount">-</span> €</p>
+                <p class="hidden"><strong>NebenKosten:</strong> <span id="nebenKostenAmount">-</span> €</p>
+                <p class="hidden"><strong>Net Honorarium:</strong> <span id="netHonor">-</span> €</p>
+                <p class="hidden"><strong>VAT:</strong> <span id="vatAmount">-</span> €</p>
+                <p class="hidden"><strong>Total Gross Honorarium:</strong> <span id="grossHonor">-</span> €</p>
+                <div class="mt-4 border-t pt-4">
+                    <h4 class="font-medium text-md mb-4">Honorare für gewählte LPs</h4>
 
-                <div class="divider"></div>
-
-                <p class="text-md font-bold"><strong>Total Gross Honorarium:</strong> <span id="grossHonor">-</span> €</p>
-                
+                    <p><strong>NebenKosten:</strong> <span id="nebenKostenLP">-</span> </p>
+                    <p><strong>Honorarangebot netto:</strong> <span id="netHonorLP">-</span> </p>
+                    <p><strong>MwSt :</strong> <span id="vatAmountLP">-</span> </p>
+                    <p ><strong>Honorarangebot brutto:</strong> <span id="grossHonorLP">-</span> </p>
+                  </div>
+                  
                 <button type="button" class="btn btn-primary btn-outline mt-4 w-full" onclick="loadSectionsFromLP()">Load Sections from LP</button>
 
             </div>
@@ -131,7 +134,7 @@ function fetchServiceProfiles() {
             console.log("✅ Fetched Service Profiles:", data); // Debugging output
 
             let serviceProfileDropdown = document.getElementById("serviceProfile");
-            serviceProfileDropdown.innerHTML = '<option value="">Select a Profile</option>';
+            serviceProfileDropdown.innerHTML = '<option value="">Tabelle auswählen</option>';
             
             data.forEach(profile => {
                 let option = document.createElement("option");
@@ -381,6 +384,8 @@ function calculateHOAI() {
 
         // 🔥 **Fix: Ensure LP Breakdown is Updated**
         updateFeeBreakdown(selectedLPs);
+        updateLPBasedHonorars(getSelectedLPs());
+
     })
     .catch(error => {
         console.error("Error calculating HOAI:", error);
@@ -487,6 +492,37 @@ document.addEventListener("DOMContentLoaded", function () {
     // Initialize on page load
     updateAnrechenbareKosten();
 });
+
+function updateLPBasedHonorars(selectedLPs) {
+    let totalPercentage = selectedLPs.reduce((sum, lp) => sum + lp.percentage, 0) / 100;
+
+    if (totalPercentage === 0 || isNaN(initialNetHonor)) {
+        document.getElementById("nebenKostenLP").textContent = "-";
+        document.getElementById("netHonorLP").textContent = "-";
+        document.getElementById("vatAmountLP").textContent = "-";
+        document.getElementById("grossHonorLP").textContent = "-";
+        return;
+    }
+
+    let zuschlagPercentage = parseFloat(document.getElementById("zuschlag").value) || 0;
+    let nebenKostenPercentage = parseFloat(document.getElementById("nebenKosten").value) || 0;
+    let vatPercentage = parseFloat(document.getElementById("vt").value) || 0;
+
+    let lpBaseNetHonor = initialNetHonor * totalPercentage;
+    let zuschlag = (lpBaseNetHonor * zuschlagPercentage) / 100;
+    let netHonorLP = lpBaseNetHonor + zuschlag;
+
+    let nebenKosten = (netHonorLP * nebenKostenPercentage) / 100;
+    let netTotal = netHonorLP + nebenKosten;
+    let vat = (netTotal * vatPercentage) / 100;
+    let gross = netTotal + vat;
+
+    document.getElementById("nebenKostenLP").textContent = nebenKosten.toLocaleString('de-DE', { minimumFractionDigits: 2 }) + " €";
+    document.getElementById("netHonorLP").textContent = netTotal.toLocaleString('de-DE', { minimumFractionDigits: 2 }) + " €";
+    document.getElementById("vatAmountLP").textContent = vat.toLocaleString('de-DE', { minimumFractionDigits: 2 }) + " €";
+    document.getElementById("grossHonorLP").textContent = gross.toLocaleString('de-DE', { minimumFractionDigits: 2 }) + " €";
+}
+
 
 async function loadSectionsFromLP() {
     let serviceProfileDropdown = document.getElementById("serviceProfile");
