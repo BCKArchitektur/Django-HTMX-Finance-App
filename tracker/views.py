@@ -1581,7 +1581,10 @@ def generate_word_document(request, contract_id):
     additional_fee_percentage = Decimal(contract.additional_fee_percentage)
 
     if contract.hoai_data:
-        additional_fee_value = (sum_of_all_lps * additional_fee_percentage) / Decimal(100)
+        if sum_of_items  > 0:
+            additional_fee_value = ((sum_of_all_lps+sum_of_items) * additional_fee_percentage) / Decimal(100)
+        else:
+            additional_fee_value = (sum_of_all_lps * additional_fee_percentage) / Decimal(100)
     else:   
         additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
 
@@ -2021,7 +2024,11 @@ def download_invoice(request, invoice_id):
 
 
     if contract.hoai_data:
-        additional_fee_value = (sum_of_all_lps * additional_fee_percentage) / Decimal(100)
+        if sum_of_items  > 0:
+            additional_fee_value = ((sum_of_all_lps+sum_of_items) * additional_fee_percentage) / Decimal(100)
+        else:
+            additional_fee_value = (sum_of_all_lps * additional_fee_percentage) / Decimal(100)
+
     else:   
         additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
 
