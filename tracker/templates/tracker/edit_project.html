@@ -15,7 +15,7 @@
         </div>
         <div class="join align-middle justify-center items-center">
             <h2 class="text-lg font-thin"></h2>
-            <h2 class="text-2xl font-semibold m-2">{{ project.project_name }}</h2>
+            <h2 class="text-2xl font-serif m-2">{{ project.project_name }}</h2>
         </div>
         <div class="flex items-center gap-2">
             <!-- Toggle Button -->
@@ -75,7 +75,7 @@
               <h2 class="text-xl font-semibold">Verträge verwalten</h2>
               <div class="join gap-4">
                 <input type="text" id="contract-search" placeholder="Verträge suchen..." class="input input-bordered input-sm" onkeyup="filterTable('contract-search', 'contract-table')">
-              <button class="btn btn-sm btn-accent" onclick="openContractModal({{ project.id }})">+ Neuer Vertrag</button>
+              <button class="btn btn-sm btn-neutral font-mono btn-outline" onclick="openContractModal({{ project.id }})">+ Neuer Vertrag</button>
             </div>  
             </div>
           <div class="animate-table-fade-in overflow-x-auto h-[50vh]" >
@@ -199,7 +199,7 @@
                 <h2 class="text-xl font-semibold">Rechnungen verwalten</h2>
                 <div class="join gap-4">
                     <input type="text" id="invoice-search" placeholder="Rechnungen suchen..." class="input input-bordered input-sm" onkeyup="filterTable('invoice-search', 'invoice-table')">
-                    <button class="btn btn-sm btn-accent" onclick="openInvoiceModal()">+ Neue Rechnung</button>
+                    <button class="btn btn-sm btn-neutral font-mono btn-outline" onclick="openInvoiceModal()">+ Neue Rechnung</button>
                 </div>
             </div>
             <div class="animate-table-fade-in overflow-x-auto h-[50vh]" >

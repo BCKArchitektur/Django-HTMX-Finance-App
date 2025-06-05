@@ -75,7 +75,7 @@
         </div>
 
         <div class="flex justify-center items-center space-x-6">
-            <button type="submit" class="btn btn-primary btn-sm m-4">Submit</button>
+            <button type="submit" class="btn btn-neutral font-mono btn-outline btn-sm m-4">Submit</button>
         </div>
     </form>
 </div>
@@ -123,7 +123,7 @@
 
 </div>
 <div class="progress-container mt-4 text-center">
-    <h3 class="text-lg font-medium">Heute erfasste Stunden:<span id="total-hours-today">{{ total_hours_today }}</span> / {{ hours_assigned_today }} Std.</h3>
+    <h3 class="text-lg font-serif">Heute erfasste Stunden :<span id="total-hours-today"> {{ total_hours_today }}</span> / {{ hours_assigned_today }} Std.</h3>
     <progress id="progressbar"class="progress progress-accent w-56" value="{{ total_hours_today }}" max="{{ hours_assigned_today }}"></progress>
 </div>
 {% endblock %}

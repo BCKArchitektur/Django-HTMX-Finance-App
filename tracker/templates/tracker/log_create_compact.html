@@ -41,7 +41,7 @@
                     </div>
                 {% endfor %}
                 <input type="hidden" name="log_time" value="">
-                <button type="submit" class="btn btn-xs w-max btn-primary">Den Rest ausfüllen</button>
+                <button type="submit" class="btn btn-xs w-max btn-secondary btn-outline font-mono">Den Rest ausfüllen</button>
             </form>
         </div>
     </div>
@@ -52,7 +52,7 @@
     <div class="indicator  w-[95%] h-56 max-w-56  mb-4">
         {% if preset.default_section.section_billed_hourly %}
         <div class=" tooltip-left" data-tip="Billed Hourly">
-            <span class="indicator-item indicator-start badge badge-secondary badge-outline flex items-center justify-center p-1 pt-0 ">⧗</span>
+            <span class="indicator-item indicator-start badge badge-primary badge-outline flex items-center justify-center p-1 pt-0 ">⧗</span>
         </div>
         {% endif %}
         <div class="card bg-base-100 max-w-56 h-full shadow-md preset-card" id="preset-{{ preset.id }}" 
@@ -128,7 +128,8 @@
                             {{ field }}
                         </div>
                     {% endfor %}
-                    <button type="submit" class="btn btn-xs btn-primary w-full mt-4">Submit</button>
+                    <button type="submit" class="btn btn-xs btn-neutral btn-outline font-mono
+                     w-full mt-4">Submit</button>
                 </form>
             </div>
         </div>
@@ -183,7 +184,7 @@
     </table>
 </div>
 <div class="progress-container mt-4 text-center">
-    <h3 class="text-lg font-medium">Heute erfasste Stunden: <span id="total-hours-today">{{ total_hours_today }}</span> / {{ hours_assigned_today }} 
+    <h3 class="text-lg font-serif">Heute erfasste Stunden : <span id="total-hours-today">{{ total_hours_today }}</span> / {{ hours_assigned_today }} 
         Std.</h3>
     <progress id="progressbar" class="progress progress-accent w-56" value="{{ total_hours_today }}" max="{{ hours_assigned_today }}"></progress>
 </div>
