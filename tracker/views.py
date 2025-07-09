@@ -37,6 +37,8 @@ from django.http import JsonResponse, Http404  # Import Http404
 from decimal import Decimal  # Import Decimal for precision handling
 from datetime import datetime
 from django.db.models import JSONField
+from babel.numbers import format_decimal
+
 
 @login_required
 def toggle_dark_mode(request):
@@ -1648,10 +1650,10 @@ def generate_word_document(request, contract_id):
         "honorarzone": hoai_details["honorarzone"],
         "honorarsatz": hoai_details["honorarsatz"],
         "honorarsatz_factor": hoai_details["honorarsatz_factor"],
-        "baukonstruktionen": format_german_number(hoai_details["baukonstruktionen"]),
-        "technische_anlagen": format_german_number(hoai_details.get("technische_anlagen", "0")),
+        "baukonstruktionen": format_decimal(float(hoai_details["baukonstruktionen"]), format='#,##0.00', locale='de_DE'),
+        "technische_anlagen": format_decimal(float(hoai_details.get("technische_anlagen", "0")), format='#,##0.00', locale='de_DE'),
+        "anrechenbare_kosten": format_decimal(float(hoai_details["anrechenbare_kosten"]), format='#,##0.00', locale='de_DE'),
 
-        "anrechenbare_kosten": format_german_number(hoai_details["anrechenbare_kosten"]),
         "interpolated_basishonorarsatz": hoai_details["interpolated_basishonorarsatz"],
         "interpolated_oberer_honorarsatz": hoai_details["interpolated_oberer_honorarsatz"],
         "grundhonorar": hoai_details["grundhonorar"],
@@ -1661,8 +1663,8 @@ def generate_word_document(request, contract_id):
         "upper_bound_von": hoai_details["upper_bound_von"] ,
         "lower_bound_bis": hoai_details["lower_bound_bis"] ,
         "upper_bound_bis": hoai_details["upper_bound_bis"],
-        "zuschlag_amount" : format_german_number(zuschlag_amount),
-        "grundhonorar_without_zuschlag":format_german_number(grundhonorar_without_zuschlag),
+        "zuschlag_amount": format_decimal(float(zuschlag_amount), format='#,##0.00', locale='de_DE'),
+        "grundhonorar_without_zuschlag": format_decimal(float(grundhonorar_without_zuschlag), format='#,##0.00', locale='de_DE'),
         "zuschlag_value" : hoai_details["zuschlag"],
     }
 
@@ -1731,11 +1733,63 @@ def create_invoice(request, project_id):
             invoice.project = project
             invoice.provided_quantities = json.loads(request.POST.get('provided_quantities'))
 
-            # Set is_cumulative field based on form input
             is_cumulative = request.POST.get('is_cumulative', 'false') == 'true'
             invoice.is_cumulative = is_cumulative
 
-            invoice.save()
+            # Financial Calculations
+            provided_quantities = invoice.provided_quantities
+            sum_of_items = Decimal('0.00')
+            nachlass_applicable_sum = Decimal('0.00')
+
+            grundhonorar = Decimal(invoice.contract.hoai_data.get("grundhonorar", "0").replace('.', '').replace(',', '.')) if invoice.contract.hoai_data else Decimal(0)
+
+            for item_id, details in provided_quantities.items():
+                rate = Decimal(details['rate'])
+                quantity = Decimal(details['quantity'])
+
+                item = Item.objects.filter(id=item_id).first()
+                unit = item.unit if item else 'Std'  # fallback
+
+                # Use % logic for LP-based items
+                if unit == "%":
+                    total = (quantity / Decimal(100)) * grundhonorar
+                else:
+                    total = rate * quantity
+
+                sum_of_items += total
+
+                if item and item.section_set.exists():
+                    section = item.section_set.first()
+                    if not section.exclude_from_nachlass:
+                        nachlass_applicable_sum += total
+
+
+            add_fee_pct = Decimal(invoice.contract.additional_fee_percentage or 0)
+            nachlass_pct = Decimal(invoice.contract.nachlass_percentage or 0)
+
+            additional_fee = (sum_of_items * add_fee_pct) / Decimal(100)
+            nachlass = (nachlass_applicable_sum * nachlass_pct) / Decimal(100)
+            invoice_net = sum_of_items + additional_fee - nachlass
+            invoice.invoice_net = invoice_net
+
+            invoice.save()  # Save first to generate ID and timestamps
+
+            # Cumulative Invoice Logic
+            if is_cumulative:
+                previous_invoices = Invoice.objects.filter(
+                    project=project,
+                    contract=invoice.contract,
+                    is_cumulative=True,
+                    id__lt=invoice.id  # Use ID instead of created_at
+                )
+
+                total_previous_net = sum(Decimal(prev.current_invoice_net or 0) for prev in previous_invoices)
+                current_net = invoice_net - total_previous_net
+
+                # Update current_invoice_net and save again
+                invoice.current_invoice_net = current_net
+                print('new invoice created: Current Invoice Net:', current_net)  
+                invoice.save()
 
             messages.success(request, 'Invoice created successfully.')
             return HttpResponseRedirect(reverse('edit_project', args=[project_id]) + '?tab=invoices')
@@ -1777,17 +1831,13 @@ def view_invoice(request, invoice_id):
         project = invoice.project
         contract = invoice.contract
 
-        # Parse provided quantities from the invoice
-        try:
-            provided_quantities_data = invoice.provided_quantities
-        except ValueError as e:
-            print(f"Error parsing provided_quantities: {e}")
-            return JsonResponse({'error': 'Invalid data format for provided quantities'}, status=400)
+        hoai_data = contract.hoai_data or {}
+        grundhonorar = Decimal(str(hoai_data.get("grundhonorar", "0")).replace('.', '').replace(',', '.')) if hoai_data else Decimal(0)
 
+        provided_quantities_data = invoice.provided_quantities or {}
         provided_quantities = []
         sum_of_items = Decimal('0.00')
         nachlass_applicable_sum = Decimal('0.00')
-
 
         for item_id, details in provided_quantities_data.items():
             try:
@@ -1795,25 +1845,31 @@ def view_invoice(request, invoice_id):
                 section = Section.objects.filter(Item=item, contract=contract).first()
                 section_name = section.section_name if section else "Unknown Section"
 
+                unit = item.unit
                 rate = Decimal(details['rate'])
                 quantity = Decimal(details['quantity'])
-                total = rate * quantity
-                if section and not section.exclude_from_nachlass:
-                    nachlass_applicable_sum += total
+
+                if unit == "%":
+                    total = (quantity / Decimal(100)) * grundhonorar
+                else:
+                    total = rate * quantity
 
                 sum_of_items += total
+
+                if section and not section.exclude_from_nachlass:
+                    nachlass_applicable_sum += total
 
                 provided_quantities.append({
                     'section_name': section_name,
                     'item_name': item.Item_name,
-                    'unit': item.unit,
+                    'unit': unit,
                     'rate': str(rate),
                     'quantity': str(quantity),
                     'total': str(total),
                     'exclude_from_nachlass': section.exclude_from_nachlass if section else False,
                 })
+
             except Item.DoesNotExist:
-                print(f"Item with id {item_id} does not exist.")
                 rate = Decimal(details['rate'])
                 quantity = Decimal(details['quantity'])
                 total = rate * quantity
@@ -1828,21 +1884,21 @@ def view_invoice(request, invoice_id):
                     'total': str(total),
                 })
 
-        # Base financial calculations
         additional_fee_percentage = Decimal(contract.additional_fee_percentage or 0)
         additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
-        vat_percentage = Decimal(contract.vat_percentage or 0)
         nachlass_percentage = Decimal(contract.nachlass_percentage or 0)
-
-        additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
         nachlass_value = (nachlass_applicable_sum * nachlass_percentage) / Decimal(100)
+
         invoice_net = sum_of_items + additional_fee_value - nachlass_value
+        vat_percentage = Decimal(contract.vat_percentage or 0)
         tax_value = (invoice_net * vat_percentage) / Decimal(100)
         invoice_gross = invoice_net + tax_value
 
         data = {
             'project_name': project.project_name,
             'contract_name': contract.contract_name,
+            'invoice_type': invoice.invoice_type,
+            'is_cumulative': invoice.is_cumulative,
             'additional_fee_percentage': str(additional_fee_percentage),
             'additional_fee_value': str(additional_fee_value),
             'provided_quantities': provided_quantities,
@@ -1854,9 +1910,10 @@ def view_invoice(request, invoice_id):
             'date_of_payment': invoice.date_of_payment.isoformat() if invoice.date_of_payment else None,
             'nachlass_percentage': str(nachlass_percentage),
             'nachlass_value': str(nachlass_value),
+            'grundhonorar': str(grundhonorar),
+            
         }
 
-        #  Adjust for cumulative invoices
         if invoice.invoice_type in ['AR', 'SR', 'ZR']:
             previous_invoices = Invoice.objects.filter(
                 project=project,
@@ -1865,35 +1922,37 @@ def view_invoice(request, invoice_id):
                 invoice_type__in=['AR', 'SR', 'ZR']
             )
 
-            total_previous_net = Decimal('0.00')
-            total_previous_tax = Decimal('0.00')
+            if invoice.is_cumulative:
+                total_previous_net = Decimal('0.00')
+                total_previous_tax = Decimal('0.00')
 
-            for prev in previous_invoices:
-                prev_net = Decimal(prev.invoice_net)
-                prev_tax = (prev_net * vat_percentage) / Decimal(100)
-                total_previous_net += prev_net
-                total_previous_tax += prev_tax
+                for prev in previous_invoices.filter(is_cumulative=True):
+                    prev_current_net = Decimal(prev.current_invoice_net or 0)
+                    prev_tax = (prev_current_net * vat_percentage) / Decimal(100)
+                    total_previous_net += prev_current_net
+                    total_previous_tax += prev_tax
 
-            current_invoice_net = invoice_net - total_previous_net
-            current_invoice_tax = tax_value - total_previous_tax
-            current_invoice_gross = current_invoice_net + current_invoice_tax
+                current_invoice_net = invoice_net - total_previous_net
+                current_invoice_tax = tax_value - total_previous_tax
+                current_invoice_gross = current_invoice_net + current_invoice_tax
 
-            data.update({
-                'current_invoice_net': str(current_invoice_net),
-                'current_invoice_tax': str(current_invoice_tax),
-                'current_invoice_gross': str(current_invoice_gross),
-            })
+                data.update({
+                        'current_invoice_net': str(current_invoice_net),
+                        'current_invoice_tax': str(current_invoice_tax),
+                        'current_invoice_gross': str(current_invoice_gross),
+                    })
+
 
         return JsonResponse(data)
 
-    except Http404 as e:
-        print(f"Invoice or related data not found: {e}")
+    except Http404:
         return JsonResponse({'error': 'Invoice not found'}, status=404)
 
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        print(f"Unexpected error: {e}")
         return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
-        
+
+
 from django.utils.dateparse import parse_date
 import pprint
 from django.http import FileResponse
@@ -2069,35 +2128,47 @@ def download_invoice(request, invoice_id):
     total_amount_paid = Decimal('0.00')
 
     previous_invoices_data = []
-    for inv in previous_invoices:
-        if inv.invoice_type not in ['AR', 'SR', 'ZR']:
-            continue
-        inv_net = Decimal(inv.invoice_net)
-        inv_tax = inv_net * vat_percentage
-        inv_gross = inv_net + inv_tax
-        inv_paid = Decimal(inv.amount_received)
+    total_invoice_gross = Decimal('0.00')
+    total_invoice_net = Decimal('0.00')
+    total_invoice_tax = Decimal('0.00')
+    total_amount_paid = Decimal('0.00')
 
-        total_invoice_gross += inv_gross
-        total_invoice_net += inv_net
-        total_amount_paid += inv_paid
-        total_invoice_tax += inv_tax
+    if invoice.is_cumulative:
+        for inv in previous_invoices:
+            if inv.invoice_type not in ['AR', 'SR', 'ZR']:
+                continue
 
-        previous_invoices_data.append({
-            'invoice_title': inv.title,
-            'invoice_type': inv.invoice_type,
-            'created_at': timezone.localtime(inv.created_at).strftime('%d.%m.%Y'),
-            'invoice_net': f"{inv_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-            'invoice_tax%': vat_percentage,
-            'invoice_tax': f"{inv_tax:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-            'invoice_gross': f"{inv_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-            'amount_paid': f"{inv_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        })
+            # Use current_invoice_net and compute tax/gross on the fly
+            inv_net = Decimal(inv.current_invoice_net or 0)
+            inv_tax = inv_net * vat_percentage
+            inv_gross = inv_net + inv_tax
+            inv_paid = Decimal(inv.amount_received or 0)
 
-    current_invoice_net = invoice_net - total_invoice_net - nachlass_value
-    current_invoice_tax = current_invoice_net * vat_percentage
-    current_invoice_gross = current_invoice_net + current_invoice_tax
-    invoice_tobepaid = total_invoice_gross - total_amount_paid
-    previous_ar_count = previous_invoices.filter(invoice_type='AR').count()
+            total_invoice_net += inv_net
+            total_invoice_tax += inv_tax
+            total_invoice_gross += inv_gross
+            total_amount_paid += inv_paid
+
+            previous_invoices_data.append({
+                'invoice_title': inv.title,
+                'invoice_type': inv.invoice_type,
+                'created_at': timezone.localtime(inv.created_at).strftime('%d.%m.%Y'),
+                'invoice_net': f"{inv_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                'invoice_tax%': vat_percentage_display,
+                'invoice_tax': f"{inv_tax:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                'invoice_gross': f"{inv_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                'amount_paid': f"{inv_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            })
+
+        # Also compute current invoice deltas for summary
+        current_invoice_net = Decimal(invoice.current_invoice_net or 0)
+        current_invoice_tax = current_invoice_net * vat_percentage
+        current_invoice_gross = current_invoice_net + current_invoice_tax
+        invoice_tobepaid = total_invoice_gross - total_amount_paid
+    else:
+        current_invoice_net = invoice_net
+        current_invoice_tax = tax_value
+        current_invoice_gross = invoice_gross
 
 
     # Prepare context for template rendering
@@ -2126,9 +2197,6 @@ def download_invoice(request, invoice_id):
         'tax': f"{tax_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
         'invoice_gross': f"{invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
         
-        'current_invoice_net' :  f"{current_invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
-        'current_invoice_gross' :  f"{current_invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
-        'current_invoice_tax' :  f"{current_invoice_tax:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
 
         'vat_percentage': vat_percentage,  
         'vat_percentage_display': vat_percentage_display, 
@@ -2138,9 +2206,10 @@ def download_invoice(request, invoice_id):
         "honorarzone": hoai_details["honorarzone"],
         "honorarsatz": hoai_details["honorarsatz"],
         "honorarsatz_factor": hoai_details["honorarsatz_factor"],
-        "baukonstruktionen": format_german_number(hoai_details["baukonstruktionen"]),
-        "technische_anlagen": format_german_number(hoai_details["technische_anlagen"]),
-        "anrechenbare_kosten": format_german_number(hoai_details["anrechenbare_kosten"]),
+        "baukonstruktionen": format_decimal(float(hoai_details["baukonstruktionen"]), format='#,##0.00', locale='de_DE'),
+        "technische_anlagen": format_decimal(float(hoai_details.get("technische_anlagen", "0")), format='#,##0.00', locale='de_DE'),
+        "anrechenbare_kosten": format_decimal(float(hoai_details["anrechenbare_kosten"]), format='#,##0.00', locale='de_DE'),
+
         "interpolated_basishonorarsatz": hoai_details["interpolated_basishonorarsatz"],
         "interpolated_oberer_honorarsatz": hoai_details["interpolated_oberer_honorarsatz"],
         "grundhonorar": hoai_details["grundhonorar"],
@@ -2150,22 +2219,27 @@ def download_invoice(request, invoice_id):
         "upper_bound_von": hoai_details["upper_bound_von"] ,
         "lower_bound_bis": hoai_details["lower_bound_bis"] ,
         "upper_bound_bis": hoai_details["upper_bound_bis"],
-        "zuschlag_amount" : format_german_number(zuschlag_amount),
-        "grundhonorar_without_zuschlag":format_german_number(grundhonorar_without_zuschlag),
+        "zuschlag_amount": format_decimal(float(zuschlag_amount), format='#,##0.00', locale='de_DE'),
+        "grundhonorar_without_zuschlag": format_decimal(float(grundhonorar_without_zuschlag), format='#,##0.00', locale='de_DE'),
         "zuschlag_value" : hoai_details["zuschlag"],
 
-        'previous_invoices': previous_invoices_data, 
-        'total_invoice_gross': f"{total_invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
-        'total_invoice_net': f"{total_invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
-        'total_invoice_tax': f"{total_invoice_tax:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
-        
-        'total_amount_paid': f"{total_amount_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
-        'invoice_tobepaid': f"{invoice_tobepaid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
+
         
         'invoice_type': invoice.invoice_type,
         'from_date': from_date.strftime('%d.%m.%Y') if from_date else None,
         'to_date': to_date.strftime('%d.%m.%Y') if to_date else None,
-        'client_firm': client.firm_name
+        'client_firm': client.firm_name,
+
+
+        'total_invoice_net': f"{total_invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'total_invoice_tax': f"{total_invoice_tax:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'total_invoice_gross': f"{total_invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+
+        'current_invoice_net': f"{current_invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'current_invoice_tax': f"{current_invoice_tax:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'current_invoice_gross': f"{current_invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+
+
     }
 
     # Sort nachlass_item_serials numerically
@@ -2180,6 +2254,16 @@ def download_invoice(request, invoice_id):
             'nachlass_applied_items': ", ".join(sorted_nachlass_items)
         })
 
+    if invoice.is_cumulative:
+        context.update({
+            'previous_invoices': previous_invoices_data,
+            'current_invoice_net': f"{current_invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'current_invoice_tax': f"{current_invoice_tax:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'current_invoice_gross': f"{current_invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'invoice_tobepaid': f"{invoice_tobepaid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'total_amount_paid': f"{total_amount_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
+       
+        })
 
     # Load and render template
     template_path = os.path.join(r'C:\Users\BCK-CustomApp\Documents\GitHub\Django-HTMX-Finance-App\templates\invoices', template_name)
@@ -2190,7 +2274,7 @@ def download_invoice(request, invoice_id):
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
     project_short_name = project.project_name.split()[0]
     company_identifier = "BCK" if "BCK" in template_name else "KOST"
-    new_filename = f"{invoice.title} {company_identifier} {project_short_name} {invoice.invoice_type} {contract.contract_name}.docx"
+    new_filename = f"{invoice.title} {company_identifier} Rechnung {project_short_name} {invoice.invoice_type} {contract.contract_name}.docx"
     response['Content-Disposition'] = f'attachment; filename={new_filename}'
     doc.save(response)
 

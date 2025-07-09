@@ -13,6 +13,16 @@
         <label class="label">Contract</label>
         <input type="text" id="view_contract_name" class="input input-bordered w-full" disabled>
       </div>
+
+      <div class="form-control">
+        <label class="label">Invoice Type</label>
+        <input type="text" id="view_invoice_type" class="input input-bordered w-full" disabled>
+      </div>
+      <div class="form-control">
+        <label class="label">Cumulative</label>
+        <input type="text" id="view_is_cumulative" class="input input-bordered w-full" disabled>
+      </div>
+      
   
       <div class="form-control">
         <label class="label">Provided Quantities</label>
@@ -104,6 +114,9 @@
           document.getElementById('view_vat').value = vat.toLocaleString("de-DE", { minimumFractionDigits: 2 });
           document.getElementById('view_gross_invoice').value = grossInvoice.toLocaleString("de-DE", { minimumFractionDigits: 2 });
   
+          document.getElementById('view_invoice_type').value = data.invoice_type || 'N/A';
+          document.getElementById('view_is_cumulative').value = data.is_cumulative ? 'Yes' : 'No';
+
           // Render the provided quantities table
           let html = '<table class="table w-full">';
           html += '<thead><tr><th>Section and Item</th><th>Rate(€)</th><th>Quantity(Provided)</th><th>Total €</th></tr></thead><tbody>';
@@ -117,7 +130,13 @@
             const rate = parseFloat(item.rate || 0);
             const unit = item.unit || 'unit';
             const quantity = parseFloat(item.quantity || 0);
-            const total = rate * quantity;
+            let total = 0;
+            if (unit === "%") {
+              const grundhonorar = parseFloat(data.grundhonorar || 0); 
+              total = (quantity / 100) * grundhonorar;
+            } else {
+              total = rate * quantity;
+            }
   
             sumOfItems += total;
   
