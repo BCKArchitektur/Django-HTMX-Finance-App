@@ -379,6 +379,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
             // Determine if any section or item is not editable
             let isContractEditable = true;
+            
 
             data.sections.forEach((section) => {
                 const isSectionEditable = section.items.every(
@@ -502,7 +503,8 @@ document.addEventListener("DOMContentLoaded", function() {
                                     <div class="w-full">
                                         <input type="text" name="section_name" value="${section.section_name}" 
                                             class="input input-sm input-bordered w-full m-2 section-name ${isSectionEditable ? '' : 'input-error'}" 
-                                            ${isSectionEditable ? '' : 'readonly'}>
+                                            ${isSectionEditable ? '' : 'readonly'}
+                                            >
                                     </div>
                                     <div class="flex space-x-2">
                                         <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionUp(this)">

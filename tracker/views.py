@@ -1371,6 +1371,8 @@ def extract_hoai_details(contract):
         "zuschlag" : zuschlag,
     }
 
+
+
 def insert_html_to_docx(html_content, doc, placeholder):
     """
     Convert HTML content to formatted DOCX content and replace the placeholder text in the Word document.
@@ -1386,6 +1388,22 @@ def insert_html_to_docx(html_content, doc, placeholder):
     from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(html_content, "html.parser")
+
+    def insert_element_content(paragraph, element):
+        if isinstance(element, str):
+            run = paragraph.add_run(element.strip())
+            return
+
+        if element.name in ['strong', 'u']:
+            run = paragraph.add_run(element.get_text())
+            apply_formatting(run, element)
+        elif element.name == 'br':
+            run = paragraph.add_run()
+            run.add_break()
+        else:
+            # For spans or other tags, recurse through their children
+            for child in element.contents:
+                insert_element_content(paragraph, child)
 
     # Helper: Apply bullet point style
     def set_bullet(paragraph):
@@ -1440,15 +1458,8 @@ def insert_html_to_docx(html_content, doc, placeholder):
             paragraph.paragraph_format.left_indent = Inches(1.75)
 
             for element in para.contents:
-                if element.name in ['strong', 'u']:
-                    run = paragraph.add_run(element.get_text())
-                    apply_formatting(run, element)
-                elif element.name == 'br':
-                    run = paragraph.add_run()
-                    run.add_break()
-                elif element.name is None:
-                    run = paragraph.add_run(element.strip())
-                    apply_formatting(run, para)
+                insert_element_content(paragraph, element)
+
 
         elif para.name in ['ul', 'ol']:
             for li in para.find_all('li'):
@@ -1602,6 +1613,9 @@ def generate_word_document(request, contract_id):
     vat_percentage = float(contract.vat_percentage) / 100
     tax = float(net_contract) * vat_percentage
     gross_contract = net_contract + Decimal(tax)
+
+    if include_scope_of_work:
+        include_scope_of_work
 
     # **Prepare Context for DOCX Template**
     context = {

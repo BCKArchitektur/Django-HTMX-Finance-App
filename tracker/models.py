@@ -308,6 +308,7 @@ class Invoice(models.Model):
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE)
     provided_quantities = models.JSONField(default=dict)
     invoice_net = models.FloatField()
+    current_invoice_net = models.FloatField(default=0.0)  # Used for cumulative invoices
     invoice_gross = models.FloatField(editable=False)  # Automatically calculated
     amount_received = models.FloatField(null=True, blank=True, default=0)
     title = models.CharField(max_length=200, unique=True)  # Ensure uniqueness

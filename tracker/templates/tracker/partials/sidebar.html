@@ -19,9 +19,9 @@
         <label tabindex="0" class="cursor-pointer">
           <div class="avatar placeholder">
             <div class="bg-white text-black rounded-full w-9 h-9 flex items-center justify-center text-xs lg:text-sm font-bold shadow-md">
-              {{ user.username }}
+              {{ user.username|slice:":2"|upper }}
             </div>
-          </div>
+          </div>          
         </label>
 
         <ul tabindex="0" class="menu dropdown-content mt-2 lg:mt-4 w-48 rounded-box bg-white text-black shadow-md p-2 space-y-1" role="menu">
