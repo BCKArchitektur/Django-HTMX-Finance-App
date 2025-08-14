@@ -505,7 +505,7 @@
                                 </select>
                             
                                 <!-- Hidden input field to store the selected VAT value -->
-                                <input type="number" id="id_vat_percentage" name="vat_percentage" class="input input-bordered input-sm hidden">
+                                <input type="number" id="id_vat_percentage" name="vat_percentage" class="input input-bordered input-sm hidden" value="19.00">
                             </td>
                         </tr>                     
                         
@@ -1522,8 +1522,10 @@
         // Initialize the select field based on the current value of the hidden input
         function initializeVatPercentage() {
             console.log('Initializing VAT percentage...');
-            console.log('Initial hidden input value:', vatPercentageInput.value);
-            vatPercentageSelect.value = vatPercentageInput.value || '0';
+            if (!vatPercentageInput.value) {
+                vatPercentageInput.value = '19.00'; // fallback default
+            }
+            vatPercentageSelect.value = vatPercentageInput.value;
             console.log('Select field value after initialization:', vatPercentageSelect.value);
         }
 

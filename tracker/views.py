@@ -2166,9 +2166,9 @@ def download_invoice(request, invoice_id):
         current_invoice_gross = current_invoice_net + current_invoice_tax
         invoice_tobepaid = total_invoice_gross - total_amount_paid
     else:
-        current_invoice_net = invoice_net
-        current_invoice_tax = tax_value
-        current_invoice_gross = invoice_gross
+        current_invoice_net = invoice_net - nachlass_value
+        current_invoice_tax = current_invoice_net * vat_percentage
+        current_invoice_gross = current_invoice_net + current_invoice_tax
 
 
     # Prepare context for template rendering
