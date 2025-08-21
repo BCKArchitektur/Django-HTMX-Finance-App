@@ -1578,6 +1578,7 @@ def generate_word_document(request, contract_id):
                 'lp_percentage': f"{lp_percentage:.2f}%",
                 'lp_amount': f"{lp_amount:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'actual_lp_value': f"{actual_lp_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                'lp_value': f"{lp_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'Item': items
             })
         else:
