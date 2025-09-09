@@ -66,6 +66,8 @@
                             <span class="badge badge-warning text-black badge-outline badge-md">On Hold</span>
                         {% elif project.status == '2' %}
                             <span class="badge badge-success badge-outline badge-md">Completed</span>
+                        {% elif project.status == '3' %}
+                            <span class="badge badge-error badge-outline badge-md">Discontinued</span>
                         {% else %}
                             <span class="badge badge-error badge-outline badge-md">Unknown</span>
                         {% endif %}
@@ -580,31 +582,27 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    function toggleProjectStatus() {
-        const isChecked = document.getElementById("toggleAllProjects").checked;
-        const table = document.getElementById("project-table");
-        const rows = table.getElementsByTagName('tr');
-        
-        // Loop through the rows and filter based on the project status
-        for (let i = 1; i < rows.length; i++) { // Skip header row
-            const cells = rows[i].getElementsByTagName('td');
-            const statusCell = cells[3]; // Assuming the status is in the 3rd column
-            
-            if (statusCell) {
-                const status = statusCell.textContent.trim();
-                
-                if (isChecked) {
-                    rows[i].style.display = ''; // Show all projects
-                } else {
-                    if (status === "Completed" || status === "On Hold") {
-                        rows[i].style.display = 'none'; // Hide Completed and On Hold projects
-                    } else {
-                        rows[i].style.display = ''; // Show only In Progress projects
-                    }
-                }
-            }
-        }
+function toggleProjectStatus() {
+  const isChecked = document.getElementById("toggleAllProjects").checked;
+  const rows = document.getElementById("project-table").getElementsByTagName('tr');
+
+  for (let i = 1; i < rows.length; i++) {
+    const statusCell = rows[i].getElementsByTagName('td')[3];
+    if (!statusCell) continue;
+
+    const status = statusCell.textContent.trim();
+
+    if (isChecked) {
+      rows[i].style.display = '';
+    } else {
+      // show ONLY "InProgress"
+      rows[i].style.display = (status === "InProgress") ? '' : 'none';
+      // (alternatively: hide specific ones)
+      // rows[i].style.display = (status === "Completed" || status === "On Hold" || status === "Discontinued") ? 'none' : '';
     }
+  }
+}
+
 
     // Call this function on page load to set the initial visibility
     document.addEventListener("DOMContentLoaded", function() {

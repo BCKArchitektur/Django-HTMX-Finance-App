@@ -209,7 +209,11 @@ class Contract(models.Model):
 
 #Creating Project model
 class Project(models.Model):
-    status_choices = (('0', 'InProgress'), ('1', 'OnHold'), ('2', 'Completed'))
+    
+    status_choices =  (('0', 'InProgress'),
+        ('1', 'OnHold'),
+        ('2', 'Completed'),
+        ('3', 'Discontinued'),)
     project_name = models.CharField(max_length=100)
     project_address = models.CharField(max_length=100 )
     client_name = models.ForeignKey('Client', on_delete=models.SET_NULL, null=True, blank=True)
