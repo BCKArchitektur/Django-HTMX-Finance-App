@@ -178,7 +178,7 @@
             <!-- Project Name -->
             <div class="form-control mb-4">
                 <label for="id_project_name" class="label">
-                    <span class="label-text">Projektname</span>
+                    <span class="label-text">Projektname*</span>
                 </label>
                 <input 
                     type="text" 
@@ -230,7 +230,7 @@
             <!-- Project Number -->
             <div class="form-control mb-4">
                 <label for="id_project_no" class="label">
-                    <span class="label-text">Projektnummer</span>
+                    <span class="label-text">Projektnummer*</span>
                 </label>
                 <input 
                     type="text" 
@@ -244,7 +244,7 @@
             <!-- Project Status -->
             <div class="form-control mb-4">
                 <label for="id_status" class="label">
-                    <span class="label-text">Status</span>
+                    <span class="label-text">Status*</span>
                 </label>
                 <select 
                     name="status" 
@@ -263,7 +263,7 @@
             <!-- Assigned User -->
             <div class="form-control mb-4">
                 <label for="id_user" class="label">
-                    <span class="label-text">Team zuweisen</span>
+                    <span class="label-text">Team zuweisen*</span>
                 </label>
                 {{ project_form.user }}
             </div>
@@ -286,7 +286,7 @@
         <form id="client-form" method="post" acstion="{% url 'projects' %}?tab=client">
             {% csrf_token %}
             <div class="form-control w-full max-w-xs">
-                <input type="text" name="firm_name" placeholder="FirmenName" class="input input-bordered w-full max-w-xs m-2" id="id_firm_name">
+                <input type="text" name="firm_name" placeholder="FirmenName*" class="input input-bordered w-full max-w-xs m-2" id="id_firm_name">
             </div>
             
             <div class="form-control w-full max-w-xs">
@@ -355,7 +355,7 @@ document.addEventListener("DOMContentLoaded", function() {
             const status = form.querySelector('[name="status"]').value;
             const user = form.querySelector('[name="user"]').value;
 
-            if (!projectName || !clientName || !projectNo || !status || !user) {
+            if (!projectName || !projectNo || !status || !user) {
                 alert('Please fill in all required fields.');
                 return;
             }
@@ -397,27 +397,35 @@ document.addEventListener("DOMContentLoaded", function() {
             const city = form.querySelector('[name="city"]').value.trim();
             const country = form.querySelector('[name="country"]').value;
 
-            if (!firmName || !clientName || !streetAddress || !postalCode || !city || !country) {
+            if (!firmName) {
                 alert('Please fill in all required fields.');
                 return;
             }
 
+            const formData = new FormData(form);
+
+            // Debug: log all fields being sent
+            for (let [key, value] of formData.entries()) {
+            console.log(key, ":", value);
+            }
+
             fetch(form.action, {
-                method: 'POST',
-                body: new FormData(form),
-                headers: {
-                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
-                },
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
             })
-            .then(response => {
-                if (response.ok) {
-                    location.href = '{% url "projects" %}?tab=clients';
-                } else {
-                    response.text().then(text => console.error(text)); // Log response text for error details
-                    alert('Failed to add client');
-                }
-            })
-            .catch(error => alert('Error adding client: ' + error));
+            .then(response => response.text().then(text => {
+            console.log("Response status:", response.status);
+            console.log("Response text:", text);
+            if (response.ok) {
+                location.href = '{% url "projects" %}?tab=clients';
+            } else {
+                alert("Failed: " + text);
+            }
+            }))
+
         });
     });
 

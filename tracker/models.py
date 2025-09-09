@@ -43,14 +43,14 @@ class Employee(models.Model):
 
 # Creating Client model
 class Client(models.Model):
-    client_name = models.CharField(max_length=255, unique=True, default='Unknown Name')
-    client_mail = models.EmailField(max_length=255, unique=True, blank=True, null=True)  # Make email optional
-    client_phone = models.CharField(blank=True, null=True)  # Add phone number field, optional
-    firm_name = models.CharField(max_length=255, unique=True, blank=True, null=True)  # Make firm name optional
+    client_name = models.CharField(max_length=255, unique=False, default='Unknown Name')
+    client_mail = models.EmailField(max_length=255, unique=False, blank=True, null=True)  
+    client_phone = models.CharField(blank=True, null=True) 
+    firm_name = models.CharField(max_length=255, unique=True, blank=True, null=True)  
     street_address = models.CharField(max_length=255, default='Unknown')
     postal_code = models.CharField(max_length=20, default='Unknown')
     city = models.CharField(max_length=100, default='Unknown')
-    country = CountryField()  # Using django-countries for country field
+    country = CountryField()  # django-countries for country field
 
     def __str__(self):
         return self.firm_name or self.client_name
