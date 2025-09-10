@@ -210,10 +210,10 @@ class Contract(models.Model):
 #Creating Project model
 class Project(models.Model):
     
-    status_choices =  (('0', 'InProgress'),
-        ('1', 'OnHold'),
-        ('2', 'Completed'),
-        ('3', 'Discontinued'),)
+    status_choices =  (('0', 'InBearbeitung'),
+        ('1', 'Zurückgestellt'),
+        ('2', 'Abgeschlossen '),
+        ('3', 'Eingestellt'),)
     project_name = models.CharField(max_length=100)
     project_address = models.CharField(max_length=100 )
     client_name = models.ForeignKey('Client', on_delete=models.SET_NULL, null=True, blank=True)
@@ -344,6 +344,12 @@ class Invoice(models.Model):
             self.title = f"{counter}-{month:02d}"
 
         super().save(*args, **kwargs)
+
+    @property
+    def current_invoice_gross(self):
+        """Gross value of the current invoice (based on current_invoice_net)."""
+        vat_percentage = Decimal(self.contract.vat_percentage)
+        return float(Decimal(self.current_invoice_net) * (1 + vat_percentage / Decimal(100)))
 
     def __str__(self):
         return self.title

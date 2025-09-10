@@ -5755,6 +5755,14 @@ html:has(.drawer-toggle:checked) {
   width: max-content;
 }
 
+.w-\[90\%\] {
+  width: 90%;
+}
+
+.w-\[99\%\] {
+  width: 99%;
+}
+
 .min-w-24 {
   min-width: 6rem;
 }
@@ -5915,6 +5923,10 @@ html:has(.drawer-toggle:checked) {
 
 .justify-between {
   justify-content: space-between;
+}
+
+.justify-items-start {
+  justify-items: start;
 }
 
 .gap-0 {

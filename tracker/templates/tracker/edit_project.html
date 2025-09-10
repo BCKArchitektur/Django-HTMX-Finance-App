@@ -15,7 +15,7 @@
         </div>
         <div class="join align-middle justify-center items-center">
             <h2 class="text-lg font-thin"></h2>
-            <h2 class="text-3xl font-sans font-extralight m-2">{{ project.project_name }}</h2>
+            <h2 class="text-3xl font-sans font-medium justify-items-start">{{ project.project_name }}</h2>
         </div>
         <div class="flex items-center gap-2">
             <!-- Toggle Button -->
@@ -68,7 +68,7 @@
 
     <div class="divider lg:divider-neutral"></div>
 
-    <div role="tablist" class="tabs tabs-bordered overflow-x-auto  w-[95%] mx-auto">
+    <div role="tablist" class="tabs tabs-bordered overflow-x-auto mx-auto">
         <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Verträge" id="contracts-tab" checked="checked" />
         <div role="tabpanel" class="tab-content p-10" id="contracts-content">
           <div class="flex justify-between items-center mb-4">
@@ -222,22 +222,27 @@
                                 Ausgabedatum
                                 <span class="sort-indicator"></span>
                             </th>
-                            <th onclick="sortTable(4, 'invoice-table')" data-column="4">
-                                Netto (€) <br> (Current)
-                                <span class="sort-indicator"></span>
-                            </th>
 
-                            <th onclick="sortTable(5, 'invoice-table')" data-column="5">
+
+                            <th onclick="sortTable(4, 'invoice-table')" data-column="5">
                                 Netto (€)
                                 <span class="sort-indicator"></span>
                             </th>
 
 
-                            <th onclick="sortTable(6, 'invoice-table')" data-column="6">
+                            <th onclick="sortTable(5, 'invoice-table')" data-column="6">
                                 Brutto (€)
                                 <span class="sort-indicator"></span>
                             </th>
-                            <th onclick="sortTable(7, 'invoice-table')" data-column="7">
+                            <th onclick="sortTable(6, 'invoice-table')" data-column="4">
+                                Netto (€) <br> (Current)
+                                <span class="sort-indicator"></span>
+                            </th>
+                            <th onclick="sortTable(7, 'invoice-table')" data-column="4">
+                                Brutto (€) <br> (Current)
+                                <span class="sort-indicator"></span>
+                            </th>
+                            <th onclick="sortTable(8, 'invoice-table')" data-column="7">
                                 Erhaltener<br>Betrag (€)
                                 <span class="sort-indicator"></span>
                             </th>
@@ -261,12 +266,14 @@
                             <td>{{ invoice.invoice_type  }}    </td>
                             <td>{{ invoice.contract.contract_name }}</td>
                             <td>{{ invoice.created_at  }}</td>
-                            <td data-value="{{ invoice.current_invoice_net }}">{{ invoice.current_invoice_net|german_number }}</td>
 
                             <td data-value="{{ invoice.invoice_net }}">{{ invoice.invoice_net|german_number }}</td>
                             <td data-value="{{ invoice.invoice_gross }}">{{ invoice.invoice_gross |german_number}}</td>
+                            <td data-value="{{ invoice.current_invoice_net }}">{{ invoice.current_invoice_net|german_number }}</td>
+                            <td data-value="{{ invoice.current_invoice_gross }}">{{ invoice.current_invoice_gross|german_number }}</td>
+
                             <td  class="w-1/12" data-value="{{ invoice.amount_received }}">
-                                {{ invoice.amount_received|german_number }} €
+                                {{ invoice.amount_received|german_number }}
                                 {% if invoice.date_of_payment %}
                                     <br><span class="text-xs text-gray-500">({{ invoice.date_of_payment }})</span>
                                 {% endif %}
@@ -277,7 +284,7 @@
                                 <a href="javascript:void(0);" onclick="openInvoiceTemplateModal({{ invoice.id }})" class="btn btn-xs btn-secondary btn-outline m-1 p-1  h-10 w-24">🖪 Invoice</a>
                             
                             </td>
-                            <td class="w-1/20" >
+                            <td class="w-1/30" >
                                 <form method="post" action="{% url 'delete_invoice' invoice.id %}" style="display:inline;" onsubmit="return confirmDelete();">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-sm btn-circle btn-error btn-outline m-1 p-1">
