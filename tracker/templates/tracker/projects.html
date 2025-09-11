@@ -40,7 +40,7 @@
                     <th onclick="sortTable(3, 'project-table')" data-column="3">Status
                         <span class="sort-indicator"></span>
                     </th>
-                    <th>Team</th>
+                    <th>Benutzer</th>
                     <th></th>
                 </tr>
             </thead>            
@@ -74,7 +74,11 @@
                     </td>                    
                     <td>
                         {% for user in project.user.all %}
-                            {{ user.username }}{% if not forloop.last %}, {% endif %}
+                                        <div class="avatar placeholder">
+                                            <div class="bg-gray-300 m-0.2 text-gray-700 rounded-full w-7 h-7 flex items-center justify-center text-xs">
+                                            {{ user.username|slice:":2"|upper }}
+                                            </div>
+                                        </div>     
                         {% endfor %}
                     </td>
                     <td>

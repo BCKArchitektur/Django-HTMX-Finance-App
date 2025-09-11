@@ -140,15 +140,13 @@
                                 <strong>{{ section.section_name }}</strong><br>
                                 {% for item in section.Item.all %}
                                     {{ item.Item_name }}:
-                                    <div class="flex flex-wrap gap-2 ">
+                                    <div class="flex flex-wrap gap-1">
                                         {% for user in item.users.all %}
-                                        <div class="avatar">
-                                        <div class="w-6 h-6 rounded-full ring-1 ring-primary ring-offset-base-100 ring-opacity-50 flex items-center justify-center leading-none">
-                                            <span class="text-xs">
+                                        <div class="avatar placeholder">
+                                            <div class="bg-gray-300 m-0.2 text-gray-700 rounded-full w-7 h-7 flex items-center justify-center text-xs">
                                             {{ user.username|slice:":2"|upper }}
-                                            </span>
-                                        </div>
-                                        </div>
+                                            </div>
+                                        </div>     
                                         {% endfor %}
                                     </div>                                    
                                     <br>
