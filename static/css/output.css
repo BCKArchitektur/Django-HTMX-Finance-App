@@ -5530,10 +5530,6 @@ html:has(.drawer-toggle:checked) {
   margin-top: 2rem;
 }
 
-.ml-1 {
-  margin-left: 0.25rem;
-}
-
 .line-clamp-1 {
   overflow: hidden;
   display: -webkit-box;
@@ -5636,6 +5632,10 @@ html:has(.drawer-toggle:checked) {
 .h-max {
   height: -moz-max-content;
   height: max-content;
+}
+
+.h-\[60vh\] {
+  height: 60vh;
 }
 
 .max-h-20 {
@@ -5759,14 +5759,6 @@ html:has(.drawer-toggle:checked) {
   width: max-content;
 }
 
-.w-\[90\%\] {
-  width: 90%;
-}
-
-.w-\[99\%\] {
-  width: 99%;
-}
-
 .min-w-24 {
   min-width: 6rem;
 }
@@ -5797,6 +5789,10 @@ html:has(.drawer-toggle:checked) {
 
 .max-w-screen-lg {
   max-width: 1024px;
+}
+
+.max-w-screen-md {
+  max-width: 768px;
 }
 
 .max-w-screen-xl {
@@ -5931,10 +5927,6 @@ html:has(.drawer-toggle:checked) {
 
 .justify-items-start {
   justify-items: start;
-}
-
-.justify-items-center {
-  justify-items: center;
 }
 
 .gap-0 {
@@ -6534,10 +6526,6 @@ html:has(.drawer-toggle:checked) {
 .text-xs {
   font-size: 0.75rem;
   line-height: 1rem;
-}
-
-.text-\[10px\] {
-  font-size: 10px;
 }
 
 .font-bold {

@@ -2016,7 +2016,7 @@ def download_invoice(request, invoice_id):
         item = get_object_or_404(Item, id=item_id)
         section = item.section_set.first()
         section_name = section.section_name if section else "Unknown Section"
-        exclude_from_nachlass = section.exclude_from_nachlass if section else False  # 💡 Key line
+        exclude_from_nachlass = section.exclude_from_nachlass if section else False 
         section_serial = section_order.get(section_name, 0)
         item_total = Decimal(details['quantity']) * Decimal(details['rate'])
 
@@ -2031,6 +2031,7 @@ def download_invoice(request, invoice_id):
             actual_lp_value = hoai_details["lp_breakdown_actual"].get(lp_key, "0")
             lp_percentage = Decimal(lp_value) if lp_value != "0" else Decimal(0)
             lp_amount = (Decimal(details['quantity']) / Decimal(100)) * grundhonorar
+            lp_bearuftragt = (lp_percentage / Decimal(100)) * grundhonorar 
             sum_of_all_lps += lp_amount
 
             item_index = section_item_order.get(section.id, {}).get(item.id, 0)
@@ -2043,8 +2044,9 @@ def download_invoice(request, invoice_id):
 
             lp_sections.append({
                 'lp_name': section_name,
-                'lp_percentage': f"{lp_percentage:.2f}%",
+                'lp_percentage': f"{lp_percentage:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'lp_amount': f"{lp_amount:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                'lp_bearuftragt': f"{lp_bearuftragt:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'actual_lp_value': f"{actual_lp_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'Item': [{
                     'Item_name': item.Item_name,
