@@ -285,29 +285,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-
-
-
-
     const invoiceForm = document.querySelector('#invoice-form');
     if (invoiceForm) {
-        invoiceForm.addEventListener('submit', function(event) {
-            const quantities = {};
-            document.querySelectorAll('input[name^="quantity_"]').forEach(input => {
-                if (input.closest('tr').querySelector('input[name^="select_"]').checked) {
-                    const quantity = parseFloat(input.value.replace(',', '.')) || 0;
-                    if (quantity !== 0) {
-                        quantities[input.dataset.itemId] = {
-                            quantity: quantity,
-                            rate: parseFloat(input.dataset.itemRate) || 0
-                        };
-                    }
-                }
-            });
-            document.querySelector('textarea[name="provided_quantities"]').value = JSON.stringify(quantities);
+    invoiceForm.addEventListener('submit', function(event) {
+        const quantities = {};
+        document.querySelectorAll('input[name^="quantity_"]').forEach(input => {
+        const row = input.closest('tr');
+        const checkbox = row.querySelector('input[name^="select_"]');
+        if (checkbox && checkbox.checked) {
+            // Include even when 0 or empty
+            const quantity = Number((input.value || '').toString().replace(',', '.')) || 0;
+            const rate = Number(input.dataset.itemRate) || 0;
+
+            quantities[input.dataset.itemId] = { quantity, rate };
+        }
         });
 
+        document.querySelector('textarea[name="provided_quantities"]').value =
+        JSON.stringify(quantities);
+    });
     }
+
 });
 
 document.addEventListener('DOMContentLoaded', function () {

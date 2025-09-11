@@ -38,7 +38,7 @@ from decimal import Decimal  # Import Decimal for precision handling
 from datetime import datetime
 from django.db.models import JSONField
 from babel.numbers import format_decimal
-
+from django.db import transaction, IntegrityError
 
 @login_required
 def toggle_dark_mode(request):
@@ -1773,7 +1773,30 @@ def create_invoice(request, project_id):
             invoice_net = sum_of_items + additional_fee - nachlass
             invoice.invoice_net = invoice_net
 
-            invoice.save()  # Save first to generate ID and timestamps
+            # ---------- AR numbering + save with retry ----------
+            # If you also add the conditional unique constraint (see below), this loop
+            # safely retries when two requests race to take the same AR number.
+            MAX_RETRIES = 3
+            for attempt in range(MAX_RETRIES):
+                try:
+                    with transaction.atomic():
+                        # Assign AR sequence number if needed
+                        if invoice.invoice_type == 'AR':
+                            # Lock existing AR rows for this contract to reduce race windows
+                            # (the unique constraint is the final guard).
+                            existing_qs = (Invoice.objects
+                                           .select_for_update()
+                                           .filter(contract=invoice.contract, invoice_type='AR'))
+                            # Use MAX in case some earlier ARs were deleted; start at 1
+                            last_num = existing_qs.aggregate(Max('current_ar_number'))['current_ar_number__max'] or 0
+                            invoice.current_ar_number = last_num + 1
+
+                        invoice.save()  # your model.save() handles gross & title
+                    break  # saved successfully
+                except IntegrityError:
+                    if attempt == MAX_RETRIES - 1:
+                        raise  # bubble up after last attempt
+                    # On collision, loop and try next number
 
             # Cumulative Invoice Logic
             if is_cumulative:
@@ -1996,6 +2019,9 @@ def download_invoice(request, invoice_id):
     lp_sections = []
     sum_of_items = Decimal('0.00')
     sum_of_all_lps = Decimal('0.00')
+    sum_actual_lp_value  = Decimal('0.00')
+    sum_lp_percentage  = Decimal('0.00')
+    sum_lp_beauftragt = Decimal('0.00')
 
     # Initialize invoice data
     nachlass_applicable_sum = Decimal('0.00')
@@ -2031,8 +2057,12 @@ def download_invoice(request, invoice_id):
             actual_lp_value = hoai_details["lp_breakdown_actual"].get(lp_key, "0")
             lp_percentage = Decimal(lp_value) if lp_value != "0" else Decimal(0)
             lp_amount = (Decimal(details['quantity']) / Decimal(100)) * grundhonorar
-            lp_bearuftragt = (lp_percentage / Decimal(100)) * grundhonorar 
+            lp_beauftragt = (lp_percentage / Decimal(100)) * grundhonorar 
             sum_of_all_lps += lp_amount
+
+            sum_actual_lp_value  += Decimal(actual_lp_value)
+            sum_lp_percentage  += lp_percentage
+            sum_lp_beauftragt += lp_beauftragt
 
             item_index = section_item_order.get(section.id, {}).get(item.id, 0)
             item_serial = f"{section_serial}.{item_index}"
@@ -2046,7 +2076,7 @@ def download_invoice(request, invoice_id):
                 'lp_name': section_name,
                 'lp_percentage': f"{lp_percentage:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'lp_amount': f"{lp_amount:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-                'lp_bearuftragt': f"{lp_bearuftragt:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                'lp_beauftragt': f"{lp_beauftragt:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'actual_lp_value': f"{actual_lp_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'Item': [{
                     'Item_name': item.Item_name,
@@ -2196,6 +2226,11 @@ def download_invoice(request, invoice_id):
         'lp_sections': lp_sections,  # Organized by LP
         'sum_of_all_lps': f"{sum_of_all_lps:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
         
+        'sum_actual_lp_value': f"{sum_actual_lp_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'sum_lp_percentage': f"{sum_lp_percentage:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        'sum_lp_beauftragt': f"{sum_lp_beauftragt:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+
+
         'invoice_net': f"{invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
         'tax': f"{tax_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
         'invoice_gross': f"{invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 

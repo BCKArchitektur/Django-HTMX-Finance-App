@@ -9,7 +9,7 @@ from decimal import Decimal
 import os
 from django.db.models import JSONField
 from django.core.exceptions import ObjectDoesNotExist
-
+from django.db import transaction, IntegrityError
 
 #Creating custom user model
 class User(AbstractUser):
@@ -320,30 +320,51 @@ class Invoice(models.Model):
     invoice_type = models.CharField(max_length=2, choices=INVOICE_TYPE_CHOICES, default='ER')  # Default to Individual Invoice
     is_cumulative = models.BooleanField(null=True, blank=True, default=None)
     date_of_payment = models.DateField(null=True, blank=True) 
+    current_ar_number = models.IntegerField(null=True, blank=True, default=0)  # New field for tracking AR numbers
     
     def save(self, *args, **kwargs):
-        vat_percentage = Decimal(self.contract.vat_percentage)
-        self.invoice_gross = float(Decimal(self.invoice_net) * (1 + vat_percentage / Decimal(100)))
+            # Always keep gross in sync
+            vat_percentage = Decimal(self.contract.vat_percentage)
+            self.invoice_gross = float(Decimal(self.invoice_net) * (1 + vat_percentage / Decimal(100)))
 
-        if not self.title:
+            # If title already set manually, just save normally
+            if self.title:
+                return super().save(*args, **kwargs)
+
             month = timezone.now().month
-            invoice_settings, _ = InvoiceSettings.objects.get_or_create(id=1)
 
-            # Check if there is a deleted invoice number to reuse
-            deleted_invoice = DeletedInvoiceNumber.objects.order_by("number").first()
-            if deleted_invoice:
-                counter = deleted_invoice.number
-                deleted_invoice.delete()  # Remove it from the deleted numbers table
-                print(f"DEBUG: Reusing deleted invoice number: {counter}")
-            else:
-                counter = invoice_settings.invoice_counter
-                invoice_settings.invoice_counter += 1
-                invoice_settings.save()
-                print(f"DEBUG: Assigning new invoice number: {counter}")
+            # Try numbers until one succeeds; serialize access to the counter
+            with transaction.atomic():
+                settings, _ = InvoiceSettings.objects.select_for_update().get_or_create(id=1)
 
-            self.title = f"{counter}-{month:02d}"
+                # We’ll try: (a) recycled numbers first, then (b) monotonically increasing counter
+                tried_numbers = set()
 
-        super().save(*args, **kwargs)
+                while True:
+                    # 1) Prefer reusing the smallest deleted number
+                    deleted = DeletedInvoiceNumber.objects.order_by('number').first()
+                    if deleted:
+                        candidate = deleted.number
+                        # Remove so it won't be picked by another concurrent txn
+                        deleted.delete()
+                    else:
+                        # 2) Otherwise use the counter or the next after what we've tried
+                        candidate = max(settings.invoice_counter, (max(tried_numbers) + 1) if tried_numbers else settings.invoice_counter)
+
+                    self.title = f"{candidate}-{month:02d}"
+
+                    try:
+                        super().save(*args, **kwargs)
+                    except IntegrityError:
+                        # Title collision (unique constraint) → try next number
+                        tried_numbers.add(candidate)
+                        continue
+                    else:
+                        # Success → advance counter if we consumed the current/greater number
+                        if candidate >= settings.invoice_counter:
+                            settings.invoice_counter = candidate + 1
+                            settings.save(update_fields=['invoice_counter'])
+                        break  # done
 
     @property
     def current_invoice_gross(self):
