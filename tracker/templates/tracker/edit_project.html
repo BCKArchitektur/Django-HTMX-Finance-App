@@ -68,7 +68,7 @@
 
     <div class="divider lg:divider-neutral"></div>
 
-    <div role="tablist" class="tabs tabs-bordered overflow-x-auto mx-auto">
+    <div role="tablist" class="tabs tabs-bordered mx-auto">
         <input type="radio" name="my_tabs_1" role="tab" class="tab" aria-label="Verträge" id="contracts-tab" checked="checked" />
         <div role="tabpanel" class="tab-content p-10" id="contracts-content">
           <div class="flex justify-between items-center mb-4">
@@ -78,7 +78,7 @@
               <button class="btn btn-sm btn-neutral font-mono btn-outline" onclick="openContractModal({{ project.id }})">+ Neuer Vertrag</button>
             </div>  
             </div>
-          <div class="animate-table-fade-in overflow-x-auto h-[50vh]" >
+          <div class="animate-table-fade-in h-[55vh] max-w-[60vw] overflow-x-auto" >
               <table class="table" id="contract-table">
                 <thead>
                     <tr>
@@ -162,10 +162,10 @@
                                     ✎ Benutzer
                                 </button>
                                 <button class="btn btn-xs btn-primary btn-outline h-10 w-24" onclick="openAddBudgetModal({{ contract.id }})">
-                                    ✎  Budget
+                                    ✎ Budget
                                 </button>
                                 <button class="btn btn-xs btn-primary btn-outline h-10 w-24" onclick="openScopeModal({{ contract.id }})">
-                                    ✎    Scope 
+                                    ✎ Scope 
                                 </button>
                                 <button class="btn btn-xs btn-secondary btn-outline h-10 w-24" onclick="openTemplateModal({{ contract.id }})">
                                     🖪 Angebot
@@ -204,7 +204,7 @@
                     <button class="btn btn-sm btn-neutral font-mono btn-outline" onclick="openInvoiceModal()">+ Neue Rechnung</button>
                 </div>
             </div>
-            <div class="animate-table-fade-in overflow-x-auto h-[50vh]" >
+            <div class="animate-table-fade-in h-[55vh] max-w-[60vw] overflow-x-auto" >
                 <table class="table" id="invoice-table">
                     <thead>
                         <tr class="hover:bg-base-300">
@@ -286,7 +286,7 @@
                                 <a href="javascript:void(0);" onclick="openInvoiceTemplateModal({{ invoice.id }})" class="btn btn-xs btn-secondary btn-outline m-1 p-1  h-10 w-24">🖪 Invoice</a>
                             
                             </td>
-                            <td class="w-1/30" >
+                            <td class="w-1/40" >
                                 <form method="post" action="{% url 'delete_invoice' invoice.id %}" style="display:inline;" onsubmit="return confirmDelete();">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-sm btn-circle btn-error btn-outline m-1 p-1">
