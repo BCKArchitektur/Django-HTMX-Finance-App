@@ -2275,8 +2275,12 @@ def download_invoice(request, invoice_id):
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
     project_short_name = project.project_name.split()[0]
     company_identifier = "BCK" if "BCK" in template_name else "KOST"
-    new_filename = f"{invoice.title} {company_identifier} Rechnung {project_short_name} {invoice.invoice_type} {contract.contract_name}.docx"
-    response['Content-Disposition'] = f'attachment; filename={new_filename}'
+    safe_contract_name = contract.contract_name.replace("/", "_")
+    new_filename = f"{invoice.title} {company_identifier} Rechnung {project_short_name} {invoice.invoice_type} {safe_contract_name}.docx"
+
+    response['Content-Disposition'] = f'attachment; filename="{new_filename}"'
+
+    print(response)
     doc.save(response)
 
     import io

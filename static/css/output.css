@@ -5530,6 +5530,10 @@ html:has(.drawer-toggle:checked) {
   margin-top: 2rem;
 }
 
+.ml-1 {
+  margin-left: 0.25rem;
+}
+
 .line-clamp-1 {
   overflow: hidden;
   display: -webkit-box;
@@ -5927,6 +5931,10 @@ html:has(.drawer-toggle:checked) {
 
 .justify-items-start {
   justify-items: start;
+}
+
+.justify-items-center {
+  justify-items: center;
 }
 
 .gap-0 {
@@ -6526,6 +6534,10 @@ html:has(.drawer-toggle:checked) {
 .text-xs {
   font-size: 0.75rem;
   line-height: 1rem;
+}
+
+.text-\[10px\] {
+  font-size: 10px;
 }
 
 .font-bold {
