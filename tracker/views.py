@@ -39,6 +39,7 @@ from datetime import datetime
 from django.db.models import JSONField
 from babel.numbers import format_decimal
 from django.db import transaction, IntegrityError
+from django.db.models import Max, Q
 
 @login_required
 def toggle_dark_mode(request):
@@ -2264,6 +2265,7 @@ def download_invoice(request, invoice_id):
 
         
         'invoice_type': invoice.invoice_type,
+        'current_ar_number': invoice.current_ar_number if invoice.invoice_type == 'AR' else None,
         'from_date': from_date.strftime('%d.%m.%Y') if from_date else None,
         'to_date': to_date.strftime('%d.%m.%Y') if to_date else None,
         'client_firm': client.firm_name,

@@ -2,7 +2,7 @@
 from django.db import migrations
 
 def backfill_ar_numbers(apps, schema_editor):
-    Invoice = apps.get_model('your_app', 'Invoice')
+    Invoice = apps.get_model('tracker', 'Invoice')
     from django.db import transaction
 
     with transaction.atomic():
@@ -28,7 +28,7 @@ def backfill_ar_numbers(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('your_app', 'XXXX_previous_migration'),
+        ('tracker', '0063_invoice_current_ar_number'),
     ]
 
     operations = [

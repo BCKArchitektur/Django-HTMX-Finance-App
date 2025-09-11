@@ -267,7 +267,7 @@
                             </td>
                             <td>{{ invoice.invoice_type  }}    </td>
                             <td>{{ invoice.contract.contract_name }}</td>
-                            <td>{{ invoice.created_at  }}</td>
+                            <td>{{ invoice.formatted_created_at   }}</td>
 
                             <td data-value="{{ invoice.invoice_net }}">{{ invoice.invoice_net|german_number }}</td>
                             <td data-value="{{ invoice.invoice_gross }}">{{ invoice.invoice_gross |german_number}}</td>
@@ -277,7 +277,7 @@
                             <td  class="w-1/12" data-value="{{ invoice.amount_received }}">
                                 {{ invoice.amount_received|german_number }}
                                 {% if invoice.date_of_payment %}
-                                    <br><span class="text-xs text-gray-500">({{ invoice.date_of_payment }})</span>
+                                    <br><span class="text-xs text-gray-500">({{ invoice.formatted_date_of_payment }})</span>
                                 {% endif %}
                             </td>                            
                             <td class="w-1/12">

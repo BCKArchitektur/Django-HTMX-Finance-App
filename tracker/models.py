@@ -374,6 +374,18 @@ class Invoice(models.Model):
 
     def __str__(self):
         return self.title
+    
+    def formatted_created_at(self):
+        """Return the created_at datetime in German format: DD.MM.YYYY HH:MM."""
+        if self.created_at:
+            return self.created_at.strftime("%d.%m.%Y %H:%M")
+        return None
+    
+    def formatted_date_of_payment(self):
+        """Return the date_of_payment in German format: DD.MM.YYYY."""
+        if self.date_of_payment:
+            return self.date_of_payment.strftime("%d.%m.%Y")
+        return None
 
 
 from django.db import models

@@ -195,9 +195,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                 const quotedQuantity = item.quantity;
                                 const availableQuantity = item.available_quantity;
                                 const previousProvidedQuantity = item.previous_provided_quantity || 0;  // ✅ Get previous invoice quantity
+                     
+                                let isChecked = ((quotedQuantity > availableQuantity) && (availableQuantity >= 0));
 
-                                const isChecked = ((quotedQuantity > availableQuantity) && (availableQuantity >= 0));
-
+                                // If section name has "LP", force enable
+                                if (section.section_name.includes("LP")) {
+                                    isChecked = true;
+                                }
 
                                  // Apply conditional styling
                                 const quantityColorClass = availableQuantity > 0 ? 'text-green-600' : 'text-red-500';
@@ -211,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 html += `<tr>
                                             <td>${sectionIndex + 1},${itemIndex + 1}</td>
                                             <td>
-                                                <input type="checkbox" name="select_${item.id}" ${isChecked ? 'checked="checked"' : ''} data-item-id="${item.id}" class="checkbox" />
+                                                <input type="checkbox" name="select_${item.id}" ${isChecked ? 'checked="checked"' : ''} data-item-id="${item.id}" class="checkbox checkbox-primary" />
                                             </td>
                                             <td class="pl-8">${item.Item_name}</td>
                                             <td>${item.rate}</td>
