@@ -5809,6 +5809,10 @@ html:has(.drawer-toggle:checked) {
   width: 1.75rem;
 }
 
+.w-\[75vw\] {
+  width: 75vw;
+}
+
 .min-w-24 {
   min-width: 6rem;
 }
@@ -5859,6 +5863,10 @@ html:has(.drawer-toggle:checked) {
 
 .max-w-\[60vw\] {
   max-width: 60vw;
+}
+
+.max-w-\[75vw\] {
+  max-width: 75vw;
 }
 
 .flex-1 {
