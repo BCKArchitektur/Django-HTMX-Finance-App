@@ -2045,6 +2045,27 @@ def download_invoice(request, invoice_id):
         for section in contract.section.all()
     }
 
+    # --- NEW: compute originally quoted (beauftragt) for non-LP sections ---
+    non_lp_beauftragt_by_section_id = {}
+    sum_beauftragt_non_lp = Decimal('0.00')
+
+    for section in contract.section.order_by('order'):
+        # Skip LP sections (LP1, LP2, ...)
+        if re.search(r"LP(\d+)", section.section_name, re.IGNORECASE):
+            continue
+
+        section_total = Decimal('0.00')
+        for item in section.Item.all():
+            # Use Decimal for financial accuracy
+            q = Decimal(str(item.quantity))
+            r = Decimal(str(item.rate))
+            section_total += q * r
+
+        non_lp_beauftragt_by_section_id[section.id] = section_total
+        sum_beauftragt_non_lp += section_total
+    # -----------------------------------------------------------------------
+
+
     # Process provided quantities
     provided_quantities = invoice.provided_quantities
     for item_id, details in provided_quantities.items():
@@ -2138,10 +2159,23 @@ def download_invoice(request, invoice_id):
 
     # Sort and finalize contract sections
     contract_sections = []
+    # Build a quick lookup: section_name -> (id, order)
+    section_lookup = {s.section_name: (s.id, section_order.get(s.section_name, 999))
+                    for s in contract.section.all()}
+
     for section_name in sorted(contract_sections_dict.keys(), key=lambda n: section_order.get(n, 999)):
-        section = contract_sections_dict[section_name]
-        section['net_section'] = f"{section['net_section']:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-        contract_sections.append(section)
+        section_out = contract_sections_dict[section_name]
+        section_out['net_section'] = f"{section_out['net_section']:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+
+        # --- NEW: add beauftragt for non-LP sections ---
+        sec_id, _ = section_lookup.get(section_name, (None, None))
+        if sec_id and sec_id in non_lp_beauftragt_by_section_id:
+            beauftragt_val = non_lp_beauftragt_by_section_id[sec_id]
+            section_out['beauftragt'] = f"{beauftragt_val:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        # ------------------------------------------------
+
+        contract_sections.append(section_out)
+
 
     # Calculate totals
     additional_fee_percentage = Decimal(contract.additional_fee_percentage)
@@ -2274,6 +2308,8 @@ def download_invoice(request, invoice_id):
         "zuschlag_amount": format_decimal(float(zuschlag_amount), format='#,##0.00', locale='de_DE'),
         "grundhonorar_without_zuschlag": format_decimal(float(grundhonorar_without_zuschlag), format='#,##0.00', locale='de_DE'),
         "zuschlag_value" : hoai_details["zuschlag"],
+
+        'sum_beauftragt' : f"{sum_beauftragt_non_lp:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
 
 
         
