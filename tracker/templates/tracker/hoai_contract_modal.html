@@ -182,11 +182,25 @@ function updateLPInputs(lpData) {
         if (lpValue > 0) shouldTriggerCalculation = true; // ✅ If any LP is checked, we should trigger calculation
 
         let lpElement = `
-            <div class="flex items-center">
-                <input type="checkbox"  class="checkbox"  id="${lpKey}" ${checkedAttr} onchange="calculateHOAI(); updateFeeBreakdown(getSelectedLPs());">
+                <div class="flex items-center">
+                <input 
+                    type="checkbox"  
+                    class="checkbox"  
+                    id="${lpKey}" 
+                    ${checkedAttr} 
+                    onchange="calculateHOAI(); updateFeeBreakdown(getSelectedLPs());"
+                >
                 <label for="${lpKey}" class="ml-2 w-2/3">LP${lpNumber}</label>
-                <input type="number" id="${lpKey}_percentage" class="input input-sm text-right" value="${lpValue}" onchange="calculateHOAI(); updateFeeBreakdown(getSelectedLPs());">%
-            </div>
+                <input 
+                    type="number" 
+                    id="${lpKey}_percentage" 
+                    class="input input-sm text-right w-20" 
+                    value="${lpValue}" 
+                    step="0.01" 
+                    onchange="calculateHOAI(); updateFeeBreakdown(getSelectedLPs());"
+                >%
+                </div>
+
         `;
 
         lpContainer.innerHTML += lpElement;
@@ -523,55 +537,55 @@ function updateLPBasedHonorars(selectedLPs) {
     document.getElementById("grossHonorLP").textContent = gross.toLocaleString('de-DE', { minimumFractionDigits: 2 }) + " €";
 }
 
-
 async function loadSectionsFromLP() {
-    let serviceProfileDropdown = document.getElementById("serviceProfile");
-    let selectedOption = serviceProfileDropdown.options[serviceProfileDropdown.selectedIndex];
+  const serviceProfileDropdown = document.getElementById("serviceProfile");
+  const selectedOption = serviceProfileDropdown.options[serviceProfileDropdown.selectedIndex];
 
-    if (!selectedOption || !selectedOption.dataset.lpBreakdown) {
-        alert("Please select a Service Profile with a valid LP breakdown.");
-        return;
+  if (!selectedOption || !selectedOption.dataset.lpBreakdown) {
+    alert("Please select a Service Profile with a valid LP breakdown.");
+    return;
+  }
+
+  const lpBreakdown = JSON.parse(selectedOption.dataset.lpBreakdown);
+  const hoaiGroup = getOrCreateHoaiGroup();
+
+  // Clear ONLY previous LP-generated sections
+  hoaiGroup.innerHTML = "";
+
+  // LP → Library Section mapping
+  const lpToSectionMapping = {
+    lp1: 1, lp2: 3, lp3: 4, lp4: 5, lp5: 6,
+    lp6: 7, lp7: 8, lp8: 9, lp9: 10
+  };
+
+  // Use only checked LPs, sorted numerically
+  const selectedLPs = Object.keys(lpBreakdown)
+    .filter(lpKey => lpBreakdown[lpKey] > 0 && document.getElementById(lpKey)?.checked)
+    .sort((a, b) => parseInt(a.slice(2)) - parseInt(b.slice(2)));
+
+  for (const lpKey of selectedLPs) {
+    const sectionId = lpToSectionMapping[lpKey];
+    if (sectionId) {
+      await addSectionFromLibrary(sectionId, { hoaiGenerated: true, target: hoaiGroup });
+      await new Promise(r => setTimeout(r, 120)); // small delay to keep DOM updates smooth
+    } else {
+      console.warn(`No section mapping found for ${lpKey}`);
     }
+  }
 
-    let lpBreakdown = JSON.parse(selectedOption.dataset.lpBreakdown);
-    let sectionsContainer = document.getElementById("sections-container");
-    sectionsContainer.innerHTML = ""; // Clear previous sections
+  console.log(" LP sections refreshed (manual sections left intact).");
+}
 
-    console.log("🔍 Filtering checked LPs...");
 
-    // Correct LP-to-Section ID Mapping (from your original request)
-    const lpToSectionMapping = {
-        "lp1": 1,  // LP1 maps to Section ID 1
-        "lp2": 3,  // LP2 maps to Section ID 3
-        "lp3": 4,  // LP3 maps to Section ID 4
-        "lp4": 5,  // LP4 maps to Section ID 5
-        "lp5": 6,  // LP5 maps to Section ID 6
-        "lp6": 7,  // LP6 maps to Section ID 7
-        "lp7": 8,  // LP7 maps to Section ID 8
-        "lp8": 9,  // LP8 maps to Section ID 9
-        "lp9": 10  // LP9 maps to Section ID 10
-    };
-
-    // Get checked LPs (Only checked LPs from Fee Breakdown)
-    let selectedLPs = Object.keys(lpBreakdown)
-        .filter(lpKey => lpBreakdown[lpKey] > 0 && document.getElementById(lpKey).checked) // Only checked LPs
-        .sort((a, b) => parseInt(a.replace("lp", "")) - parseInt(b.replace("lp", ""))); // Sort numerically
-
-    console.log("✅ Selected LPs (checked only, in correct order):", selectedLPs);
-
-    // Process each checked LP sequentially with delay
-    for (const lpKey of selectedLPs) {
-        let sectionId = lpToSectionMapping[lpKey]; // Get mapped Section ID
-        if (sectionId) {
-            console.log(`🔍 Fetching section for ${lpKey} (Section ID: ${sectionId})...`);
-            await addSectionFromLibrary(sectionId); // Load sections in correct order
-            await new Promise(resolve => setTimeout(resolve, 200)); // 5ms delay
-        } else {
-            console.warn(`⚠️ No section mapping found for ${lpKey}`);
-        }
-    }
-
-    console.log("✅ Sections added from library in correct order!");
+function getOrCreateHoaiGroup() {
+  const root = document.getElementById('sections-container');
+  let group = root.querySelector('[data-hoai-group="true"]');
+  if (!group) {
+    group = document.createElement('div');
+    group.setAttribute('data-hoai-group', 'true');
+    root.appendChild(group);
+  }
+  return group;
 }
 
 </script>

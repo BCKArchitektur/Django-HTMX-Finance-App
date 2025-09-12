@@ -1983,36 +1983,36 @@
         }
     }
 
-    function toggleProjectStatus() {
-        const isChecked = document.getElementById("toggleAllProjects").checked;
-        const table = document.getElementById("project-table");
-        const rows = table.getElementsByTagName('tr');
+    // function toggleProjectStatus() {
+    //     const isChecked = document.getElementById("toggleAllProjects").checked;
+    //     const table = document.getElementById("project-table");
+    //     const rows = table.getElementsByTagName('tr');
         
-        // Loop through the rows and filter based on the project status
-        for (let i = 1; i < rows.length; i++) { // Skip header row
-            const cells = rows[i].getElementsByTagName('td');
-            const statusCell = cells[2]; // Assuming the status is in the 3rd column
+    //     // Loop through the rows and filter based on the project status
+    //     for (let i = 1; i < rows.length; i++) { // Skip header row
+    //         const cells = rows[i].getElementsByTagName('td');
+    //         const statusCell = cells[2]; // Assuming the status is in the 3rd column
             
-            if (statusCell) {
-                const status = statusCell.textContent.trim();
+    //         if (statusCell) {
+    //             const status = statusCell.textContent.trim();
                 
-                if (isChecked) {
-                    rows[i].style.display = ''; // Show all projects
-                } else {
-                    if (status === "Completed" || status === "On Hold") {
-                        rows[i].style.display = 'none'; // Hide Completed and On Hold projects
-                    } else {
-                        rows[i].style.display = ''; // Show only In Progress projects
-                    }
-                }
-            }
-        }
-    }
+    //             if (isChecked) {
+    //                 rows[i].style.display = ''; // Show all projects
+    //             } else {
+    //                 if (status === "Completed" || status === "On Hold") {
+    //                     rows[i].style.display = 'none'; // Hide Completed and On Hold projects
+    //                 } else {
+    //                     rows[i].style.display = ''; // Show only In Progress projects
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
-    // Call this function on page load to set the initial visibility
-    document.addEventListener("DOMContentLoaded", function() {
-        toggleProjectStatus(); // Ensure that only In Progress projects are shown initially
-    });
+    // // Call this function on page load to set the initial visibility
+    // document.addEventListener("DOMContentLoaded", function() {
+    //     toggleProjectStatus(); // Ensure that only In Progress projects are shown initially
+    // });
 
     function filterTable(inputId, tableId) {
     const input = document.getElementById(inputId);
