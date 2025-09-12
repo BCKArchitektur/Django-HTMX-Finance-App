@@ -107,7 +107,7 @@
                     <p ><strong>Honorarangebot brutto:</strong> <span id="grossHonorLP">-</span> </p>
                   </div>
                   
-                <button type="button" class="btn btn-primary btn-outline mt-4 w-full" onclick="loadSectionsFromLP()">Load Sections from LP</button>
+                <button type="button" class="btn btn-primary btn-outline mt-4 w-full" onclick="loadSectionsFromLP()">LP-Abschnitte laden</button>
 
             </div>
         </div>
@@ -183,7 +183,7 @@ function updateLPInputs(lpData) {
 
         let lpElement = `
             <div class="flex items-center">
-                <input type="checkbox" id="${lpKey}" ${checkedAttr} onchange="calculateHOAI(); updateFeeBreakdown(getSelectedLPs());">
+                <input type="checkbox"  class="checkbox"  id="${lpKey}" ${checkedAttr} onchange="calculateHOAI(); updateFeeBreakdown(getSelectedLPs());">
                 <label for="${lpKey}" class="ml-2 w-2/3">LP${lpNumber}</label>
                 <input type="number" id="${lpKey}_percentage" class="input input-sm text-right" value="${lpValue}" onchange="calculateHOAI(); updateFeeBreakdown(getSelectedLPs());">%
             </div>
