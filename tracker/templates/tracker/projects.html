@@ -11,12 +11,25 @@
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-2xl  font-sans font-medium">Projekte ({{ projects.count }})</h2>
             <div class="flex items-center gap-2">
+
+
+
+
                 <label for="toggleAllProjects" class="text-sm mr-2">"Alle Projekte"</label>
                 <label class="toggle text-base-content">
                     <input type="checkbox" class="toggle" id="toggleAllProjects" onchange="toggleProjectStatus()"/>
                     <span class="toggle-label"></span> 
                 </label>
-                <input type="text" id="project-search" placeholder="Projekte suchen..." class="input input-bordered input-sm" onkeyup="filterTable('project-search', 'project-table')">
+                                <!-- Team filter -->
+                <select id="user-filter" multiple
+                        class="select select-sm w-60 appearance-none [background-image:none]">
+                    {% for u in users %}
+                        <option value="{{ u.id }}">
+                        {{ u.username|slice:":2"|upper }}
+                        </option>
+                    {% endfor %}
+                    </select>
+                <input type="text" id="project-search" placeholder="Suchen..." class="input input-bordered input-sm" oninput="applyProjectFilters()" onkeyup="filterTable('project-search', 'project-table')">
                 <button class="btn btn-sm btn-neutral btn-outline font-mono" onclick="openProjectModal()">+ Neues Projekt</button>
             </div>            
         </div>
@@ -46,7 +59,9 @@
             </thead>            
               <tbody>
                 {% for project in projects %}
-                <tr class="hover:bg-base-300">
+                <tr class="hover:bg-base-300"
+                    data-users="{% for user in project.user.all %}{{ user.id }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                    data-status="{{ project.status }}">
                     <td>
                         {{ project.project_no }}</td>
                     <td>
@@ -106,7 +121,7 @@
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-2xl  font-sans font-medium  ">Klienten ({{ clients.count }})</h2>
             <div class="flex items-center gap-2">
-                <input type="text" id="client-search" placeholder="Klienten suchen..." class="input input-bordered input-sm" onkeyup="filterTable('client-search', 'client-table')">
+                <input type="text" id="client-search" placeholder="Suchen..." class="input input-bordered input-sm" onkeyup="filterTable('client-search', 'client-table')">
                 <button class="btn btn-sm btn-neutral btn-outline font-mono" onclick="openClientModal()">+ Neuer Klient</button>
             </div>
         </div>
@@ -525,6 +540,24 @@ document.addEventListener("DOMContentLoaded", function () {
     placeholder: "Benutzer suchen...",
     dropdownDirection: 'up'  // This ensures the dropdown opens upwards
   });
+
+const userFilterEl = document.getElementById("user-filter");
+  if (!userFilterEl.tomselect) {
+    window.userFilter = new TomSelect("#user-filter", {
+      plugins: ['remove_button'],
+            maxItems: null,
+            create: false,
+            searchField: 'text',
+      placeholder: "Benutzer filtern…",
+      persist: true,
+      closeAfterSelect: false
+    });
+    // Use TomSelect's own change event
+    window.userFilter.on('change', applyProjectFilters);
+  }
+
+  // Re-apply filters whenever selection changes
+  document.getElementById("user-filter").addEventListener("change", applyProjectFilters);
 });
 
 
@@ -613,12 +646,14 @@ function toggleProjectStatus() {
       // rows[i].style.display = (status === "Completed" || status === "On Hold" || status === "Discontinued") ? 'none' : '';
     }
   }
+    applyProjectFilters();
 }
 
 
     // Call this function on page load to set the initial visibility
     document.addEventListener("DOMContentLoaded", function() {
-        toggleProjectStatus(); // Ensure that only In Progress projects are shown initially
+        toggleProjectStatus(); 
+          applyProjectFilters();
     });
 
 
@@ -641,4 +676,46 @@ function toggleProjectStatus() {
 
         
     
+<script>
+function applyProjectFilters() {
+  const searchVal = (document.getElementById('project-search')?.value || '').toLowerCase();
+
+  // Always read from TomSelect instance; ensure array
+  let selectedUsers = [];
+  if (window.userFilter) {
+    const v = window.userFilter.getValue();
+    selectedUsers = Array.isArray(v) ? v : (v ? String(v).split(',') : []);
+  }
+
+  const showAll = document.getElementById('toggleAllProjects')?.checked ?? true;
+
+  const table = document.getElementById('project-table');
+  const rows = table.getElementsByTagName('tr');
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    const cells = row.getElementsByTagName('td');
+    if (!cells.length) continue;
+
+    const statusCode = row.dataset.status || '';
+    const statusPass = showAll ? true : (statusCode === '0'); // only InBearbeitung when unchecked
+
+    const rowUsers = (row.dataset.users || '').split(',').map(s => s.trim()).filter(Boolean);
+
+    // If you want ANY selected user to match, use 'some'; for ALL, use 'every'
+    const usersPass = selectedUsers.length === 0
+      ? true
+      : selectedUsers.some(u => rowUsers.includes(u)); // <- any-match
+
+    let text = '';
+    for (let j = 0; j < cells.length; j++) text += (cells[j].textContent || cells[j].innerText) + ' ';
+    const textPass = text.toLowerCase().includes(searchVal);
+
+    row.style.display = (statusPass && usersPass && textPass) ? '' : 'none';
+  }
+}
+
+</script>
+
+
 {% endblock extra_scripts %}

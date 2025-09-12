@@ -140,12 +140,14 @@ def index(request):
     }
     return render(request, 'tracker/index.html', context)
 
+from django.contrib.auth import get_user_model
 @login_required
 def projects(request):
-    projects = Project.objects.all()  # Show all projects
-    clients = Client.objects.all()  # Assuming all clients should be shown
+    projects = Project.objects.all()
+    clients = Client.objects.all()
     project_form = ProjectForm()
     client_form = ClientForm()
+    User = get_user_model()
 
     if request.method == 'POST':
         if 'project_name' in request.POST:
@@ -164,8 +166,10 @@ def projects(request):
         'clients': clients.order_by('-firm_name'),
         'project_form': project_form,
         'client_form': client_form,
+        "users": User.objects.filter(is_active=True).order_by('username'),
     }
     return render(request, 'tracker/projects.html', context)
+
 
 
 @csrf_exempt
@@ -2076,10 +2080,7 @@ def download_invoice(request, invoice_id):
             sum_lp_percentage  += lp_percentage
             sum_lp_beauftragt += lp_beauftragt
 
-            if skip_zero_lps:
-                sum_actual_lp_value == None
-                sum_lp_percentage == None
-                sum_lp_beauftragt == None
+
 
             item_index = section_item_order.get(section.id, {}).get(item.id, 0)
             item_serial = f"{section_serial}.{item_index}"
@@ -2243,10 +2244,6 @@ def download_invoice(request, invoice_id):
         'lp_sections': lp_sections,  # Organized by LP
         'sum_of_all_lps': f"{sum_of_all_lps:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
         
-        'sum_actual_lp_value': f"{sum_actual_lp_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        'sum_lp_percentage': f"{sum_lp_percentage:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-        'sum_lp_beauftragt': f"{sum_lp_beauftragt:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-
 
         'invoice_net': f"{invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),  
         'tax': f"{tax_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'), 
@@ -2294,9 +2291,16 @@ def download_invoice(request, invoice_id):
         'current_invoice_net': f"{current_invoice_net:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'current_invoice_tax': f"{current_invoice_tax:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
         'current_invoice_gross': f"{current_invoice_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-
-
     }
+
+
+    if not skip_zero_lps:
+        context.update({
+            'sum_actual_lp_value': f"{sum_actual_lp_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'sum_lp_percentage':   f"{sum_lp_percentage:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            'sum_lp_beauftragt':   f"{sum_lp_beauftragt:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+        })
+
 
     # Sort nachlass_item_serials numerically
     sorted_nachlass_items = sorted(

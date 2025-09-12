@@ -5801,6 +5801,10 @@ html:has(.drawer-toggle:checked) {
   width: 50vw;
 }
 
+.w-60 {
+  width: 15rem;
+}
+
 .min-w-24 {
   min-width: 6rem;
 }
@@ -5905,6 +5909,12 @@ html:has(.drawer-toggle:checked) {
 
 .list-disc {
   list-style-type: disc;
+}
+
+.appearance-none {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
 }
 
 .grid-cols-1 {
@@ -6301,6 +6311,10 @@ html:has(.drawer-toggle:checked) {
 .bg-white {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+}
+
+.bg-none {
+  background-image: none;
 }
 
 .from-info-content {
@@ -6890,6 +6904,10 @@ html:has(.drawer-toggle:checked) {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
+}
+
+.\[background-image\:none\] {
+  background-image: none;
 }
 
 @media (min-width: 640px) {
