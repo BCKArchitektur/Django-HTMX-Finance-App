@@ -146,6 +146,56 @@ document.addEventListener("DOMContentLoaded", function() {
             });
     }
 
+    // --- HOAI name detection + grouping helpers ---
+    function isHoaiSectionName(name = "") {
+    const normalized = (name || "").trim().toLowerCase().replace(/\s+/g, " ");
+    const m = normalized.match(/^(?:lp\s*|leistungsphase\s*)([1-9])\b/); // LP1..LP9
+    if (!m) return null;
+    const n = parseInt(m[1], 10);
+    return n >= 1 && n <= 9 ? n : null;
+    }
+
+    function getOrCreateHoaiGroupLocal() {
+    // prefer the one you already defined in the HOAI script
+    if (typeof getOrCreateHoaiGroup === "function") return getOrCreateHoaiGroup();
+    const root = document.getElementById('sections-container');
+    let group = root.querySelector('[data-hoai-group="true"]');
+    if (!group) {
+        group = document.createElement('div');
+        group.setAttribute('data-hoai-group', 'true');
+        root.appendChild(group);
+    }
+    return group;
+    }
+
+    function tagHoaiByName(sectionEl, {moveToGroup=true} = {}) {
+    const input = sectionEl.querySelector('.section-name');
+    if (!input) return;
+    const lpNum = isHoaiSectionName(input.value);
+
+    if (lpNum) {
+        sectionEl.dataset.hoaiGenerated = 'true';        // data-hoai-generated="true"
+        sectionEl.classList.add('hoai-generated');       // optional styling hook
+        if (moveToGroup) {
+        const group = getOrCreateHoaiGroupLocal();
+        if (sectionEl.parentElement !== group) group.appendChild(sectionEl);
+        }
+    } else {
+        delete sectionEl.dataset.hoaiGenerated;
+        sectionEl.classList.remove('hoai-generated');
+    }
+    }
+
+    // Whenever a section name changes, re-infer HOAI and (if needed) move under the HOAI group.
+document.addEventListener('input', (e) => {
+  if (!e.target.classList?.contains('section-name')) return;
+  const section = e.target.closest('.section-block');
+  if (!section) return;
+  const wasHoai = section.dataset.hoaiGenerated === 'true';
+  tagHoaiByName(section, {moveToGroup: true});
+  // if it changed from HOAI → non-HOAI, we leave it where it is (you can also move it back if you prefer)
+});
+
     // Function to build the contract JSON
     function buildContractJSON() {
         let contract = {
@@ -602,6 +652,8 @@ document.addEventListener("DOMContentLoaded", function() {
                             </div>
                         `;
                         sectionsContainer.insertAdjacentHTML('beforeend', sectionTemplate);
+                        const inserted = sectionsContainer.lastElementChild;
+tagHoaiByName(inserted, {moveToGroup:true});
                     });
             }
         });
@@ -883,6 +935,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 </div>
             `;
             sectionsContainer.insertAdjacentHTML('beforeend', sectionTemplate);
+            const inserted = sectionsContainer.lastElementChild;
+tagHoaiByName(inserted, {moveToGroup:true});
+
         });
     }
 
@@ -937,6 +992,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
             // Add section to the container
             sectionsContainer.insertAdjacentHTML('beforeend', sectionTemplate);
+            const inserted = sectionsContainer.lastElementChild;
+tagHoaiByName(inserted, {moveToGroup:true});
+
         });
 
         console.log("Form populated with contract details.");
@@ -1007,6 +1065,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 <div class="items-container"></div>
             </div>`;
         document.querySelector('#sections-container').insertAdjacentHTML('beforeend', sectionTemplate);
+        const inserted = document.querySelector('#sections-container').lastElementChild;
+tagHoaiByName(inserted, {moveToGroup:true});
+
     }
 
     // Function to add a new item
@@ -1156,15 +1217,24 @@ window.addSectionFromLibrary = function(sectionId, options = {}) {
 
       // Ensure the real node exists, then tag it if needed
       const added = target.querySelector(`.section-block[data-section-id="${newSectionId}"]`);
-      if (added) {
-        if (isHoaiGenerated) {
-          added.dataset.hoaiGenerated = 'true';   // data-hoai-generated="true"
-          added.classList.add('hoai-generated');  // extra CSS hook
-        }
-        resolve(added);
-      } else {
-        reject(new Error('Failed to insert section node'));
-      }
+if (added) {
+  // 1) keep your explicit flag if provided
+  if (isHoaiGenerated) {
+    added.dataset.hoaiGenerated = 'true';
+    added.classList.add('hoai-generated');
+    // ensure it sits inside the HOAI group
+    const group = getOrCreateHoaiGroupLocal();
+    if (added.parentElement !== group) group.appendChild(added);
+  }
+
+  // 2) ALSO infer by name (covers reloads / edits / library items without the flag)
+  tagHoaiByName(added, {moveToGroup:true});
+
+  resolve(added);
+} else {
+  reject(new Error('Failed to insert section node'));
+}
+
     });
   });
 };
@@ -1280,3 +1350,7 @@ window.addSectionFromLibrary = function(sectionId, options = {}) {
 
 });
 </script>
+
+<style>
+  .hoai-generated { outline: 1px dashed #499da8; border-radius: 6px; }
+</style>

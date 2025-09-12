@@ -2000,6 +2000,10 @@ def download_invoice(request, invoice_id):
     from_date = parse_date(from_date_str) if from_date_str else None
     to_date = parse_date(to_date_str) if to_date_str else None
 
+    skip_zero_lps_raw = request.GET.get('skip_zero_lps', '')
+    skip_zero_lps = str(skip_zero_lps_raw).lower() in ('1', 'true', 'on', 'yes')
+
+
     # Check if template is English
     is_english_template = template_name in ['inv_BCK_En.docx', 'inv_Kost_En.docx']
 
@@ -2056,19 +2060,31 @@ def download_invoice(request, invoice_id):
             lp_key = f"lp{lp_match.group(1)}"
             lp_value = hoai_details["lp_values"].get(lp_key, "0")
             actual_lp_value = hoai_details["lp_breakdown_actual"].get(lp_key, "0")
+
             lp_percentage = Decimal(lp_value) if lp_value != "0" else Decimal(0)
             lp_amount = (Decimal(details['quantity']) / Decimal(100)) * grundhonorar
-            lp_beauftragt = (lp_percentage / Decimal(100)) * grundhonorar 
-            sum_of_all_lps += lp_amount
+            lp_beauftragt = (lp_percentage / Decimal(100)) * grundhonorar
 
+            # NEW: if requested, skip LPs that are zero (0 % or provided quantity 0)
+            if skip_zero_lps and (lp_percentage == 0 or Decimal(details['quantity']) == 0):
+                # Do not touch any sums or lists; just omit this LP row
+                continue
+
+            sum_of_all_lps += lp_amount
             sum_actual_lp_value  += Decimal(actual_lp_value)
+
             sum_lp_percentage  += lp_percentage
             sum_lp_beauftragt += lp_beauftragt
+
+            if skip_zero_lps:
+                sum_actual_lp_value == None
+                sum_lp_percentage == None
+                sum_lp_beauftragt == None
 
             item_index = section_item_order.get(section.id, {}).get(item.id, 0)
             item_serial = f"{section_serial}.{item_index}"
 
-            # Apply Nachlass check for LP items (if ever needed)
+            # Apply Nachlass check for LP items (unchanged)
             if not exclude_from_nachlass:
                 nachlass_applicable_sum += lp_amount
                 nachlass_item_serials.append(item_serial)
@@ -2078,13 +2094,13 @@ def download_invoice(request, invoice_id):
                 'lp_percentage': f"{lp_percentage:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'lp_amount': f"{lp_amount:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'lp_beauftragt': f"{lp_beauftragt:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-                'actual_lp_value': f"{actual_lp_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                'actual_lp_value': f"{Decimal(actual_lp_value):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'Item': [{
                     'Item_name': item.Item_name,
                     'Item_serial': item_serial,
                     'unit': unit,
                     'rate': f"{Decimal(details['rate']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-                    'quantity': f"{details['quantity']:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                    'quantity': f"{Decimal(details['quantity']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                     'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
                 }]
             })

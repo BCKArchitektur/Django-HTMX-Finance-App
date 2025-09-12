@@ -1,16 +1,16 @@
 <div id="recordPaymentModal" class="modal">
     <div class="modal-box max-w-5xl">
-        <h3 class="font-bold text-lg m-4">Record Payment</h3>
+        <h3 class="font-bold text-lg m-4">Zahlung verbuchen</h3>
         <form id="record-payment-form" method="post" action="{% url 'record_payment' 0 %}">
             {% csrf_token %}
 
             <div class="form-control">
-                <label class="label">Invoice Net (€)</label>
+                <label class="label">Rechnung Netto (€)</label>
                 <input type="text" id="payment_invoice_net" class="input input-bordered w-full" readonly>
             </div>
 
             <div class="form-control">
-                <label class="label">Additional Fee (€)</label>
+                <label class="label">Nebenkosten (€)</label>
                 <input type="text" id="payment_additional_fee" class="input input-bordered w-full" readonly>
             </div>
 
@@ -25,12 +25,12 @@
             </div>
 
             <div class="form-control">
-                <label class="label">Invoice Gross (€)</label>
+                <label class="label">Rechnung brutto (€)</label>
                 <input type="text" id="payment_invoice_gross" class="input input-bordered w-full" readonly>
             </div>
 
             <div class="form-control">
-                <label class="label">Current Invoice Gross (€)</label>
+                <label class="label">Aktuelle Rechnung brutto (€)</label>
                 <div class="flex">
                     <input type="text" id="payment_current_invoice_gross" class="input input-bordered w-full" readonly>
                 </div>
@@ -38,21 +38,21 @@
             
 
             <div class="form-control">
-                <label class="label">Amount Received (€)</label>
+                <label class="label">Erhaltener Betrag (€)</label>
                 <div class="flex">
                     <input type="number" step="0.01" name="amount_received" id="amount_received" class="input input-bordered w-full" required>
-                    <button type="button" class="btn btn-secondary btn-outline ml-2" onclick="copyCurrentGross()">Copy from Invoice Gross</button>
+                    <button type="button" class="btn btn-secondary btn-outline ml-2" onclick="copyCurrentGross()">Kopie aus Rechnung Brutto</button>
                 </div>
             </div>
 
             <div class="form-control mt-4">
-                <label class="label">Date of Payment</label>
+                <label class="label">Zahlungsdatum</label>
                 <input type="date" name="date_of_payment" id="date_of_payment" class="input input-bordered w-full">
             </div>
 
             <div class="modal-action">
-                <button type="submit" class="btn btn-primary">Save Payment</button>
-                <a href="#" class="btn" onclick="closeRecordPaymentModal()">Cancel</a>
+                <button type="submit" class="btn btn-primary">Zahlung speichern</button>
+                <a href="#" class="btn" onclick="closeRecordPaymentModal()">Abbrechen</a>
             </div>
         </form>
     </div>

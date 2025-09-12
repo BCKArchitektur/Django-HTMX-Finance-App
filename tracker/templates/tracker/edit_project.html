@@ -78,7 +78,7 @@
               <button class="btn btn-sm btn-neutral font-mono btn-outline" onclick="openContractModal({{ project.id }})">+ Neuer Vertrag</button>
             </div>  
             </div>
-          <div class="animate-table-fade-in h-[55vh] w-[75vw] overflow-x-auto" >
+          <div class="animate-table-fade-in h-[55vh] overflow-x-auto" >
               <table class="table" id="contract-table">
                 <thead>
                     <tr>
@@ -202,7 +202,7 @@
                     <button class="btn btn-sm btn-neutral font-mono btn-outline" onclick="openInvoiceModal()">+ Neue Rechnung</button>
                 </div>
             </div>
-            <div class="animate-table-fade-in h-[55vh] w-[75vw] overflow-x-auto" >
+            <div class="animate-table-fade-in h-[55vh]  overflow-x-auto" >
                 <table class="table" id="invoice-table">
                     <thead>
                         <tr class="hover:bg-base-300">
@@ -280,7 +280,7 @@
                             </td>                            
                             <td class="w-1/12">
 
-                                <button class="btn btn-xs btn-primary btn-outline m-1  h-10 w-24" onclick="openRecordPaymentModal({{ invoice.id }})">Payment</button> <!-- New Button -->
+                                <button class="btn btn-xs btn-primary btn-outline m-1  h-10 w-24" onclick="openRecordPaymentModal({{ invoice.id }})">Zahlung</button> <!-- New Button -->
                                 <a href="javascript:void(0);" onclick="openInvoiceTemplateModal({{ invoice.id }})" class="btn btn-xs btn-secondary btn-outline m-1 p-1  h-10 w-24">🖪 Invoice</a>
                             
                             </td>
@@ -608,13 +608,13 @@
 <!-- Modal to select the invoice template and date range -->
 <div id="selectInvoiceTemplateModal" class="modal">
     <div class="modal-box">
-        <h3 class="font-bold text-lg">Select Invoice Template and Date Range</h3>
+        <h3 class="font-bold text-lg">Rechnungsvorlage und Datumsbereich auswählen</h3>
         <form id="invoice-template-form" method="get" action="{% url 'download_invoice' 0 %}">
             <input type="hidden" name="invoice_id" id="invoice_id">
             
             <!-- Invoice Template Selection -->
             <div class="form-control m-2">
-                <label for="invoice_template_name" class="label">Template</label>
+                <label for="invoice_template_name" class="label">Rechnungsvorlage</label>
                 <select name="invoice_template_name" id="invoice_template_name" class="select select-bordered w-full">
                     <option value="inv_BCK_De.docx">BCK De</option>
                     <option value="inv_BCK_En.docx">BCK En</option>
@@ -626,22 +626,33 @@
             <div class="divider"></div>
 
             <!-- Performance Period Subheading -->
-            <h4 class="font-semibold text-md m-2">Performance Period</h4>
+            <h4 class="font-semibold text-md m-2">Zeitraum </h4>
 
             <!-- From Date -->
             <div class="form-control m-2" >
-                <label for="from_date" class="label">From Date</label>
+                <label for="from_date" class="label">Von </label>
                 <input type="date" name="from_date" id="from_date" class="input input-bordered w-full">
             </div>
 
             <!-- To Date -->
             <div class="form-control m-2">
-                <label for="to_date" class="label">To Date</label>
+                <label for="to_date" class="label">Bis</label>
                 <input type="date" name="to_date" id="to_date" class="input input-bordered w-full">
             </div>
 
+            <!-- Skip LPs with zero -->
+        <div class="form-control m-2">
+        <label class="label cursor-pointer justify-start">
+            <input type="checkbox" name="skip_zero_lps" id="skip_zero_lps" class="checkbox checkbox-bordered m-1">
+             Leere LPs überspringen
+        </label>
+        <p class="text-xs text-gray-500 mt-1">
+            Blendet LP-Positionen aus, die 0&nbsp;% oder 0,00 € betragen.
+        </p>
+        </div>
+
             <div class="modal-action">
-                <button type="submit" class="btn btn-primary">Download</button>
+                <button type="submit" class="btn btn-primary">Herunterladen</button>
                 <a href="#" class="btn" onclick="closeInvoiceTemplateModal()">Cancel</a>
             </div>
         </form>
@@ -795,24 +806,27 @@
     }
 
     document.getElementById('invoice-template-form').addEventListener('submit', function(event) {
-        const invoiceId = document.getElementById('invoice_id').value;
-        const templateName = document.getElementById('invoice_template_name').value;
-        const fromDate = document.getElementById('from_date').value;
-        const toDate = document.getElementById('to_date').value;
+        const invoiceId   = document.getElementById('invoice_id').value;
+        const templateName= document.getElementById('invoice_template_name').value;
+        const fromDate    = document.getElementById('from_date').value;
+        const toDate      = document.getElementById('to_date').value;
+        const skipZeros   = document.getElementById('skip_zero_lps').checked ? '1' : '0';
 
-        // Check if both date fields are provided
         if (!fromDate || !toDate) {
             alert('Please provide both From and To dates.');
-            event.preventDefault();  // Prevent form submission
+            event.preventDefault();
             return;
         }
 
-        // Set the form action URL
-        this.action = `{% url 'download_invoice' 0 %}`.replace('0', invoiceId) + `?template_name=${templateName}&from_date=${fromDate}&to_date=${toDate}`;
+        this.action = `{% url 'download_invoice' 0 %}`
+            .replace('0', invoiceId)
+            + `?template_name=${encodeURIComponent(templateName)}`
+            + `&from_date=${encodeURIComponent(fromDate)}`
+            + `&to_date=${encodeURIComponent(toDate)}`
+            + `&skip_zero_lps=${skipZeros}`;
 
         // Close the modal
         closeInvoiceTemplateModal();
-
     });
 
     function fetchData(url, callback) {
