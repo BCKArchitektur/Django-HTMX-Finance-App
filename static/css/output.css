@@ -5756,6 +5756,10 @@ html:has(.drawer-toggle:checked) {
   width: 1.5rem;
 }
 
+.w-60 {
+  width: 15rem;
+}
+
 .w-64 {
   width: 16rem;
 }
@@ -5776,10 +5780,6 @@ html:has(.drawer-toggle:checked) {
   width: 24rem;
 }
 
-.w-\[75vw\] {
-  width: 75vw;
-}
-
 .w-\[95\%\] {
   width: 95%;
 }
@@ -5795,14 +5795,6 @@ html:has(.drawer-toggle:checked) {
 .w-max {
   width: -moz-max-content;
   width: max-content;
-}
-
-.w-\[50vw\] {
-  width: 50vw;
-}
-
-.w-60 {
-  width: 15rem;
 }
 
 .min-w-24 {
@@ -6254,6 +6246,11 @@ html:has(.drawer-toggle:checked) {
   background-color: rgb(209 213 219 / var(--tw-bg-opacity));
 }
 
+.bg-gray-500 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(107 114 128 / var(--tw-bg-opacity));
+}
+
 .bg-indigo-300 {
   --tw-bg-opacity: 1;
   background-color: rgb(165 180 252 / var(--tw-bg-opacity));
@@ -6313,8 +6310,9 @@ html:has(.drawer-toggle:checked) {
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
 }
 
-.bg-none {
-  background-image: none;
+.bg-gray-400 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(156 163 175 / var(--tw-bg-opacity));
 }
 
 .from-info-content {

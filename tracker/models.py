@@ -386,6 +386,19 @@ class Invoice(models.Model):
         if self.date_of_payment:
             return self.date_of_payment.strftime("%d.%m.%Y")
         return None
+    
+    def get_invoice_label(self):
+        """Return formatted invoice label depending on type."""
+        if self.invoice_type == 'AR':
+            # Use current_ar_number if available, fallback to 1
+            number = self.current_ar_number or 1
+            return f"{number}. AR"
+        elif self.invoice_type == 'SR':
+            return "SR"
+        elif self.invoice_type == 'ZR':
+            return "ZR"
+        else:  # default ER
+            return "ER"
 
 
 from django.db import models

@@ -2243,6 +2243,7 @@ def download_invoice(request, invoice_id):
                 'invoice_tax': f"{inv_tax:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'invoice_gross': f"{inv_gross:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'amount_paid': f"{inv_paid:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                'get_invoice_label': inv.get_invoice_label(),
             })
 
         # Also compute current invoice deltas for summary

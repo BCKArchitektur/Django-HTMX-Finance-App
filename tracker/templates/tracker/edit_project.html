@@ -211,7 +211,7 @@
                                 <span class="sort-indicator"></span>
                             </th>
                             <th onclick="sortTable(1, 'invoice-table')" data-column="1">
-                                Typ
+                                Rechnungs Typ
                                 <span class="sort-indicator"></span>
                             </th>
                             <th onclick="sortTable(2, 'invoice-table')" data-column="2">
@@ -263,7 +263,7 @@
                                     {{ invoice.title }}
                                 </a> 
                             </td>
-                            <td>{{ invoice.invoice_type  }}    </td>
+                            <td>{{ invoice.get_invoice_label  }}    </td>
                             <td>{{ invoice.contract.contract_name }}</td>
                             <td>{{ invoice.formatted_created_at   }}</td>
 
