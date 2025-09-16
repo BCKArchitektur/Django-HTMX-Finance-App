@@ -2017,11 +2017,13 @@ def download_invoice(request, invoice_id):
     zuschlag_amount = float(parse_german_number(hoai_details["zuschlag_amount"]) if hoai_details["zuschlag_amount"] != "0" else Decimal(0))
     grundhonorar_without_zuschlag = float(grundhonorar) - zuschlag_amount
 
-    # Build section order mapping from contract
-    section_order = {
-        section.section_name: idx + 1
-        for idx, section in enumerate(contract.section.order_by('order'))
-    }
+    # Build section order for NON-LP sections only (to match estimates)
+    non_lp_sections = [
+        s for s in contract.section.order_by('order')
+        if not re.search(r"LP(\d+)", s.section_name, re.IGNORECASE)
+    ]
+    section_order = {s.section_name: idx + 1 for idx, s in enumerate(non_lp_sections)}
+
 
     # Initialize section storage
     contract_sections_dict = {}
@@ -2070,11 +2072,20 @@ def download_invoice(request, invoice_id):
     provided_quantities = invoice.provided_quantities
     for item_id, details in provided_quantities.items():
         item = get_object_or_404(Item, id=item_id)
-        section = item.section_set.first()
+
+        # Ensure we use the section from THIS contract (prevents 0 index / wrong mapping)
+        section = (
+            item.section_set.filter(contract=contract).first()
+            or contract.section.filter(Item=item).first()
+        )
+
         section_name = section.section_name if section else "Unknown Section"
-        exclude_from_nachlass = section.exclude_from_nachlass if section else False 
-        section_serial = section_order.get(section_name, 0)
+        exclude_from_nachlass = section.exclude_from_nachlass if section else False
+        # Number only non-LP sections; LPs won't have a non-LP serial
+        section_serial = section_order.get(section_name)
+
         item_total = Decimal(details['quantity']) * Decimal(details['rate'])
+
 
         unit = item.unit
         if is_english_template:
@@ -2109,7 +2120,7 @@ def download_invoice(request, invoice_id):
             # Apply Nachlass check for LP items (unchanged)
             if not exclude_from_nachlass:
                 nachlass_applicable_sum += lp_amount
-                nachlass_item_serials.append(item_serial)
+
 
             lp_sections.append({
                 'lp_name': section_name,
@@ -2119,7 +2130,7 @@ def download_invoice(request, invoice_id):
                 'actual_lp_value': f"{Decimal(actual_lp_value):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'Item': [{
                     'Item_name': item.Item_name,
-                    'Item_serial': item_serial,
+                    'Item_serial': "",
                     'unit': unit,
                     'rate': f"{Decimal(details['rate']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                     'quantity': f"{Decimal(details['quantity']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
@@ -2136,8 +2147,14 @@ def download_invoice(request, invoice_id):
                 }
 
             section_data = contract_sections_dict[section_name]
-            item_index = section_item_order.get(section.id, {}).get(item.id, 0)
+
+            # Use the order map; if missing, fall back to append-position
+            item_index = section_item_order.get(section.id, {}).get(item.id)
+            if not item_index:
+                item_index = len(section_data['Item']) + 1
+
             item_serial = f"{section_serial}.{item_index}"
+
             # item_serial = f"{section_data['section_serial']}.{len(section_data['Item']) + 1}"
 
             section_data['Item'].append({
@@ -2340,10 +2357,13 @@ def download_invoice(request, invoice_id):
 
 
     # Sort nachlass_item_serials numerically
+    numeric_nachlass = [s for s in nachlass_item_serials if re.match(r"^\d+\.\d+$", str(s or ""))]
     sorted_nachlass_items = sorted(
-        nachlass_item_serials,
+        numeric_nachlass,
         key=lambda x: tuple(map(int, x.split('.')))
     )
+
+
     if nachlass_value != 0:
         context.update({
             'nachlass_value': f"{nachlass_value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
