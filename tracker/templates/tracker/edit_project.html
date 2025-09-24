@@ -1422,13 +1422,10 @@
                         <option value="Tag(e)" ${item.unit === 'Tag(e)' ? 'selected' : ''}>Tag(e)</option>
                     `;
 
-                    const isPsch = item.unit === 'Psch';
-                    const quantityValue = isPsch ? '1' : (item.quantity || '');
+                    const quantityValue = (item.quantity || '');
                     const formattedQuantityValue = formatNumberToGerman(quantityValue);
                     const formattedRate = formatNumberToGerman(item.rate || 0);
                     const loggedHours = item.hours_logged || 0;
-
-
 
                     const itemRow = document.createElement('tr');
                     itemRow.innerHTML = `
@@ -1440,7 +1437,7 @@
                         <td>
                             <input type="text" name="quantity_${item.id}" value="${formattedQuantityValue}" 
                                 class="input input-bordered w-full" 
-                                ${itemInvoiced ? 'disabled' : (isPsch ? 'readonly' : '')} 
+                                ${itemInvoiced ? 'disabled' : ''} 
                                 onchange="updateTotalBudget(${item.id})">
                             <input type="hidden" name="original_quantity_${item.id}" value="${quantityValue}">
                         </td>
@@ -1519,11 +1516,6 @@
         quantityInput.disabled = false;
 
         switch (selectElement.value) {
-            case "Psch":
-                quantityInput.value = "1";
-                quantityInput.readOnly = true;
-                break;
-
             case "%":
                 quantityInput.value = originalQuantityInput.value || "0";
                 quantityInput.setAttribute("step", "0.01");
