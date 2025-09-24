@@ -2163,7 +2163,8 @@ def download_invoice(request, invoice_id):
                 'unit': unit,
                 'rate': f"{Decimal(details['rate']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
                 'quantity': f"{Decimal(details['quantity']):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-                'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+                'total': f"{item_total:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                'sort_index': item_index
             })
 
             section_data['net_section'] += item_total
@@ -2174,6 +2175,16 @@ def download_invoice(request, invoice_id):
                 nachlass_applicable_sum += item_total
                 nachlass_item_serials.append(item_serial)
 
+    # NEW: ensure items inside each non-LP section are ordered by their planned index
+    for _sec in contract_sections_dict.values():
+        _sec['Item'].sort(key=lambda x: x.get('sort_index', 0))
+    
+    def _lp_num(name):
+        m = re.search(r"LP(\d+)", (name or ""), re.IGNORECASE)
+        return int(m.group(1)) if m else 9999
+
+    lp_sections.sort(key=lambda row: _lp_num(row.get('lp_name')))
+    
     # Sort and finalize contract sections
     contract_sections = []
     # Build a quick lookup: section_name -> (id, order)
