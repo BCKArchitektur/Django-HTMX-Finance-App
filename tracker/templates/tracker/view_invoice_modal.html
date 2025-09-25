@@ -1,170 +1,425 @@
 <div id="viewInvoiceModal" class="modal">
-    <div class="modal-box max-w-5xl">
-      <button class="btn btn-sm btn-circle btn-ghost absolute top-2 right-2" onclick="closeViewInvoiceModal()">✕</button>
-  
-      <h3 class="font-bold text-lg m-4">View Invoice</h3>
-  
+  <div class="modal-box max-w-[1200px] w-full relative">
+    <!-- Close -->
+    <button class="btn btn-sm btn-circle btn-ghost absolute top-2 right-2" onclick="closeViewInvoiceModal()">✕</button>
+
+    <h3 class="font-bold text-lg m-4">Rechnung ansehen</h3>
+
+    <!-- Kopf-Infos -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div class="form-control">
-        <label class="label">Project</label>
+        <label class="label">Projekt</label>
         <input type="text" id="view_project_name" class="input input-bordered w-full" disabled>
       </div>
-  
+
       <div class="form-control">
-        <label class="label">Contract</label>
+        <label class="label">Vertrag</label>
         <input type="text" id="view_contract_name" class="input input-bordered w-full" disabled>
       </div>
 
       <div class="form-control">
-        <label class="label">Invoice Type</label>
+        <label class="label">Rechnungstyp</label>
         <input type="text" id="view_invoice_type" class="input input-bordered w-full" disabled>
       </div>
+
       <div class="form-control">
-        <label class="label">Cumulative</label>
+        <label class="label">Kumulationsmodus</label>
         <input type="text" id="view_is_cumulative" class="input input-bordered w-full" disabled>
       </div>
-      
-  
-      <div class="form-control">
-        <label class="label">Provided Quantities</label>
-        <div id="view_provided_quantities_table"></div>
+    </div>
+
+    <!-- === START: Zweispaltiges Layout wie im Create-Dialog === -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+
+      <!-- LINKE SPALTE: Mengen + obere Karte (volle Breite) -->
+      <div class="md:col-span-2">
+        <!-- Gelieferte Mengen (nummeriert) -->
+        <div class="form-control">
+          <label class="label">Gelieferte Mengen</label>
+          <div id="view_provided_quantities_table"></div>
+        </div>
+
+        <!-- Obere Berechnung (Gesamt) -->
+        <div class="card bg-base-100 mt-4 w-full">
+          <div class="card-body p-4">
+            <h4 class="font-semibold mb-2">Berechnung (Gesamt)</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label class="flex items-center justify-end gap-4">
+                <span class="text-sm text-zinc-600">Zwischensumme Positionen €</span>
+                <input type="text" id="view_sum_of_items" class="input input-bordered input-sm w-48 text-right" readonly>
+              </label>
+
+              <label class="flex items-center justify-end gap-4">
+                <span class="text-sm text-zinc-600">Nebenkosten %</span>
+                <input type="text" id="view_additional_fee_percentage" class="input input-bordered input-sm w-48 text-right" readonly>
+              </label>
+
+              <label class="flex items-center justify-end gap-4">
+                <span class="text-sm text-zinc-600">Nebenkosten €</span>
+                <input type="text" id="view_additional_fee" class="input input-bordered input-sm w-48 text-right" readonly>
+              </label>
+
+              <label class="flex items-center justify-end gap-4">
+                <span class="text-sm text-zinc-600">Nachlass %</span>
+                <input type="text" id="view_nachlass_percentage" class="input input-bordered input-sm w-48 text-right" readonly>
+              </label>
+
+              <label class="flex items-center justify-end gap-4">
+                <span class="text-sm text-zinc-600">Nachlass €</span>
+                <input type="text" id="view_nachlass_value" class="input input-bordered input-sm w-48 text-right" readonly>
+              </label>
+
+              <label class="flex items-center justify-end gap-4">
+                <span class="font-semibold">Rechnungs-Netto €</span>
+                <input type="text" id="view_invoice_net" class="input input-bordered input-sm w-48 text-right" readonly>
+              </label>
+
+              <label class="flex items-center justify-end gap-4">
+                <span class="text-sm text-zinc-600">USt(%)</span>
+                <input type="text" id="view_vat_percentage" class="input input-bordered input-sm w-48 text-right" readonly>
+              </label>
+
+              <label class="flex items-center justify-end gap-4">
+                <span class="text-sm text-zinc-600">USt €</span>
+                <input type="text" id="view_vat" class="input input-bordered input-sm w-48 text-right" readonly>
+              </label>
+
+              <label class="sm:col-span-2 flex items-center justify-end gap-4">
+                <span class="font-semibold">Rechnungs-Brutto €</span>
+                <input type="text" id="view_gross_invoice" class="input input-bordered input-sm w-48 text-right" readonly>
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
-  
-      <div class="overflow-x-auto mt-4">
-        <table class="table w-full">
-          <tbody>
-            <tr>
-              <td class="text-right font-thin w-1/6">Sum of Items €</td>
-              <td><input type="text" id="view_sum_of_items" class="input input-bordered input-sm w-1/4" readonly></td>
-            </tr>
-            <tr>
-              <td class="text-right font-thin w-1/6">Additional Fee %</td>
-              <td><input type="text" id="view_additional_fee_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
-            </tr>
-            <tr>
-              <td class="text-right font-thin w-1/6">Additional Fee €</td>
-              <td><input type="text" id="view_additional_fee" class="input input-bordered input-sm w-1/4" readonly></td>
-            </tr>
-            <tr>
-              <td class="text-right font-thin w-1/6">Nachlass %</td>
-              <td><input type="text" id="view_nachlass_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
-            </tr>
-            <tr>
-              <td class="text-right font-thin w-1/6">Nachlass €</td>
-              <td><input type="text" id="view_nachlass_value" class="input input-bordered input-sm w-1/4" readonly></td>
-            </tr>
-            <tr>
-              <td class="text-right font-bold w-1/6">Invoice Net €</td>
-              <td><input type="text" id="view_invoice_net" class="input input-bordered input-sm w-1/4" readonly></td>
-            </tr>
-            <tr>
-              <td class="text-right font-thin w-1/6">VAT (%)</td>
-              <td><input type="text" id="view_vat_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
-            </tr>
-            <tr>
-              <td class="text-right font-thin w-1/6">VAT €</td>
-              <td><input type="text" id="view_vat" class="input input-bordered input-sm w-1/4" readonly></td>
-            </tr>
-            <tr>
-              <td class="text-right font-bold w-1/6">Gross Invoice €</td>
-              <td><input type="text" id="view_gross_invoice" class="input input-bordered input-sm w-1/4" readonly></td>
-            </tr>
-          </tbody>
-        </table>
+
+      <!-- RECHTE SPALTE: identische 2 Karten wie im Create-Dialog -->
+      <div class="md:col-span-2">
+        <div class="md:flex md:justify-end">
+          <div class="space-y-4 w-full md:max-w-[800px]">
+            <!-- Frühere Rechnungen -->
+            <div class="card bg-base-100 w-full">
+              <div class="card-body p-4">
+                <h4 class="font-semibold mb-2">Frühere Rechnungen</h4>
+                <div id="view_prev_invoices"></div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Aktuelle Rechnungsdetails (berechnet) -->
+            <div class="card bg-base-100 w-full">
+              <div class="card-body p-4">
+                <h4 class="font-semibold mb-1">Aktuelle Rechnungsdetails (berechnet)</h4>
+                <div class="text-xs text-zinc-500 mb-3" id="view_current_mode_label"></div>
+                <div class="flex justify-end text-sm">
+                  <span>Aktuell Rechnungs-Netto €</span>
+                  <span id="view_current_net" class="text-right w-24">0,00</span>
+                </div>
+                <div class="flex justify-end text-sm">
+                  <span>USt €</span>
+                  <span id="view_current_tax" class="text-right w-24">0,00</span>
+                </div>
+                <div class="flex justify-end font-semibold">
+                  <span>Aktuell Rechnungs-Brutto €</span>
+                  <span id="view_current_gross" class="text-right w-24">0,00</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
       </div>
-  
-      <div class="modal-action">
-        <a href="#" class="btn" onclick="closeViewInvoiceModal()">Close</a>
-      </div>
+
+    </div>
+    <!-- === END: Zweispaltiges Layout === -->
+
+    <div class="modal-action">
+      <a href="#" class="btn" onclick="closeViewInvoiceModal()">Schließen</a>
     </div>
   </div>
-  
-  <script>
-    function openViewInvoiceModal() {
-      document.getElementById('viewInvoiceModal').classList.add('modal-open');
-    }
-  
-    function closeViewInvoiceModal() {
-      document.getElementById('viewInvoiceModal').classList.remove('modal-open');
-    }
-  
-    function viewInvoice(invoiceId) {
-      fetch(`/ajax/view-invoice/${invoiceId}/`)
-        .then(response => response.json())
-        .then(data => {
-          document.getElementById('view_project_name').value = data.project_name || 'N/A';
-          document.getElementById('view_contract_name').value = data.contract_name || 'N/A';
-  
-          const additionalFeePercentage = parseFloat(data.additional_fee_percentage || 0);
-          const vatPercentage = parseFloat(data.vat_percentage || 0);
-          const nachlassPercentage = parseFloat(data.nachlass_percentage || 0);
-  
-          const additionalFee = parseFloat(data.additional_fee_value || 0);
-          const nachlass = parseFloat(data.nachlass_value || 0);
-          const invoiceNet = parseFloat(data.invoice_net || 0);
-          const vat = parseFloat(data.tax_value || 0);
-          const grossInvoice = parseFloat(data.invoice_gross || 0);
-  
-          document.getElementById('view_additional_fee_percentage').value = additionalFeePercentage.toLocaleString("de-DE", { minimumFractionDigits: 2 });
-          document.getElementById('view_vat_percentage').value = vatPercentage.toLocaleString("de-DE", { minimumFractionDigits: 2 });
-          document.getElementById('view_nachlass_percentage').value = nachlassPercentage.toLocaleString("de-DE", { minimumFractionDigits: 2 });
-  
-          document.getElementById('view_additional_fee').value = additionalFee.toLocaleString("de-DE", { minimumFractionDigits: 2 });
-          document.getElementById('view_nachlass_value').value = nachlass.toLocaleString("de-DE", { minimumFractionDigits: 2 });
-          document.getElementById('view_invoice_net').value = invoiceNet.toLocaleString("de-DE", { minimumFractionDigits: 2 });
-          document.getElementById('view_vat').value = vat.toLocaleString("de-DE", { minimumFractionDigits: 2 });
-          document.getElementById('view_gross_invoice').value = grossInvoice.toLocaleString("de-DE", { minimumFractionDigits: 2 });
-  
-          document.getElementById('view_invoice_type').value = data.invoice_type || 'N/A';
-          document.getElementById('view_is_cumulative').value = data.is_cumulative ? 'Yes' : 'No';
+</div>
 
-          // Render the provided quantities table
-          let html = '<table class="table w-full">';
-          html += '<thead><tr><th>Section and Item</th><th>Rate(€)</th><th>Quantity(Provided)</th><th>Total €</th></tr></thead><tbody>';
-  
-          let currentSection = '';
-          let sumOfItems = 0;
-  
-          data.provided_quantities.forEach(item => {
-            const sectionName = item.section_name || 'Unknown Section';
-            const itemName = item.item_name || 'Unknown Item';
-            const rate = parseFloat(item.rate || 0);
-            const unit = item.unit || 'unit';
-            const quantity = parseFloat(item.quantity || 0);
-            let total = 0;
-            if (unit === "%") {
-              const grundhonorar = parseFloat(data.grundhonorar || 0); 
-              total = (quantity / 100) * grundhonorar;
-            } else {
-              total = rate * quantity;
-            }
-  
-            sumOfItems += total;
-  
-            if (currentSection !== sectionName) {
-              currentSection = sectionName;
-              html += `<tr><td colspan="4" class="font-bold">${currentSection}</td></tr>`;
-            }
-  
-            html += `<tr>
-                      <td class="pl-8">${itemName}</td>
-                      <td>${rate.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €</td>
-                      <td>${quantity.toLocaleString("de-DE", { minimumFractionDigits: 2 })} (${unit})</td>
-                      <td>${total.toLocaleString("de-DE", { minimumFractionDigits: 2 })}</td>
-                    </tr>`;
-          });
-  
-          html += '</tbody></table>';
-          document.getElementById('view_provided_quantities_table').innerHTML = html;
-  
-          // Display pre-computed total of sum of items
-          document.getElementById('view_sum_of_items').value = sumOfItems.toLocaleString("de-DE", { minimumFractionDigits: 2 });
-  
-          openViewInvoiceModal();
-        })
-        .catch(error => {
-          console.error('Error fetching invoice:', error);
-          alert('Error fetching invoice: ' + error.message);
-        });
+<script>
+  /* --- helpers (de-DE) --- */
+  function _fmtDE(n){ return Number(n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+  function openViewInvoiceModal(){ document.getElementById('viewInvoiceModal').classList.add('modal-open'); }
+  function closeViewInvoiceModal(){ document.getElementById('viewInvoiceModal').classList.remove('modal-open'); }
+
+  /* identical to create view's renderer, but target differs */
+  function _renderPrevInvoices(list){
+    const target = document.getElementById('view_prev_invoices');
+    if(!list || !list.length){
+      target.innerHTML = '<div class="text-sm text-zinc-500">Keine früheren Rechnungen.</div>';
+      return;
     }
-  </script>
-  
+    let html = `
+      <table class="table table-zebra w-full text-xs">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Titel</th>
+            <th>Datum</th>
+            <th class="text-right">Netto</th>
+            <th class="text-right">Steuer</th>
+            <th class="text-right">Brutto</th>
+          </tr>
+        </thead>
+        <tbody>`;
+    list.forEach((inv, idx)=>{
+      html += `
+        <tr>
+          <td>${idx+1}</td>
+          <td>
+            ${inv.title ?? 'Rechnung'}
+            <span class="badge badge-primary badge-sm ml-2">
+              ${inv.invoice_type}
+              ${inv.invoice_type === 'AR' && inv.current_ar_number ? '.' + inv.current_ar_number : ''}
+              ${inv.is_cumulative ? ', kum.' : ''}
+            </span>
+          </td>
+          <td>${inv.created_at}</td>
+          <td class="text-right">${_fmtDE(inv.net)}</td>
+          <td class="text-right">${_fmtDE(inv.tax)}</td>
+          <td class="text-right">${_fmtDE(inv.gross)}</td>
+        </tr>`;
+    });
+    html += `</tbody></table>`;
+    target.innerHTML = html;
+  }
+
+  /* number sections + items and render table similar to create */
+  function _renderProvidedQuantitiesNumbered(rows){
+    // rows: [{section_name,item_name,unit,rate,quantity,total,exclude_from_nachlass?}, ...]
+    if(!rows || !rows.length){
+      document.getElementById('view_provided_quantities_table').innerHTML =
+        '<div class="text-sm text-zinc-500">Keine Positionen.</div>';
+      return;
+    }
+
+    // group by section_name preserving order
+    const bySection = [];
+    const indexMap = new Map();
+    rows.forEach(r=>{
+      const sec = r.section_name || 'Unbekannte Sektion';
+      if(!indexMap.has(sec)){
+        indexMap.set(sec, {name: sec, items: []});
+        bySection.push(indexMap.get(sec));
+      }
+      indexMap.get(sec).items.push(r);
+    });
+
+    let html = '<table class="table w-full">';
+    html += '<thead><tr><th>Nr.</th><th>Sektion & Position</th><th>Satz</th><th>Menge (bereitgestellt)</th><th>Summe</th></tr></thead><tbody>';
+
+    bySection.forEach((sec, sIdx)=>{
+      const sectionNo = sIdx + 1;
+      html += `
+        <tr>
+          <td colspan="5" class="font-bold bg-base-100 text-sm text-zinc-700 px-4 py-2">
+            <div class="flex justify-between items-center">
+              <span>${sectionNo}. ${sec.name}</span>
+              ${sec.items.some(it=>it.exclude_from_nachlass) ? '<span class="text-xs font-thin text-rose-600 bg-rose-100 border border-rose-200 rounded-md px-2 py-1">Vom Nachlass ausgenommen</span>' : ''}
+            </div>
+          </td>
+        </tr>`;
+      sec.items.forEach((item, iIdx)=>{
+        const rate = Number(item.rate || 0);
+        const qty  = Number(item.quantity || 0);
+        const unit = item.unit || '';
+        // fallback total if not precomputed
+        let total = Number(item.total ?? (unit === '%' ? (qty/100.0)*Number(item.grundhonorar||0) : rate*qty));
+        html += `
+          <tr>
+            <td>${sectionNo},${iIdx+1}</td>
+            <td class="pl-8">${item.item_name || 'Position'}</td>
+            <td>${_fmtDE(rate)} €</td>
+            <td>${_fmtDE(qty)} (${unit})</td>
+            <td>${_fmtDE(total)} €</td>
+          </tr>`;
+      });
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('view_provided_quantities_table').innerHTML = html;
+  }
+
+  function viewInvoice(invoiceId){
+    fetch(`/ajax/view-invoice/${invoiceId}/`)
+      .then(r=>r.json())
+      .then(data=>{
+        // basics
+        document.getElementById('view_project_name').value  = data.project_name || 'N/A';
+        document.getElementById('view_contract_name').value = data.contract_name || 'N/A';
+        document.getElementById('view_invoice_type').value  = data.invoice_type || 'N/A';
+        document.getElementById('view_is_cumulative').value = data.is_cumulative ? 'Ja' : 'Nein';
+
+        // totals (Gesamt)
+        const addPct = parseFloat(data.additional_fee_percentage || 0);
+        const vatPct = parseFloat(data.vat_percentage || 0);
+        const nachPct = parseFloat(data.nachlass_percentage || 0);
+
+        const addVal = parseFloat(data.additional_fee_value || 0);
+        const nachVal= parseFloat(data.nachlass_value || 0);
+        const net    = parseFloat(data.invoice_net || 0);
+        const tax    = parseFloat(data.tax_value || 0);
+        const gross  = parseFloat(data.invoice_gross || 0);
+
+        document.getElementById('view_additional_fee_percentage').value = _fmtDE(addPct);
+        document.getElementById('view_vat_percentage').value            = _fmtDE(vatPct);
+        document.getElementById('view_nachlass_percentage').value       = _fmtDE(nachPct);
+
+        document.getElementById('view_additional_fee').value = _fmtDE(addVal);
+        document.getElementById('view_nachlass_value').value = _fmtDE(nachVal);
+        document.getElementById('view_invoice_net').value    = _fmtDE(net);
+        document.getElementById('view_vat').value            = _fmtDE(tax);
+        document.getElementById('view_gross_invoice').value  = _fmtDE(gross);
+
+        // provided quantities (numbered)
+        _renderProvidedQuantitiesNumbered(data.provided_quantities || []);
+
+        // sum of items (use server precomp if present; else sum client-side)
+        const sumOfItems = parseFloat(data.sum_of_items || 0);
+        if(sumOfItems){
+          document.getElementById('view_sum_of_items').value = _fmtDE(sumOfItems);
+        } else {
+          const s = (data.provided_quantities || []).reduce((acc, it)=>{
+            const rate = Number(it.rate || 0);
+            const q = Number(it.quantity || 0);
+            const u = it.unit || '';
+            const total = (typeof it.total !== 'undefined')
+              ? Number(it.total)
+              : (u === '%' ? (q/100.0)*Number(data.grundhonorar || 0) : rate*q);
+            return acc + (isFinite(total) ? total : 0);
+          }, 0);
+          document.getElementById('view_sum_of_items').value = _fmtDE(s);
+        }
+
+        // previous invoices card + current invoice (delta) card
+        _renderPrevInvoices(data.previous_invoices || []);
+
+        const sumPrevCurrentNet = parseFloat(data.sum_previous_current_net || 0);
+        let curNet, curTax, curGross, modeLabel;
+
+        if(data.is_cumulative){
+          // prefer backend-provided current_* if present (more accurate when historical tax differs)
+          if(typeof data.current_invoice_net !== 'undefined'){
+            curNet   = parseFloat(data.current_invoice_net || 0);
+            curTax   = parseFloat(data.current_invoice_tax || 0);
+            curGross = parseFloat(data.current_invoice_gross || 0);
+          } else {
+            curNet   = Math.max(0, net - (isFinite(sumPrevCurrentNet) ? sumPrevCurrentNet : 0));
+            curTax   = curNet * (vatPct/100.0);
+            curGross = curNet + curTax;
+          }
+          modeLabel = 'Kumulationsmodus: Aktuell = Gesamt-Netto – Summe (vorherige aktuelle Netto)';
+        } else {
+          curNet = net; curTax = tax; curGross = gross;
+          modeLabel = 'Normalmodus: Aktuell = Gesamt-Netto';
+        }
+
+        document.getElementById('view_current_mode_label').textContent = modeLabel;
+        document.getElementById('view_current_net').textContent   = _fmtDE(curNet);
+        document.getElementById('view_current_tax').textContent   = _fmtDE(curTax);
+        document.getElementById('view_current_gross').textContent = _fmtDE(curGross);
+
+        openViewInvoiceModal();
+      })
+      .catch(err=>{
+        console.error('Error fetching invoice:', err);
+        alert('Fehler beim Laden der Rechnung: ' + err.message);
+      });
+  }
+</script>
+<script>
+  function _renderProvidedQuantitiesNumbered(rows){
+    const target = document.getElementById('view_provided_quantities_table');
+    if (!rows || !rows.length){
+      target.innerHTML = '<div class="text-sm text-zinc-500">Keine Positionen.</div>';
+      return;
+    }
+
+    // group by (section_name, section_serial, is_lp_section)
+    const map = new Map();
+    rows.forEach(r => {
+      const key = `${r.section_name}||${r.section_serial ?? ''}||${r.is_lp_section ? 1 : 0}`;
+      if (!map.has(key)){
+        map.set(key, {
+          name: r.section_name || 'Unbekannte Sektion',
+          section_serial: r.section_serial ?? null, // integer for non-LP, null for LP
+          is_lp: !!r.is_lp_section,
+          items: [],
+        });
+      }
+      map.get(key).items.push(r);
+    });
+
+    // sort sections: non-LP (by section_serial asc), then LP by LP number in name, finally by name
+    function lpNum(name){
+      const m = /LP\s*(\d+)/i.exec(name || '');
+      return m ? parseInt(m[1], 10) : 9999;
+    }
+    const sections = Array.from(map.values()).sort((a, b) => {
+      if (a.is_lp !== b.is_lp) return a.is_lp ? 1 : -1; // non-LP first
+      if (!a.is_lp && !b.is_lp) {
+        // both non-LP: compare numeric section_serial (nulls last)
+        const as = a.section_serial ?? 9999, bs = b.section_serial ?? 9999;
+        return as - bs || a.name.localeCompare(b.name);
+      }
+      // both LP: compare LP number
+      const al = lpNum(a.name), bl = lpNum(b.name);
+      return al - bl || a.name.localeCompare(b.name);
+    });
+
+    // sort items inside each section by item_index (fallback to name)
+    sections.forEach(sec => {
+      sec.items.sort((x, y) => {
+        const ix = (x.item_index ?? 9999) - (y.item_index ?? 9999);
+        return ix !== 0 ? ix : (x.item_name || '').localeCompare(y.item_name || '');
+      });
+    });
+
+    let html = '<table class="table w-full">';
+    html += '<thead><tr><th>Nr.</th><th>Sektion & Position</th><th>Satz</th><th>Menge (bereitgestellt)</th><th>Summe</th></tr></thead><tbody>';
+
+    sections.forEach(sec => {
+      const secLabel = (sec.section_serial != null) ? `${sec.section_serial}. ${sec.name}` : sec.name;
+      const sectionHasExcluded = sec.items.some(it => it.exclude_from_nachlass);
+      html += `
+        <tr>
+          <td colspan="5" class="font-bold bg-base-100 text-sm text-zinc-700 px-4 py-2">
+            <div class="flex justify-between items-center">
+              <span>${secLabel}</span>
+              ${sectionHasExcluded ? '<span class="text-xs font-thin text-rose-600 bg-rose-100 border border-rose-200 rounded-md px-2 py-1">Vom Nachlass ausgenommen</span>' : ''}
+            </div>
+          </td>
+        </tr>`;
+
+      sec.items.forEach(item => {
+        const rate = Number(item.rate || 0);
+        const qty  = Number(item.quantity || 0);
+        const unit = item.unit || '';
+        const total = (item.total != null)
+          ? Number(item.total)
+          : (unit === '%'
+              ? (qty/100.0) * Number(item.grundhonorar || 0)
+              : rate * qty);
+
+        const nrCell = item.item_serial && !item.is_lp_section ? item.item_serial : '—';
+
+        html += `
+          <tr>
+            <td>${nrCell}</td>
+            <td class="pl-8">${item.item_name || 'Position'}</td>
+            <td>${_fmtDE(rate)} €</td>
+            <td>${_fmtDE(qty)} (${unit})</td>
+            <td>${_fmtDE(total)} €</td>
+          </tr>`;
+      });
+    });
+
+    html += '</tbody></table>';
+    target.innerHTML = html;
+  }
+</script>

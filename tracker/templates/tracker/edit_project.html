@@ -402,7 +402,7 @@
     <div class="modal-box max-w-5xl">
         <button class="btn btn-sm btn-circle btn-ghost position:absolute; top-0; right-0; " onclick="closeAddUsersModal()">✕</button>
 
-        <h3 class="font-bold text-lg m-4">Add/Edit Users</h3>
+        <h3 class="font-bold text-lg m-4">Benutzer hinzufügen/bearbeiten</h3>
         <form id="add-users-form" method="post" action="{% url 'add_users' %}">
             {% csrf_token %}
             <input type="hidden" name="contract_id" id="add_users_contract_id">
@@ -410,9 +410,9 @@
                 <table class="table" id="users-table">
                     <thead>
                         <tr>
-                            <th>NO.</th>
-                            <th>SECTION</th>
-                            <th>ITEM</th>
+                            <th>Nr.</th>
+                            <th>Sektion</th>
+                            <th>Item</th>
                             <!-- Usernames will be populated here by JavaScript -->
                         </tr>
                     </thead>
@@ -422,8 +422,8 @@
                 </table>
             </div>
             <div class="modal-action">
-                <button type="submit" class="btn btn-primary">Save</button>
-                <a href="#" class="btn" onclick="closeAddUsersModal()">Cancel</a>
+                <button type="submit" class="btn btn-primary">Speichern</button>
+                <a href="#" class="btn" onclick="closeAddUsersModal()">Abbrechen</a>
             </div>
         </form>
     </div>
@@ -434,7 +434,7 @@
     <div class="modal-box max-w-5xl">
         <button class="btn btn-sm btn-circle btn-ghost position:absolute; top-0; right-0; " onclick="closeAddBudgetModal()">✕</button>
 
-        <h3 class="font-bold text-lg m-4">Add/Edit Budget</h3>
+        <h3 class="font-bold text-lg m-4">Budget hinzufügen/bearbeiten</h3>
         <form id="add-budget-form" method="post" action="{% url 'add_budget' %}">
             {% csrf_token %}
             <input type="hidden" name="contract_id" id="add_budget_contract_id">
@@ -442,13 +442,13 @@
                 <table class="table" id="budget-table">
                     <thead>
                         <tr>
-                            <th>NO.</th>
-                            <th>SECTION</th>
-                            <th>ITEM</th>
-                            <th>QUANTITY</th>
-                            <th>UNIT</th>
-                            <th>RATE</th>
-                            <th>TOTAL</th>
+                            <th>Nr.</th>
+                            <th>Sektion</th>
+                            <th>Item</th>
+                            <th>Menge</th>
+                            <th>Einheit</th>
+                            <th>Honorar</th>
+                            <th>Honorar für Leistungen</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -460,25 +460,25 @@
                 <table class="table w-full">
                     <tbody>
                         <tr>
-                            <td class="text-right font-thin w-1/6">Sum of Items (€)</td>
+                            <td class="text-right font-thin w-1/6">Zwischensumme Positionen €</td>
                             <td><input type="text" id="sum_of_items" class="input  input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-right font-thin w-1/6">Additional Fee (%)*</td>
+                            <td class="text-right font-thin w-1/6">Nebenkosten* %</td>
                             <td><input type="number" step="0.01" name="additional_fee_percentage" id="additional_fee_percentage" class="input input-bordered input-secondary input-sm w-1/4"></td>
                         </tr>
                         <tr>
-                            <td class="text-right font-thin w-1/6">Additional Fee (€)</td>
+                            <td class="text-right font-thin w-1/6">Nebenkosten €</td>
                             <td><input type="text" id="additional_fee" class="input  input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-right font-thin w-1/6">Zuschlag (%)</td>
+                            <td class="text-right font-thin w-1/6">Zuschlag %</td>
                             <td>
                                 <input type="text" id="zuschlag_value" class="input input-sm w-1/4" readonly>
                             </td>
                         </tr>
                         <tr>
-                            <td class="text-right font-thin w-1/6"> - Nachlass (€) or (%)</td>
+                            <td class="text-right font-thin w-1/6"> - Nachlass € or %</td>
                             <td class="flex gap-4 items-center">
                                 <!-- Option 1: Fixed value -->
                                 <label class="flex items-center gap-1">
@@ -497,13 +497,13 @@
                         </tr>
                         
                         <tr>
-                            <td class="text-right font-bold w-1/6">Net Contract (€)</td>
+                            <td class="text-right font-bold w-1/6">Netto-Angebot €</td>
                             <td><input type="text" id="net_contract" class="input  input-sm w-1/4" readonly></td>
                         </tr>
 
                         
                         <tr>
-                            <td class="text-right font-thin w-1/6">VAT (%)*</td>
+                            <td class="text-right font-thin w-1/6">USt* %</td>
                             <td>
                                 <!-- Select field for VAT percentage -->
                                 <select id="vat_percentage_select" class="select select-bordered select-secondary input-sm w-1/4">
@@ -517,11 +517,11 @@
                         </tr>                     
                         
                         <tr>
-                            <td class="text-right font-thin w-1/6">VAT (€)</td>
+                            <td class="text-right font-thin w-1/6">USt €</td>
                             <td><input type="text" id="vat" class="input  input-sm w-1/4" readonly></td>
                         </tr>
                         <tr>
-                            <td class="text-right font-bold w-1/6">Gross Contract (€)</td>
+                            <td class="text-right font-bold w-1/6">Brutto-Angebot €</td>
                             <td><input type="text" id="gross_contract" class="input input-sm w-1/4" readonly></td>
                         </tr>
                     </tbody>
@@ -1362,7 +1362,7 @@
                     <div>
                         <div class="flex gap-2 items-center">
                             <label class="label cursor-pointer">
-                                <span class="label-text text-xs mr-1">Exclude from Nachlass</span>
+                                <span class="label-text text-xs mr-1">Vom Nachlass ausgenommen</span>
                                 <input type="checkbox" class="checkbox checkbox-sm exclude-nachlass-checkbox" 
                                     data-section-id="${section.id}" ${section.exclude_from_nachlass ? 'checked' : ''}>
                             </label>

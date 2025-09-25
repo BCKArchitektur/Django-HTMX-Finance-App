@@ -7338,6 +7338,10 @@ html:has(.drawer-toggle:checked) {
     max-width: 800px;
   }
 
+  .md\:max-w-\[900px\] {
+    max-width: 900px;
+  }
+
   .md\:flex-1 {
     flex: 1 1 0%;
   }

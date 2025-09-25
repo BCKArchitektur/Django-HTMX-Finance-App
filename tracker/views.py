@@ -1892,6 +1892,7 @@ def delete_invoice(request, invoice_id):
     # Redirect to the edit project page with the invoices tab open
     return redirect(reverse('edit_project', args=[project_id]) + '?tab=invoices')
 
+
 @login_required
 def view_invoice(request, invoice_id):
     try:
@@ -1899,9 +1900,34 @@ def view_invoice(request, invoice_id):
         project = invoice.project
         contract = invoice.contract
 
+        # --- HOAI / Grundhonorar parsing ---
         hoai_data = contract.hoai_data or {}
-        grundhonorar = Decimal(str(hoai_data.get("grundhonorar", "0")).replace('.', '').replace(',', '.')) if hoai_data else Decimal(0)
+        if hoai_data:
+            grundhonorar = Decimal(
+                str(hoai_data.get("grundhonorar", "0"))
+                .replace('.', '')
+                .replace(',', '.')
+            )
+        else:
+            grundhonorar = Decimal(0)
 
+        # ===== Build estimate-based ordering to mirror download_invoice =====
+        # 1) Section serials: only for NON-LP sections, by `order`
+        #    LP sections are intentionally NOT numbered (consistent with doc export)
+        all_sections_qs = contract.section.order_by('order')
+        non_lp_sections = [s for s in all_sections_qs if not re.search(r"LP(\d+)", s.section_name or "", re.IGNORECASE)]
+        section_serial_by_id = {s.id: idx + 1 for idx, s in enumerate(non_lp_sections)}
+
+        # 2) Item index per section by item.order
+        section_item_index = {
+            section.id: {
+                item.id: i + 1
+                for i, item in enumerate(section.Item.order_by('order'))
+            }
+            for section in all_sections_qs
+        }
+
+        # --- Provided quantities + sums ---
         provided_quantities_data = invoice.provided_quantities or {}
         provided_quantities = []
         sum_of_items = Decimal('0.00')
@@ -1910,13 +1936,19 @@ def view_invoice(request, invoice_id):
         for item_id, details in provided_quantities_data.items():
             try:
                 item = Item.objects.get(id=item_id)
-                section = Section.objects.filter(Item=item, contract=contract).first()
+
+                # find the section for THIS contract (robust if item is shared)
+                section = (
+                    item.section_set.filter(contract=contract).first()
+                    or contract.section.filter(Item=item).first()
+                )
                 section_name = section.section_name if section else "Unknown Section"
 
                 unit = item.unit
                 rate = Decimal(details['rate'])
                 quantity = Decimal(details['quantity'])
 
+                # compute total (supports % items against grundhonorar)
                 if unit == "%":
                     total = (quantity / Decimal(100)) * grundhonorar
                 else:
@@ -1924,20 +1956,33 @@ def view_invoice(request, invoice_id):
 
                 sum_of_items += total
 
-                if section and not section.exclude_from_nachlass:
+                # exclude_from_nachlass if section says so
+                exclude_flag = section.exclude_from_nachlass if section else False
+                if section and not exclude_flag:
                     nachlass_applicable_sum += total
+
+                # --- Serial numbers to match estimates ---
+                is_lp = bool(re.search(r"LP(\d+)", section_name or "", re.IGNORECASE))
+                section_serial = section_serial_by_id.get(section.id) if (section and not is_lp) else None
+                item_index = section_item_index.get(section.id, {}).get(item.id, None)
+                item_serial = f"{section_serial}.{item_index}" if (section_serial and item_index) else ""
 
                 provided_quantities.append({
                     'section_name': section_name,
+                    'section_serial': section_serial,   # e.g. 1, 2, 3 ... (None for LP)
                     'item_name': item.Item_name,
+                    'item_index': item_index,           # 1..n within section by item.order
+                    'item_serial': item_serial,         # "section_serial.item_index" for non-LP
                     'unit': unit,
                     'rate': str(rate),
                     'quantity': str(quantity),
                     'total': str(total),
-                    'exclude_from_nachlass': section.exclude_from_nachlass if section else False,
+                    'exclude_from_nachlass': bool(exclude_flag),
+                    'is_lp_section': is_lp,             # helpful flag for the client
                 })
 
             except Item.DoesNotExist:
+                # Fallback if item was deleted from catalog
                 rate = Decimal(details['rate'])
                 quantity = Decimal(details['quantity'])
                 total = rate * quantity
@@ -1945,15 +1990,22 @@ def view_invoice(request, invoice_id):
 
                 provided_quantities.append({
                     'section_name': 'Unknown Section',
+                    'section_serial': None,
                     'item_name': f'Unknown Item (ID: {item_id})',
+                    'item_index': None,
+                    'item_serial': "",
                     'unit': 'Unknown Unit',
                     'rate': str(rate),
                     'quantity': str(quantity),
                     'total': str(total),
+                    'exclude_from_nachlass': False,
+                    'is_lp_section': False,
                 })
 
+        # --- Totals (Gesamt) ---
         additional_fee_percentage = Decimal(contract.additional_fee_percentage or 0)
         additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
+
         nachlass_percentage = Decimal(contract.nachlass_percentage or 0)
         nachlass_value = (nachlass_applicable_sum * nachlass_percentage) / Decimal(100)
 
@@ -1967,58 +2019,97 @@ def view_invoice(request, invoice_id):
             'contract_name': contract.contract_name,
             'invoice_type': invoice.invoice_type,
             'is_cumulative': invoice.is_cumulative,
+
+            # line items with estimate-matching serials
+            'provided_quantities': provided_quantities,
+
+            # Gesamtwerte (strings for consistent JSON formatting)
+            'sum_of_items': str(sum_of_items),
             'additional_fee_percentage': str(additional_fee_percentage),
             'additional_fee_value': str(additional_fee_value),
-            'provided_quantities': provided_quantities,
-            'invoice_net': str(invoice_net),
-            'tax_value': str(tax_value),
-            'invoice_gross': str(invoice_gross),
-            'vat_percentage': str(vat_percentage),
-            'amount_received': invoice.amount_received,
-            'date_of_payment': invoice.date_of_payment.isoformat() if invoice.date_of_payment else None,
             'nachlass_percentage': str(nachlass_percentage),
             'nachlass_value': str(nachlass_value),
+            'invoice_net': str(invoice_net),
+            'vat_percentage': str(vat_percentage),
+            'tax_value': str(tax_value),
+            'invoice_gross': str(invoice_gross),
+
+            # optional fields already present
+            'amount_received': invoice.amount_received,
+            'date_of_payment': invoice.date_of_payment.isoformat() if invoice.date_of_payment else None,
             'grundhonorar': str(grundhonorar),
-            
         }
 
-        if invoice.invoice_type in ['AR', 'SR', 'ZR']:
-            previous_invoices = Invoice.objects.filter(
-                project=project,
-                contract=contract,
-                created_at__lt=invoice.created_at,
-                invoice_type__in=['AR', 'SR', 'ZR']
-            )
+        # --- Previous invoices + cumulative delta support for the right cards ---
+        prev_qs = Invoice.objects.filter(
+            project=project,
+            contract=contract,
+            invoice_type__in=['AR', 'SR', 'ZR'],
+            created_at__lt=invoice.created_at  # only earlier ones for context
+        ).order_by('created_at')
 
-            if invoice.is_cumulative:
-                total_previous_net = Decimal('0.00')
-                total_previous_tax = Decimal('0.00')
+        vat_percentage_decimal = (vat_percentage or Decimal(0)) / Decimal(100)
+        previous_invoices_data = []
+        sum_previous_current_net = Decimal('0.00')
 
-                for prev in previous_invoices.filter(is_cumulative=True):
-                    prev_current_net = Decimal(prev.current_invoice_net or 0)
-                    prev_tax = (prev_current_net * vat_percentage) / Decimal(100)
-                    total_previous_net += prev_current_net
-                    total_previous_tax += prev_tax
+        for inv in prev_qs:
+            # For cumulative, sum only the "current" net portions
+            if inv.is_cumulative:
+                inv_net = Decimal(inv.current_invoice_net or 0)
+                sum_previous_current_net += inv_net
+            else:
+                inv_net = Decimal(inv.invoice_net or 0)
 
-                current_invoice_net = invoice_net - total_previous_net
-                current_invoice_tax = tax_value - total_previous_tax
-                current_invoice_gross = current_invoice_net + current_invoice_tax
+            inv_tax = inv_net * vat_percentage_decimal
+            inv_gross = inv_net + inv_tax
 
-                data.update({
-                        'current_invoice_net': str(current_invoice_net),
-                        'current_invoice_tax': str(current_invoice_tax),
-                        'current_invoice_gross': str(current_invoice_gross),
-                    })
+            previous_invoices_data.append({
+                'id': inv.id,
+                'title': inv.title,
+                'created_at': timezone.localtime(inv.created_at).strftime('%d.%m.%Y'),
+                'invoice_type': inv.invoice_type,
+                'is_cumulative': inv.is_cumulative,
+                'net': float(inv_net),
+                'tax': float(inv_tax),
+                'gross': float(inv_gross),
+                'current_ar_number': int(inv.current_ar_number) if inv.invoice_type == 'AR' and inv.current_ar_number is not None else None,
+            })
 
+        data.update({
+            'previous_invoices': previous_invoices_data,
+            'sum_previous_current_net': float(sum_previous_current_net),
+        })
+
+        # --- Current (delta) for THIS invoice if cumulative ---
+        if invoice.invoice_type in ['AR', 'SR', 'ZR'] and invoice.is_cumulative:
+            total_previous_net = Decimal('0.00')
+            total_previous_tax = Decimal('0.00')
+
+            for prev in prev_qs.filter(is_cumulative=True):
+                prev_current_net = Decimal(prev.current_invoice_net or 0)
+                prev_tax = prev_current_net * vat_percentage_decimal
+                total_previous_net += prev_current_net
+                total_previous_tax += prev_tax
+
+            current_invoice_net = invoice_net - total_previous_net
+            current_invoice_tax = tax_value - total_previous_tax
+            current_invoice_gross = current_invoice_net + current_invoice_tax
+
+            data.update({
+                'current_invoice_net': str(current_invoice_net),
+                'current_invoice_tax': str(current_invoice_tax),
+                'current_invoice_gross': str(current_invoice_gross),
+            })
 
         return JsonResponse(data)
 
     except Http404:
         return JsonResponse({'error': 'Invoice not found'}, status=404)
-
     except Exception as e:
+        # Log as needed
         print(f"Unexpected error: {e}")
         return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+
 
 
 from django.utils.dateparse import parse_date
