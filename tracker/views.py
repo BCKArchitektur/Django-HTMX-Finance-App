@@ -1001,6 +1001,7 @@ def get_contract_scope(request, contract_id):
         'scope': contract.scope_of_work if contract.scope_of_work else ''
     })
 
+
 def load_contract_data(request):
     contract_id = request.GET.get('contract_id')
     contract = get_object_or_404(Contract, id=contract_id)
@@ -1053,13 +1054,13 @@ def load_contract_data(request):
                 'description': item.description,
                 'quantity': item.quantity,
                 'available_quantity': available_quantity,
-                'previous_provided_quantity': previous_provided_quantity,  
+                'previous_provided_quantity': previous_provided_quantity,
                 'unit': item.unit,
                 'rate': item.rate,
                 'total': item.total,
                 'users': list(item.users.values_list('id', flat=True)),
                 'tasks': list(item.tasks.values('id', 'task_name')),
-                'hours_logged': hours_logged,  
+                'hours_logged': hours_logged,
             })
 
         section_data.append({
@@ -1076,6 +1077,42 @@ def load_contract_data(request):
     nachlass_value = contract.nachlass_value
     nachlass_percentage = contract.nachlass_percentage
 
+    # --- NEW: lightweight previous-invoices summary for the modal's right panel ---
+    prev_qs = Invoice.objects.filter(
+        project_id=project_id,
+        contract_id=contract_id,
+        invoice_type__in=['AR', 'SR', 'ZR']
+    ).order_by('created_at')
+
+    vat_percentage_decimal = Decimal(contract.vat_percentage or 0) / Decimal(100)
+    previous_invoices_data = []
+    sum_previous_current_net = Decimal('0.00')
+
+    for inv in prev_qs:
+        # Mirror download_invoice logic:
+        # For cumulative invoices, use current_invoice_net (delta)
+        # For non-cumulative, take invoice_net as-is
+        if inv.is_cumulative:
+            inv_net = Decimal(inv.current_invoice_net or 0)
+            sum_previous_current_net += inv_net
+        else:
+            inv_net = Decimal(inv.invoice_net or 0)
+
+        inv_tax = inv_net * vat_percentage_decimal
+        inv_gross = inv_net + inv_tax
+
+        previous_invoices_data.append({
+            'id': inv.id,
+            'title': inv.title,
+            'created_at': timezone.localtime(inv.created_at).strftime('%d.%m.%Y'),
+            'invoice_type': inv.invoice_type,
+            'is_cumulative': inv.is_cumulative,
+            'net': float(inv_net),
+            'tax': float(inv_tax),
+            'gross': float(inv_gross),
+            'current_ar_number': int(inv.current_ar_number) if inv.invoice_type == 'AR' and inv.current_ar_number is not None else None,
+        })
+    # ------------------------------------------------------------------------------
 
     contract_data = {
         'contract_name': contract.contract_name,
@@ -1085,17 +1122,19 @@ def load_contract_data(request):
         'additional_fee_percentage': contract.additional_fee_percentage,
         'vat_percentage': contract.vat_percentage,
         'invoices_exist': invoices_exist,
-        'is_cumulative': is_cumulative, 
+        'is_cumulative': is_cumulative,
         'latest_provided_quantities': latest_provided_quantities,
         'hoai_data': hoai_data,
         'zuschlag_value': zuschlag_value,
-        'nachlass_value' : nachlass_value,
-        'nachlass_percentage' : nachlass_percentage,
+        'nachlass_value': nachlass_value,
+        'nachlass_percentage': nachlass_percentage,
 
+        # NEW fields for the right panel
+        'previous_invoices': previous_invoices_data,
+        'sum_previous_current_net': float(sum_previous_current_net),
     }
 
     return JsonResponse(contract_data)
-
 
 def check_task_name(request):
     task_name = request.GET.get('task_name', None)

@@ -1,386 +1,486 @@
 <div id="invoiceModal" class="modal">
-    <div class="modal-box max-w-6xl relative">
-        <!-- Close Button -->
-        <button class="btn btn-sm btn-circle btn-ghost absolute top-2 right-2" onclick="closeInvoiceModal()">✕</button>
+  <div class="modal-box max-w-[1200px] w-full relative">
+    <!-- Schließen -->
+    <button class="btn btn-sm btn-circle btn-ghost absolute top-2 right-2" onclick="closeInvoiceModal()">✕</button>
 
-        <!-- Cummulation Mode Toggle -->
-        <div class="absolute top-3 right-14">
-            <label class="cursor-pointer flex items-center">
-                <span class="mr-2 font-extralight text-xs">"Cummulation Mode"</span>
-                <input type="checkbox" id="cummulationModeSwitch" class="toggle toggle-primary" onchange="toggleCummulationMode()">
-            </label>
+    <!-- Kumulationsmodus -->
+    <div class="absolute top-3 right-14">
+      <label class="cursor-pointer flex items-center">
+        <span class="mr-2 font-extralight text-xs">Kumulationsmodus</span>
+        <input type="checkbox" id="cummulationModeSwitch" class="toggle toggle-primary" onchange="toggleCummulationMode()">
+      </label>
+    </div>
+
+    <h3 class="font-bold text-lg m-4">Neue Rechnung erstellen</h3>
+
+    <form id="invoice-form" method="post" action="{% url 'create_invoice' project.id %}">
+      {% csrf_token %}
+
+      <!-- Hidden kumulativ -->
+      <input type="hidden" id="is_cumulative" name="is_cumulative" value="false">
+
+      <!-- Projekt -->
+      <div class="form-control">
+        <label class="label">Projekt</label>
+        <input type="text" class="input input-bordered w-full" value="{{ project.project_name }}" disabled>
+      </div>
+
+      <!-- Vertrag -->
+      <div class="form-control">
+        <label class="label">Vertrag</label>
+        <select id="id_contract" name="contract" class="select select-bordered w-full">
+          <option value="">Vertrag auswählen</option>
+          {% for contract in contracts %}
+            <option value="{{ contract.id }}">{{ contract.contract_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Rechnungstyp -->
+      <div class="form-control">
+        <label class="label">Rechnungstyp</label>
+        <select id="id_invoice_type" name="invoice_type" class="select select-bordered w-full">
+          <option value="ER">Einzelrechnung</option>
+          <option value="ZR">Anzahlungsrechnung</option>
+        </select>
+      </div>
+
+      <!-- === START: Zweispaltiges Layout (left wide, right cards pinned right) === -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+
+        <!-- LINKE SPALTE: Mengen + obere Karte (volle Breite) -->
+        <div class="md:col-span-2">
+          <!-- Gelieferte Mengen -->
+          <div class="form-control">
+            <label class="label">Gelieferte Mengen</label>
+            <textarea name="provided_quantities" class="textarea textarea-bordered w-full" hidden>{{ form.initial.provided_quantities }}</textarea>
+            <div id="provided-quantities-table"></div>
+          </div>
+
+          <!-- Obere Berechnung -->
+          <div class="card bg-base-100 mt-4 w-full">
+            <div class="card-body p-4">
+              <h4 class="font-semibold mb-2">Berechnung (Gesamt)</h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label class="flex items-center justify-end gap-4">
+                  <span class="text-sm text-zinc-600">Zwischensumme Positionen €</span>
+                  <input type="text" id="id_sum_of_items" class="input input-bordered input-sm w-48 text-right" readonly>
+                </label>
+
+                <label class="flex items-center justify-end gap-4">
+                  <span class="text-sm text-zinc-600">Nebenkosten %</span>
+                  <input type="text" id="id_additional_fee_percentage" class="input input-bordered input-sm w-48 text-right" readonly value="{{ additional_fee_percentage }}">
+                </label>
+
+                <label class="flex items-center justify-end gap-4">
+                  <span class="text-sm text-zinc-600">Nebenkosten €</span>
+                  <input type="text" id="id_additional_fee" class="input input-bordered input-sm w-48 text-right" readonly>
+                </label>
+
+                <label class="flex items-center justify-end gap-4">
+                  <span class="text-sm text-zinc-600">Nachlass %</span>
+                  <input type="text" id="id_nachlass_percentage" class="input input-bordered input-sm w-48 text-right" readonly>
+                </label>
+
+                <label class="flex items-center justify-end gap-4">
+                  <span class="text-sm text-zinc-600">Nachlass €</span>
+                  <input type="text" id="id_nachlass_value" class="input input-bordered input-sm w-48 text-right" readonly>
+                </label>
+
+                <label class="flex items-center justify-end gap-4">
+                  <span class="font-semibold">Rechnungs-Netto €</span>
+                  <input type="text" id="id_invoice_net" name="invoice_net" class="input input-bordered input-sm w-48 text-right" readonly>
+                </label>
+
+                <label class="flex items-center justify-end gap-4">
+                  <span class="text-sm text-zinc-600">USt(%)</span>
+                  <input type="text" id="vat_percentage" class="input input-bordered input-sm w-48 text-right" readonly>
+                </label>
+
+                <label class="flex items-center justify-end gap-4">
+                  <span class="text-sm text-zinc-600">USt €</span>
+                  <input type="text" id="id_vat" class="input input-bordered input-sm w-48 text-right" readonly>
+                </label>
+
+                <label class="sm:col-span-2 flex items-center justify-end gap-4">
+                  <span class="font-semibold">Rechnungs-Brutto €</span>
+                  <input type="text" id="id_gross_invoice" class="input input-bordered input-sm w-48 text-right" readonly>
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <h3 class="font-bold text-lg m-4">Neue Rechnung erstellen</h3>
-        <form id="invoice-form" method="post" action="{% url 'create_invoice' project.id %}">
-            {% csrf_token %}
 
-            <!-- Hidden Input for is_cumulative -->
-            <input type="hidden" id="is_cumulative" name="is_cumulative" value="false">
+ 
 
-            <div class="form-control">
-                <label class="label">Project</label>
-                <input type="text" class="input input-bordered w-full" value="{{ project.project_name }}" disabled>
-            </div>
+        <!-- RECHTE SPALTE: Ganze Reihe, Inhalt an rechten Rand schieben -->
+        <div class="md:col-span-2">
+          <div class="md:flex md:justify-end">
+            <!-- feste Maxbreite rechts; auf Mobile volle Breite -->
+            <div class="space-y-4 w-full md:max-w-[800px]">
+              <div class="card bg-base-100  w-full">
+                <div class="card-body p-4">
+                  <h4 class="font-semibold mb-2">Frühere Rechnungen</h4>
+                  <div id="prev-invoices"></div>
+                </div>
+              </div>
 
-            <div class="form-control">
-                <label class="label">Contract</label>
-                <select id="id_contract" name="contract" class="select select-bordered w-full">
-                    <option value="">Select Contract</option>
-                    {% for contract in contracts %}
-                        <option value="{{ contract.id }}">{{ contract.contract_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+<div class="divider"></div>
 
-            <div class="form-control">
-                <label class="label">Invoice Type</label>
-                <select id="id_invoice_type" name="invoice_type" class="select select-bordered w-full">
-                    <option value="ER">Einzelrechnung (Individual Invoice)</option>
-                    <option value="ZR">Anzahlungsrechnung (Advance Payment Invoice)</option>
-                </select>
-            </div>
-                    
-            <!-- Provided Quantities Section -->
-            <div class="form-control">
-                <label class="label">Provided Quantities</label>
-                <textarea name="provided_quantities" class="textarea textarea-bordered w-full" hidden>{{ form.initial.provided_quantities }}</textarea>
-                <div id="provided-quantities-table"></div>
-            </div>
 
-            <!-- Invoice Calculation Table -->
-            <div class="overflow-x-auto mt-4">
-                <table class="table w-full">
-                    <tbody>
-                        <tr>
-                            <td class="text-right font-thin w-1/6">Sum of Items €</td>
-                            <td><input type="text" id="id_sum_of_items" class="input input-bordered input-sm w-1/4" readonly></td>
-                        </tr>
-                        <tr>
-                            <td class="text-right font-thin w-1/6">Additional Fee %</td>
-                            <td><input type="text" id="id_additional_fee_percentage" class="input input-bordered input-sm w-1/4" readonly value="{{ additional_fee_percentage }}"></td>
-                        </tr>
-                        <tr>
-                            <td class="text-right font-thin w-1/6">Additional Fee €</td>
-                            <td><input type="text" id="id_additional_fee" class="input input-bordered input-sm w-1/4" readonly></td>
-                        </tr>
-                        <tr>
-                            <td class="text-right font-thin w-1/6">Nachlass %</td>
-                            <td><input type="text" id="id_nachlass_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
-                        </tr>
-                        <tr>
-                            <td class="text-right font-thin w-1/6">Nachlass €</td>
-                            <td><input type="text" id="id_nachlass_value" class="input input-bordered input-sm w-1/4" readonly></td>
-                        </tr>                       
-                        <tr>
-                            <td class="text-right font-bold w-1/6">Invoice Net €</td>
-                            <td><input type="text" id="id_invoice_net" name="invoice_net" class="input input-bordered input-sm w-1/4" readonly></td>
-                        </tr>
-                        
-                        <tr>
-                            <td class="text-right font-thin w-1/6">VAT(%)</td>
-                            <td><input type="text" id="vat_percentage" class="input input-bordered input-sm w-1/4" readonly></td>
-                        </tr>                        
-                        <tr>
-                            <td class="text-right font-thin w-1/6">VAT €</td>
-                            <td><input type="text" id="id_vat" class="input input-bordered input-sm w-1/4" readonly></td>
-                        </tr>
-                        <tr>
-                            <td class="text-right font-bold w-1/6">Gross Invoice €</td>
-                            <td><input type="text" id="id_gross_invoice" class="input input-bordered input-sm w-1/4" readonly></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+<div class="card bg-base-100 w-full">
+  <div class="card-body p-4">
+    <h4 class="font-semibold mb-1">Aktuelle Rechnungsdetails (berechnet)</h4>
+    <div class="text-xs text-zinc-500 mb-3" id="current-mode-label"></div>
 
-            <!-- Modal Actions -->
-            <div class="modal-action">
-                <button type="submit" class="btn btn-primary btn-outline">Create Invoice</button>
-                <a href="#" class="btn" onclick="closeInvoiceModal()">Cancel</a>
-            </div>
-        </form>
+    <div class="flex justify-end text-sm">
+      <span>Netto €</span>
+      <span id="current_net" class="text-right w-24">0,00</span>
     </div>
+    <div class="flex justify-end text-sm">
+      <span>USt €</span>
+      <span id="current_tax" class="text-right w-24">0,00</span>
+    </div>
+    <div class="flex justify-end font-semibold">
+      <span>Brutto €</span>
+      <span id="current_gross" class="text-right w-24">0,00</span>
+    </div>
+  </div>
+</div>
+
+
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <!-- === END: Zweispaltiges Layout === -->
+
+
+      <!-- Aktionen -->
+      <div class="modal-action">
+        <button type="submit" class="btn btn-primary btn-outline">Rechnung erstellen</button>
+        <a href="#" class="btn" onclick="closeInvoiceModal()">Abbrechen</a>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>
+/* ===== Umschalten Kumulationsmodus ===== */
 function toggleCummulationMode() {
-    const isChecked = document.getElementById('cummulationModeSwitch').checked;
-    const invoiceTypeSelect = document.getElementById('id_invoice_type');
-    const isCumulativeInput = document.getElementById('is_cumulative');
+  const isChecked = document.getElementById('cummulationModeSwitch').checked;
+  const invoiceTypeSelect = document.getElementById('id_invoice_type');
+  const isCumulativeInput = document.getElementById('is_cumulative');
 
-    // Update the hidden field value
-    isCumulativeInput.value = isChecked ? "true" : "false";
+  isCumulativeInput.value = isChecked ? "true" : "false";
+  invoiceTypeSelect.innerHTML = '';
 
-    // Clear existing options
-    invoiceTypeSelect.innerHTML = '';
-
-    if (isChecked) {
-        // Cumulative Mode options
-        invoiceTypeSelect.innerHTML += `
-            <option value="AR">Abschlagsrechnung (Partial/Progress Invoice)</option>
-            <option value="SR">Schlussrechnung (Final Invoice)</option>
-            <option value="ZR">Anzahlungsrechnung (Advance Payment Invoice)</option>
-        `;
-    } else {
-        // Normal Mode options
-        invoiceTypeSelect.innerHTML += `
-            <option value="ER">Einzelrechnung (Individual Invoice)</option>
-            <option value="ZR">Anzahlungsrechnung (Advance Payment Invoice)</option>
-        `;
-    }
+  if (isChecked) {
+    invoiceTypeSelect.innerHTML += `
+      <option value="AR">Abschlagsrechnung</option>
+      <option value="SR">Schlussrechnung</option>
+      <option value="ZR">Anzahlungsrechnung</option>
+    `;
+  } else {
+    invoiceTypeSelect.innerHTML += `
+      <option value="ER">Einzelrechnung</option>
+      <option value="ZR">Anzahlungsrechnung</option>
+    `;
+  }
 }
 
 function openInvoiceModal() {
-    // Reinitialize dynamic content or event listeners if necessary
-    
-    // Clear any previous errors or data
-    document.getElementById('provided-quantities-table').innerHTML = '';
-    
-    // Open the modal
-    document.getElementById('invoiceModal').classList.add('modal-open');
+  document.getElementById('provided-quantities-table').innerHTML = '';
+  document.getElementById('invoiceModal').classList.add('modal-open');
 }
-
 function closeInvoiceModal() {
-    // Clear modal content here if needed
-    const invoiceForm = document.querySelector('#invoice-form');
-    if (invoiceForm) {
-        invoiceForm.reset(); // This resets all the form fields
-    }
-    document.getElementById('provided-quantities-table').innerHTML = ''; // Clear any dynamically added content
-
-    document.getElementById('invoiceModal').classList.remove('modal-open');
+  const invoiceForm = document.querySelector('#invoice-form');
+  if (invoiceForm) invoiceForm.reset();
+  document.getElementById('provided-quantities-table').innerHTML = '';
+  document.getElementById('invoiceModal').classList.remove('modal-open');
 }
 
+/* ===== Zahlen-Helfer: akzeptiert Komma oder Punkt ===== */
+function __fmtDE(n) {
+  const num = Number(n || 0);
+  return num.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function __parseFlex(v) {
+  if (v == null) return 0;
+  let s = String(v).trim().replace(/\s+/g, '');
+  if (s === '') return 0;
+  const hasComma = s.includes(',');
+  const hasDot = s.includes('.');
+  if (hasComma && hasDot) {
+    s = s.replace(/\./g, '').replace(',', '.');
+    return parseFloat(s);
+  }
+  if (hasComma) return parseFloat(s.replace(',', '.'));
+  return parseFloat(s);
+}
+
+/* ===== Rechte Karten ===== */
+function __renderPrevInvoices(list) {
+  const target = document.getElementById('prev-invoices');
+  if (!list || !list.length) {
+    target.innerHTML = '<div class="text-sm text-zinc-500">Keine früheren Rechnungen.</div>';
+    return;
+  }
+  let html = `
+    <table class="table table-zebra w-full text-xs">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Titel</th>
+          <th>Datum</th>
+          <th class="text-right">Netto</th>
+          <th class="text-right">Steuer</th>
+          <th class="text-right">Brutto</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  list.forEach((inv, idx) => {
+    html += `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>
+          ${inv.title}
+          <span class="badge badge-primary badge-sm ml-2">
+            ${inv.invoice_type}
+            ${inv.invoice_type === 'AR' && inv.current_ar_number ? '.' + inv.current_ar_number : ''}
+            ${inv.is_cumulative ? ', kum.' : ''}
+          </span>
+        </td>
+
+        <td>${inv.created_at}</td>
+        <td class="text-right">${__fmtDE(inv.net)}</td>
+        <td class="text-right">${__fmtDE(inv.tax)}</td>
+        <td class="text-right">${__fmtDE(inv.gross)}</td>
+      </tr>`;
+  });
+  html += '</tbody></table>';
+  target.innerHTML = html;
+}
+
+/* ===== Aktuell (Delta) berechnen ===== */
+let __sumPrevCurrentNet = 0;
+let __isCumulative = false;
+
+function __recalcCurrentFromTotals() {
+  const totalNetDisplayed = __parseFlex(document.getElementById('id_invoice_net')?.value || 0);
+  const vatPct = __parseFlex(document.getElementById('vat_percentage')?.value || 0);
+
+  let currentNet = totalNetDisplayed;
+  if (__isCumulative) {
+    currentNet = totalNetDisplayed - __sumPrevCurrentNet;
+  }
+  if (!isFinite(currentNet)) currentNet = 0;
+  if (currentNet < 0) currentNet = 0;
+
+  const currentTax = currentNet * (vatPct / 100.0);
+  const currentGross = currentNet + currentTax;
+
+  document.getElementById('current-mode-label').textContent =
+    __isCumulative
+      ? 'Kumulationsmodus: Aktuell = Gesamt-Netto – Summe (vorherige aktuelle Netto)'
+      : 'Normalmodus: Aktuell = Gesamt-Netto';
+
+  document.getElementById('current_net').textContent = __fmtDE(currentNet);
+  document.getElementById('current_tax').textContent = __fmtDE(currentTax);
+  document.getElementById('current_gross').textContent = __fmtDE(currentGross);
+}
+
+/* Originale calculateInvoiceNet einhaken (nicht entfernen) */
+(function () {
+  const oldCalc = window.calculateInvoiceNet;
+  window.calculateInvoiceNet = function () {
+    if (typeof oldCalc === 'function') oldCalc.apply(this, arguments);
+    __recalcCurrentFromTotals();
+  };
+})();
+
+/* ===== Laden/Binden ===== */
 document.addEventListener('DOMContentLoaded', function() {
-    // Rest of your code...
-    const contractField = document.querySelector('#id_contract');
-    const isCumulativeInput = document.getElementById('is_cumulative');
-    
-    if (contractField) {
-        contractField.addEventListener('change', function() {
-            const contractId = this.value;
-            if (contractId) {
-                fetch(`/ajax/load-contract-data/?contract_id=${contractId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById('id_additional_fee_percentage').value = data.additional_fee_percentage || 0;
-                        document.getElementById('vat_percentage').value = data.vat_percentage || 0;
-                        document.getElementById('id_nachlass_value').value = data.nachlass_value || 0;
-                        document.getElementById('id_nachlass_percentage').value = data.nachlass_percentage || 0;
+  const contractField = document.querySelector('#id_contract');
+  const isCumulativeInput = document.getElementById('is_cumulative');
 
-                        const isCumulative = data.is_cumulative;
-                        isCumulativeInput.value = isCumulative ? "true" : "false";
+  if (contractField) {
+    contractField.addEventListener('change', function() {
+      const contractId = this.value;
+      if (contractId) {
+        fetch(`/ajax/load-contract-data/?contract_id=${contractId}`)
+          .then(r => r.json())
+          .then(data => {
+            document.getElementById('id_additional_fee_percentage').value = data.additional_fee_percentage || 0;
+            document.getElementById('vat_percentage').value = data.vat_percentage || 0;
+            document.getElementById('id_nachlass_value').value = data.nachlass_value || 0;
+            document.getElementById('id_nachlass_percentage').value = data.nachlass_percentage || 0;
 
-                        let html = '<table class="table w-full">';
-                            html += '<thead><tr><th>No.</th><th>Select</th><th>Section and Item</th><th>Rate</th><th>Hours<br>Logged</th><th>Quantity<br>(Quoted)</th><th>Quantity<br>(Available)</th><th>Quantity<br>(Provided)</th><th>Total</th></tr></thead>';
+            const isCumulative = data.is_cumulative;
+            isCumulativeInput.value = isCumulative ? "true" : "false";
 
-                        html += '<tbody>';
+            __renderPrevInvoices(data.previous_invoices || []);
+            __sumPrevCurrentNet = Number(data.sum_previous_current_net || 0);
+            __isCumulative = !!data.is_cumulative;
 
-                        data.sections.forEach((section, sectionIndex) => {
-                            const sectionId = section.id;
-                            const excludeNachlass = section.exclude_from_nachlass;
+            // Tabelle mit Sektionen/Positionen
+            let html = '<table class="table w-full">';
+            html += '<thead><tr><th>Nr.</th><th>Wahl</th><th>Sektion & Position</th><th>Satz</th><th>Std. erfasst</th><th>Menge (angeboten)</th><th>Menge (verfügbar)</th><th>Menge (bereitgestellt)</th><th>Summe</th></tr></thead>';
+            html += '<tbody>';
 
-                            html += `<tr>
-                                <td colspan="9" class="font-bold bg-base-100 text-sm text-zinc-700 px-4 py-2">
-                                    <div class="flex justify-between items-center">
-                                        <span>${sectionIndex + 1}. ${section.section_name}</span>
-                                        ${excludeNachlass ? '<span class="text-xs font-thin text-rose-600 bg-rose-100 border border-rose-200 rounded-md px-2 py-1">Excluded from Nachlass</span>' : ''}
-                                    </div>
-                                    <input type="hidden" class="section-metadata" data-section-id="${sectionId}" data-exclude-nachlass="${excludeNachlass}">
-                                </td>
-                            </tr>`;
+            data.sections.forEach((section, sIdx) => {
+              const sectionId = section.id;
+              const excludeNachlass = section.exclude_from_nachlass;
 
+              html += `<tr>
+                <td colspan="9" class="font-bold bg-base-100 text-sm text-zinc-700 px-4 py-2">
+                  <div class="flex justify-between items-center">
+                    <span>${sIdx + 1}. ${section.section_name}</span>
+                    ${excludeNachlass ? '<span class="text-xs font-thin text-rose-600 bg-rose-100 border border-rose-200 rounded-md px-2 py-1">Vom Nachlass ausgenommen</span>' : ''}
+                  </div>
+                  <input type="hidden" class="section-metadata" data-section-id="${sectionId}" data-exclude-nachlass="${excludeNachlass}">
+                </td>
+              </tr>`;
 
-                            section.items.forEach((item, itemIndex) => {
-                                const quotedQuantity = item.quantity;
-                                const availableQuantity = item.available_quantity;
-                                const previousProvidedQuantity = item.previous_provided_quantity || 0;  // ✅ Get previous invoice quantity
-                     
-                                let isChecked = ((quotedQuantity > availableQuantity) && (availableQuantity >= 0));
+              section.items.forEach((item, iIdx) => {
+                const quotedQuantity = item.quantity;
+                const availableQuantity = item.available_quantity;
+                const previousProvidedQuantity = item.previous_provided_quantity || 0;
 
-                                // If section name has "LP", force enable
-                                if (section.section_name.includes("LP")) {
-                                    isChecked = true;
-                                }
+                let isChecked = ((quotedQuantity > availableQuantity) && (availableQuantity >= 0));
+                if (section.section_name.includes("LP")) isChecked = true;
 
-                                 // Apply conditional styling
-                                const quantityColorClass = availableQuantity > 0 ? 'text-green-600' : 'text-red-500';
-                                // Compare hours_logged and quotedQuantity
-                                const hoursLogged = item.hours_logged || 0;
-                                const hoursClass = hoursLogged <= quotedQuantity ? 'text-green-600' : 'text-red-500';
+                const qtyClass = availableQuantity > 0 ? 'text-green-600' : 'text-red-500';
+                const hoursLogged = item.hours_logged || 0;
+                const hoursClass = hoursLogged <= quotedQuantity ? 'text-green-600' : 'text-red-500';
 
+                html += `<tr>
+                  <td>${sIdx + 1},${iIdx + 1}</td>
+                  <td><input type="checkbox" name="select_${item.id}" ${isChecked ? 'checked="checked"' : ''} data-item-id="${item.id}" class="checkbox checkbox-primary" /></td>
+                  <td class="pl-8">${item.Item_name}</td>
+                  <td>${item.rate}</td>
+                  <td class="${hoursClass}">${Number(hoursLogged).toFixed(2)}</td>
+                  <td>${quotedQuantity}(${item.unit})</td>
+                  <td class="${qtyClass}">${availableQuantity}</td>
+                  <td>
+                    <input type="text" name="quantity_${item.id}" class="input input-bordered"
+                      data-item-id="${item.id}"
+                      data-item-rate="${item.rate}"
+                      data-item-unit="${item.unit}"
+                      onchange="updateTotalInvoice(${item.id})"
+                      value="${isCumulative ? previousProvidedQuantity : ''}"
+                      placeholder="${isCumulative ? previousProvidedQuantity : ''}"
+                      ${isChecked ? '' : 'disabled'} />
+                  </td>
+                  <td id="total_${item.id}">0.00</td>
+                </tr>`;
+              });
+            });
 
-                                console.log(`Item ID: ${item.id}, isChecked: ${isChecked}`);
-    
-                                html += `<tr>
-                                            <td>${sectionIndex + 1},${itemIndex + 1}</td>
-                                            <td>
-                                                <input type="checkbox" name="select_${item.id}" ${isChecked ? 'checked="checked"' : ''} data-item-id="${item.id}" class="checkbox checkbox-primary" />
-                                            </td>
-                                            <td class="pl-8">${item.Item_name}</td>
-                                            <td>${item.rate}</td>
-                                            <td class="${hoursClass} " >${hoursLogged.toFixed(2)}</td>
+            html += '</tbody></table>';
+            document.getElementById('provided-quantities-table').innerHTML = html;
 
-                                            <td>${quotedQuantity}(${item.unit})</td>
-                                            <td class="${quantityColorClass}">${availableQuantity}</td>
-                                            <td>
-                                                <input type="text" name="quantity_${item.id}" class="input input-bordered"
-                                                    data-item-id="${item.id}" 
-                                                    data-item-rate="${item.rate}"
-                                                    data-item-unit="${item.unit}" 
-                                                    onchange="updateTotalInvoice(${item.id})"
-                                                    value="${isCumulative ? previousProvidedQuantity : ''}"
-                                                    placeholder="${isCumulative ? previousProvidedQuantity : ''}" 
-                                                    ${isChecked ? '' : 'disabled'} />
-                                            </td>
-
-                                            <td id="total_${item.id}">0.00</td>
-                                        </tr>`;
-                            });
-                        });
-                        html += '</tbody></table>';
-                        document.getElementById('provided-quantities-table').innerHTML = html;
-    
-                        document.querySelectorAll('#provided-quantities-table .checkbox').forEach(checkbox => {
-                            console.log('checkbox', checkbox);
-                            const itemId = checkbox.dataset.itemId;
-                            console.log('itemid', itemId);
-                            const quantityInput = document.querySelector(`#provided-quantities-table input[name="quantity_${itemId}"]`);
-                            console.log('quantityInput', quantityInput);
-
-                            // Get cumulative mode status
-                            const isCumulative = document.getElementById('is_cumulative').value === "true";
-
-                            // // Disable checkboxes that were already checked in cumulative mode
-                            // if (isCumulative && checkbox.checked) {
-                            //     checkbox.disabled = true;  // ✅ Prevent unchecking in cumulative invoices
-                            // }
-
-                            checkbox.addEventListener('change', function () {
-                                console.log(`Checkbox for item ID ${itemId} changed to: ${this.checked}`);
-                                
-                                if (isCumulative && this.checked) {
-                                    // this.disabled = true;  // ✅ Lock checkbox once checked in cumulative mode
-                                }
-
-                                if (this.checked) {
-                                    quantityInput.disabled = false;
-                                } else {
-                                    quantityInput.value = '';
-                                    quantityInput.disabled = true;
-                                }
-                                calculateInvoiceNet();
-                            });
-
-                            quantityInput.addEventListener('input', calculateInvoiceNet);
-                        });
-
-                        calculateInvoiceNet();
-                    })
-                    .catch(error => {
-                        console.error('Error loading contract data:', error);
-                    });
-            } else {
-                document.getElementById('provided-quantities-table').innerHTML = '';
-                document.getElementById('id_additional_fee_percentage').value = 0;
-                document.getElementById('vat_percentage').value = 0;
+            // Events pro Zeile
+            document.querySelectorAll('#provided-quantities-table .checkbox').forEach(cb => {
+              const itemId = cb.dataset.itemId;
+              const qtyInput = document.querySelector(`#provided-quantities-table input[name="quantity_${itemId}"]`);
+              cb.addEventListener('change', function () {
+                if (this.checked) qtyInput.disabled = false;
+                else { qtyInput.value = ''; qtyInput.disabled = true; }
                 calculateInvoiceNet();
-            }
-        });
-    }
+              });
+              qtyInput.addEventListener('input', function () { calculateInvoiceNet(); });
+            });
 
-    const invoiceForm = document.querySelector('#invoice-form');
-    if (invoiceForm) {
-    invoiceForm.addEventListener('submit', function(event) {
-        const quantities = {};
-        document.querySelectorAll('input[name^="quantity_"]').forEach(input => {
+            calculateInvoiceNet();
+          })
+          .catch(err => console.error('Fehler beim Laden der Vertragsdaten:', err));
+      } else {
+        document.getElementById('provided-quantities-table').innerHTML = '';
+        document.getElementById('id_additional_fee_percentage').value = 0;
+        document.getElementById('vat_percentage').value = 0;
+        calculateInvoiceNet();
+      }
+    });
+  }
+
+  // Form: Zahlen mit Komma/Punkt speichern
+  const invoiceForm = document.querySelector('#invoice-form');
+  if (invoiceForm) {
+    invoiceForm.addEventListener('submit', function() {
+      const quantities = {};
+      document.querySelectorAll('input[name^="quantity_"]').forEach(input => {
         const row = input.closest('tr');
         const checkbox = row.querySelector('input[name^="select_"]');
         if (checkbox && checkbox.checked) {
-            // Include even when 0 or empty
-            const quantity = Number((input.value || '').toString().replace(',', '.')) || 0;
-            const rate = Number(input.dataset.itemRate) || 0;
-
-            quantities[input.dataset.itemId] = { quantity, rate };
+          const quantity = __parseFlex(input.value || 0) || 0;
+          const rate = __parseFlex(input.dataset.itemRate) || 0;
+          quantities[input.dataset.itemId] = { quantity, rate };
         }
-        });
-
-        document.querySelector('textarea[name="provided_quantities"]').value =
-        JSON.stringify(quantities);
+      });
+      document.querySelector('textarea[name="provided_quantities"]').value = JSON.stringify(quantities);
     });
-    }
-
+  }
 });
 
+/* Ersten Modus fixieren bei bestehender Rechnung */
 document.addEventListener('DOMContentLoaded', function () {
-    const contractField = document.querySelector('#id_contract');
-    const cummulationModeSwitch = document.getElementById('cummulationModeSwitch');
-    const isCumulativeInput = document.getElementById('is_cumulative');
+  const contractField = document.querySelector('#id_contract');
+  const cummulationModeSwitch = document.getElementById('cummulationModeSwitch');
+  const isCumulativeInput = document.getElementById('is_cumulative');
 
-    if (contractField) {
-        contractField.addEventListener('change', function () {
-            const contractId = this.value;
-            if (contractId) {
-                fetch(`/ajax/get-first-invoice-mode/?contract_id=${contractId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.first_invoice_exists) {
-                            // Lock the mode based on the first invoice
-                            isCumulativeInput.value = data.is_cumulative ? "true" : "false";
-                            cummulationModeSwitch.checked = data.is_cumulative;
-                            cummulationModeSwitch.disabled = true; // Disable toggle
-                        } else {
-                            // Allow user to select if no previous invoices exist
-                            cummulationModeSwitch.disabled = false;
-                        }
-
-                        // Call toggleCummulationMode to update dropdown options
-                        toggleCummulationMode();
-                    })
-                    .catch(error => console.error('Error fetching first invoice data:', error));
-            }
-        });
-    }
-    // Function to validate input values for quantity fields
-    let quantityAlertTimeout = null; // Global timeout handler
-
-    function validateQuantityInput(input) {
-        // Ensure the function only runs for inputs inside the Invoice Modal
-        if (!input.closest("#invoiceModal")) {
-            return; // Exit if the input is not within the invoice modal
-        }
-
-        // Clear any existing alert timeout
-        clearTimeout(quantityAlertTimeout);
-
-        const previousProvidedQuantity = parseFloat(input.placeholder) || 0;
-        const quotedQuantity = parseFloat(input.closest('tr').querySelector('td:nth-child(6)').textContent) || 0;
-        let enteredValue = parseFloat(input.value) || 0;
-
-        // Delay the validation and alert
-        quantityAlertTimeout = setTimeout(() => {
-            if (enteredValue < previousProvidedQuantity || enteredValue > quotedQuantity) {
-                // alert(`Quantity must be between ${previousProvidedQuantity} and ${quotedQuantity}`);
-                input.classList.add("input-error");
+  if (contractField) {
+    contractField.addEventListener('change', function () {
+      const contractId = this.value;
+      if (contractId) {
+        fetch(`/ajax/get-first-invoice-mode/?contract_id=${contractId}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.first_invoice_exists) {
+              isCumulativeInput.value = data.is_cumulative ? "true" : "false";
+              cummulationModeSwitch.checked = data.is_cumulative;
+              cummulationModeSwitch.disabled = true;
             } else {
-                input.classList.remove("input-error");
+              cummulationModeSwitch.disabled = false;
             }
-
-            updateTotalInvoice(input.dataset.itemId);
-        }, 100); // 500ms delay
-    }
-
-
-
-    document.addEventListener('input', function (event) {
-        if (event.target.matches('input[name^="quantity_"]')) {
-            validateQuantityInput(event.target);
-        }
+            toggleCummulationMode();
+          })
+          .catch(err => console.error('Fehler beim Prüfen des ersten Modus:', err));
+      }
     });
+  }
 
+  // Sanfte Eingabeprüfung + Sync
+  let quantityAlertTimeout = null;
+  function validateQuantityInput(input) {
+    if (!input.closest("#invoiceModal")) return;
+    clearTimeout(quantityAlertTimeout);
 
+    const prevProvided = parseFloat(input.placeholder) || 0;
+    const quotedCell = input.closest('tr').querySelector('td:nth-child(6)');
+    const quotedText = quotedCell ? quotedCell.textContent : '0';
+    const quoted = __parseFlex(quotedText);
+    let entered = __parseFlex(input.value);
 
+    quantityAlertTimeout = setTimeout(() => {
+      if (entered < prevProvided || entered > quoted) input.classList.add("input-error");
+      else input.classList.remove("input-error");
+      updateTotalInvoice(input.dataset.itemId);
+      __recalcCurrentFromTotals();
+    }, 100);
+  }
+
+  document.addEventListener('input', function (e) {
+    if (e.target.matches('input[name^="quantity_"]')) validateQuantityInput(e.target);
+  });
+
+  ['id_invoice_net','vat_percentage'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', __recalcCurrentFromTotals);
+  });
 });
-
-
 </script>
