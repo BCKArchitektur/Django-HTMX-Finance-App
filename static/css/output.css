@@ -6488,6 +6488,10 @@ html:has(.drawer-toggle:checked) {
   padding-top: 1px;
 }
 
+.pr-4 {
+  padding-right: 1rem;
+}
+
 .text-left {
   text-align: left;
 }

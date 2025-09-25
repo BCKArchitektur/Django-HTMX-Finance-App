@@ -1039,7 +1039,7 @@ def load_contract_data(request):
                     for invoice in previous_invoices
                 )
 
-            available_quantity = item.quantity - previous_provided_quantity
+            available_quantity = round(item.quantity - previous_provided_quantity, 2)
 
             # Calculate hours_logged from Logs model
             hours_logged = Logs.objects.filter(log_Item=item).aggregate(
