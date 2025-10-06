@@ -2811,3 +2811,58 @@ def reset_project_hourly_rates(request, project_id):
         messages.success(request, 'Die benutzerdefinierten Stundensätze wurden zurückgesetzt.')
 
     return redirect('edit_project', project_id=project.id)
+
+
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+from django.urls import reverse
+
+@login_required
+@require_POST
+def move_contract(request):
+    """
+    Move a Contract from one Project to another.
+    POST fields:
+      - contract_id
+      - from_project_id
+      - to_project_id
+      - redirect_to_target [optional 'on']
+    """
+    contract_id = request.POST.get('contract_id')
+    from_project_id = request.POST.get('from_project_id')
+    to_project_id = request.POST.get('to_project_id')
+    redirect_to_target = request.POST.get('redirect_to_target') in ('on', 'true', '1')
+
+    if not all([contract_id, from_project_id, to_project_id]):
+        return JsonResponse({'status': 'error', 'error': 'Missing parameters.'}, status=400)
+
+    if from_project_id == to_project_id:
+        return JsonResponse({'status': 'error', 'error': 'Zielprojekt entspricht dem aktuellen Projekt.'}, status=400)
+
+    contract = get_object_or_404(Contract, id=contract_id)
+    from_project = get_object_or_404(Project, id=from_project_id)
+    to_project = get_object_or_404(Project, id=to_project_id)
+
+    # Safety: ensure the contract is actually attached to from_project
+    if not from_project.contract.filter(id=contract.id).exists():
+        return JsonResponse({'status': 'error', 'error': 'Vertrag gehört nicht zu diesem Projekt.'}, status=400)
+
+    # Remove from current project, add to target project
+    from_project.contract.remove(contract)
+    to_project.contract.add(contract)
+
+    # Optional: if you want to keep the same users on the target project, ensure they’re included
+    # (only if your permission model expects it)
+    for u in contract.user.all():
+        to_project.user.add(u)
+
+    # Success response (choose redirect)
+    redirect_url = None
+    if redirect_to_target:
+        redirect_url = reverse('edit_project', args=[to_project.id])
+    else:
+        redirect_url = reverse('edit_project', args=[from_project.id])
+
+    return JsonResponse({'status': 'success', 'redirect_url': redirect_url})

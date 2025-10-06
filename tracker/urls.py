@@ -55,6 +55,8 @@ urlpatterns = [
     path('list-service-profiles/', ServiceProfileListView.as_view(), name='list-service-profiles'),
     path('calculate-hoai/', HOAICalculationView.as_view(), name='calculate-hoai'),
 
+    path('contracts/move/', views.move_contract, name='move_contract'),
+
 
     path('project/<int:project_id>/update-settings/', views.update_project_settings, name='update_project_settings'),
     path('projects/<int:project_id>/reset-hourly-rates/', views.reset_project_hourly_rates, name='reset_project_hourly_rates'),

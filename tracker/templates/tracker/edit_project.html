@@ -152,35 +152,59 @@
                                     <br>
                                 {% endfor %}
                                 {% endfor %}
-                            </div>                            
-                        </td>
+                            </div>   
+                        </td>                         
                         <td class="w-1/2">
-                            <div class="flex flex-col items-center justify-center h-full gap-1 py-2">
-                                <button class="btn btn-xs btn-primary btn-outline h-10 w-24" onclick="openAddUsersModal({{ contract.id }})">
-                                    ✎ Benutzer
-                                </button>
-                                <button class="btn btn-xs btn-primary btn-outline h-10 w-24" onclick="openAddBudgetModal({{ contract.id }})">
-                                    ✎ Budget
-                                </button>
-                                <button class="btn btn-xs btn-primary btn-outline h-10 w-24" onclick="openScopeModal({{ contract.id }})">
-                                    ✎ Scope 
-                                </button>
-                                <button class="btn btn-xs btn-secondary btn-outline h-10 w-24" onclick="openTemplateModal({{ contract.id }})">
-                                    🖪 Angebot
-                                </button>
-                            </div>
+                        <button class="btn btn-xs btn-secondary btn-outline h-10 w-24"
+                                onclick="openTemplateModal({{ contract.id }})">
+                            <iconify-icon icon="mdi:file-document-outline" height="16"></iconify-icon>
+                            Angebot
+                        </button>
                         </td>
-                        
-                            <td class="w-1/12">
-                                <form method="post" action="{% url 'delete_contract' contract.id %}" style="display:inline;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-circle btn-error btn-outline p-1 m-1" onclick="return confirm('Are you sure you want to delete this contract?');">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
-                                </form>
-                            </td>                        
+
+<td class="w-1/12 text-right bg-slate-500">
+  <div class="dropdown dropdown-end bg-slate-500">
+    <button tabindex="0" class="btn btn-circle btn-outline btn-sm">
+      <iconify-icon icon="mdi:dots-vertical" height="18"></iconify-icon>
+    </button>
+    <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-200 rounded-box w-56 z-50">
+      <li>
+        <a onclick="openAddUsersModal({{ contract.id }})">
+          <iconify-icon icon="mdi:account-multiple-outline" height="16"></iconify-icon>
+          Benutzer
+        </a>
+      </li>
+      <li>
+        <a onclick="openAddBudgetModal({{ contract.id }})">
+          <iconify-icon icon="mdi:cash" height="16"></iconify-icon>
+          Budget
+        </a>
+      </li>
+      <li>
+        <a onclick="openScopeModal({{ contract.id }})">
+          <iconify-icon icon="mdi:clipboard-text-outline" height="16"></iconify-icon>
+          Scope
+        </a>
+      </li>
+      <li>
+        <a onclick="openMoveContractModal({{ contract.id }}, {{ project.id }})">
+          <iconify-icon icon="lucide:move-diagonal" height="16"></iconify-icon>
+          Verschieben
+        </a>
+      </li>
+      <li>
+        <form method="post" action="{% url 'delete_contract' contract.id %}" onsubmit="return confirm('Vertrag wirklich löschen?');">
+          {% csrf_token %}
+          <button type="submit" class="w-full flex items-center gap-2">
+            <iconify-icon icon="mdi:trash-can-outline" height="16"></iconify-icon>
+            Löschen
+          </button>
+        </form>
+      </li>
+    </ul>
+  </div>
+</td>
+       
                     </tr>
                     {% empty %}
                     <tr>
@@ -603,6 +627,44 @@
             </div>
         </form>
     </div>
+</div>
+
+<!-- Move Contract Modal -->
+<div id="moveContractModal" class="modal">
+  <div class="modal-box max-w-lg">
+    <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="closeMoveContractModal()">✕</button>
+    <h3 class="font-bold text-lg mb-4">Vertrag in anderes Projekt verschieben</h3>
+
+    <form id="move-contract-form" method="post" action="{% url 'move_contract' %}">
+      {% csrf_token %}
+      <input type="hidden" name="contract_id" id="move_contract_id">
+      <input type="hidden" name="from_project_id" id="move_from_project_id">
+
+      <div class="form-control">
+        <label class="label">Zielprojekt</label>
+        <select name="to_project_id" id="move_to_project_id" class="select select-bordered w-full" required>
+          <option value="" disabled selected>Projekt auswählen…</option>
+          {% for p in all_projects %}
+            {% if p.id != project.id %}
+              <option value="{{ p.id }}">{{ p.project_no }} – {{ p.project_name }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-control mt-4">
+        <label class="cursor-pointer label">
+          <span class="label-text">Nach dem Verschieben direkt zum Zielprojekt springen</span>
+          <input type="checkbox" name="redirect_to_target" class="toggle toggle-sm" checked>
+        </label>
+      </div>
+
+      <div class="modal-action">
+        <button type="submit" class="btn btn-primary">Verschieben</button>
+        <a href="#" class="btn" onclick="closeMoveContractModal()">Abbrechen</a>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- Modal to select the invoice template and date range -->
@@ -2060,4 +2122,50 @@
 
     </style>
     
+
+    
+<script>
+  function openMoveContractModal(contractId, fromProjectId) {
+    document.getElementById('move_contract_id').value = contractId;
+    document.getElementById('move_from_project_id').value = fromProjectId;
+    document.getElementById('move_to_project_id').selectedIndex = 0;
+    document.getElementById('moveContractModal').classList.add('modal-open');
+  }
+
+  function closeMoveContractModal() {
+    document.getElementById('moveContractModal').classList.remove('modal-open');
+  }
+
+  // AJAX submit (keeps your page behavior consistent with other modals)
+  document.getElementById('move-contract-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+      }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'success') {
+        if (data.redirect_url) {
+          window.location.href = data.redirect_url;
+        } else {
+          location.reload();
+        }
+      } else {
+        alert(data.error || 'Fehler beim Verschieben.');
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Fehler beim Verschieben.');
+    });
+  });
+</script>
+
 {% endblock %}
