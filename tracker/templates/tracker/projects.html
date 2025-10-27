@@ -300,55 +300,78 @@
 
 <!-- Client Modal -->
 <div id="clientModal" class="modal">
-    <div class="modal-box">
-        <h3 class="font-bold text-lg m-4">Neuen Klienten hinzufügen</h3>
-        <form id="client-form" method="post" acstion="{% url 'projects' %}?tab=client">
-            {% csrf_token %}
-            <div class="form-control w-full max-w-xs">
-                <input type="text" name="firm_name" placeholder="FirmenName*" class="input input-bordered w-full max-w-xs m-2" id="id_firm_name">
-            </div>
-            
-            <div class="form-control w-full max-w-xs">
-                <input type="text" name="client_name" placeholder="KlientName" class="input input-bordered w-full max-w-xs m-2" id="id_client_name">
-            </div>
-            
-            <div class="form-control w-full max-w-xs">
-                <input type="email" name="client_mail" placeholder="KlientEmail" class="input input-bordered w-full max-w-xs m-2" id="id_client_mail">
-            </div>
-            
-            <div class="form-control w-full max-w-xs">
-                <input type="text" name="client_phone" placeholder="Rufnummer" class="input input-bordered w-full max-w-xs m-2" id="id_client_phone">
-            </div>
-            
-            
-            <div class="form-control w-full max-w-xs">
-                <input type="text" name="street_address" placeholder="Straße und Hausnummer" class="input input-bordered w-full max-w-xs m-2" id="id_street_address">
-            </div>
-            
-            <div class="form-control w-full max-w-xs">
-                <input type="text" name="postal_code" placeholder="Postleitzahl" class="input input-bordered w-full max-w-xs m-2" id="id_postal_code">
-            </div>
-            
-            <div class="form-control w-full max-w-xs">
-                <input type="text" name="city" placeholder="Stadt" class="input input-bordered w-full max-w-xs m-2" id="id_city">
-            </div>
-            
-            <div class="form-control w-full max-w-xs">
-                <select name="country" class="select select-bordered w-full max-w-xs m-2">
-                    <option disabled selected>Land</option>
-                    {% for choice in client_form.country.field.choices %}
-                        <option value="{{ choice.0 }}" {% if client_form.country.value == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <div class="modal-action">
-                <button type="submit" class="btn btn-secondary btn-sm">Speichern</button>
-                <a href="#" class="btn btn-sm" onclick="closeClientModal()">Cancel</a>
-            </div>
-        </form>
-    </div>
+  <div class="modal-box">
+    <h3 class="font-bold text-lg m-4">Neuen Klienten hinzufügen</h3>
+
+    <!-- note: corrected 'acstion' -> 'action' and ensure we land back on clients tab -->
+    <form id="client-form" method="post" action="{% url 'projects' %}?tab=clients">
+      {% csrf_token %}
+
+      <!-- FirmenName (required) -->
+      <div class="form-control w-full max-w-xs">
+        <label for="id_firm_name" class="label">
+          <span class="label-text">FirmenName<span class="text-error ml-1">*</span></span>
+        </label>
+        <input
+          type="text"
+          name="firm_name"
+          id="id_firm_name"
+          placeholder="FirmenName"
+          class="input input-bordered w-full max-w-xs m-2"
+          required
+          aria-required="true"
+        />
+      </div>
+
+      <!-- Optional fields (no 'required') -->
+      <div class="form-control w-full max-w-xs">
+        <label for="id_client_name" class="label"><span class="label-text">KlientName (optional)</span></label>
+        <input type="text" name="client_name" id="id_client_name" placeholder="KlientName" class="input input-bordered w-full max-w-xs m-2" />
+      </div>
+
+      <div class="form-control w-full max-w-xs">
+        <label for="id_client_mail" class="label"><span class="label-text">KlientEmail (optional)</span></label>
+        <input type="email" name="client_mail" id="id_client_mail" placeholder="KlientEmail" class="input input-bordered w-full max-w-xs m-2" />
+      </div>
+
+      <div class="form-control w-full max-w-xs">
+        <label for="id_client_phone" class="label"><span class="label-text">Rufnummer (optional)</span></label>
+        <input type="text" name="client_phone" id="id_client_phone" placeholder="Rufnummer" class="input input-bordered w-full max-w-xs m-2" />
+      </div>
+
+      <div class="form-control w-full max-w-xs">
+        <label for="id_street_address" class="label"><span class="label-text">Straße und Hausnummer (optional)</span></label>
+        <input type="text" name="street_address" id="id_street_address" placeholder="Straße und Hausnummer" class="input input-bordered w-full max-w-xs m-2" />
+      </div>
+
+      <div class="form-control w-full max-w-xs">
+        <label for="id_postal_code" class="label"><span class="label-text">Postleitzahl (optional)</span></label>
+        <input type="text" name="postal_code" id="id_postal_code" placeholder="Postleitzahl" class="input input-bordered w-full max-w-xs m-2" />
+      </div>
+
+      <div class="form-control w-full max-w-xs">
+        <label for="id_city" class="label"><span class="label-text">Stadt (optional)</span></label>
+        <input type="text" name="city" id="id_city" placeholder="Stadt" class="input input-bordered w-full max-w-xs m-2" />
+      </div>
+
+      <div class="form-control w-full max-w-xs">
+        <label class="label"><span class="label-text">Land (optional)</span></label>
+        <select name="country" class="select select-bordered w-full max-w-xs m-2">
+          <option value="" selected>—</option>
+          {% for choice in client_form.country.field.choices %}
+            <option value="{{ choice.0 }}" {% if client_form.country.value == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="modal-action">
+        <button type="submit" class="btn btn-secondary btn-sm">Speichern</button>
+        <a href="#" class="btn btn-sm" onclick="closeClientModal()">Cancel</a>
+      </div>
+    </form>
+  </div>
 </div>
+
 
 {% endblock content %}
 
@@ -715,6 +738,60 @@ function applyProjectFilters() {
   }
 }
 
+</script>
+<script>
+  // Case-insensitive set of existing firm names rendered from the server
+  window.existingFirmNames = new Set([
+    {% for c in clients %}"{{ c.firm_name|escapejs|lower }}"{% if not forloop.last %},{% endif %}{% endfor %}
+  ]);
+</script>
+<script>
+document.getElementById('client-form').addEventListener('submit', function(event) {
+  event.preventDefault();
+  const form = event.target;
+
+  const firmName = form.querySelector('[name="firm_name"]').value.trim();
+  if (!firmName) {
+    alert('Bitte FirmenName ausfüllen.');
+    return;
+  }
+
+  // Client-side duplicate check (case-insensitive)
+  if (window.existingFirmNames && window.existingFirmNames.has(firmName.toLowerCase())) {
+    alert('Dieser Firmenname existiert bereits.');
+    return;
+  }
+
+  const formData = new FormData(form);
+
+  fetch(form.action, {
+    method: 'POST',
+    body: formData,
+    headers: { 'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value },
+  })
+  .then(async (response) => {
+    const text = await response.text(); // might be HTML
+    if (response.ok) {
+      // add to local set so a second add in the same session is caught
+      if (window.existingFirmNames) window.existingFirmNames.add(firmName.toLowerCase());
+      location.href = '{% url "projects" %}?tab=clients';
+      return;
+    }
+
+    // Server-side specific error messaging
+    const msgIsDuplicate = /unique|already exists|bereits.*existiert|gleichzeitig|Duplicate/i.test(text);
+    if (response.status === 409 || msgIsDuplicate) {
+      alert('Dieser Firmenname existiert bereits.');
+    } else {
+      console.error('Create client failed:', response.status, text);
+      alert('Speichern fehlgeschlagen. Bitte erneut versuchen.');
+    }
+  })
+  .catch((err) => {
+    console.error(err);
+    alert('Netzwerkfehler. Bitte erneut versuchen.');
+  });
+});
 </script>
 
 

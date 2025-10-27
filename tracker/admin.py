@@ -75,74 +75,185 @@ class ClientAdmin(admin.ModelAdmin):
     search_fields = ('client_name', 'client_mail', 'firm_name', 'city', 'country')
 
 
-# admin_actions.py (or wherever you keep your admin actions)
+from decimal import Decimal  # optional
+from .models import Project, EstimateSettings  # ensure these are importable here
+
+def _find_project_for_log(log_obj):
+    """
+    Try to resolve the Project for a log:
+    1) projects linked to the log's contract whose display string matches log_project_name
+    2) by project_no parsed from 'NNNN-Project Name'
+    3) fallback: first project linked to the contract
+    """
+    name = (log_obj.log_project_name or "").strip()
+    qs = Project.objects.filter(contract=log_obj.log_contract)
+
+    # 1) match "project_no-project_name"
+    for p in qs:
+        if f"{p.project_no}-{p.project_name}" == name:
+            return p
+
+    # 2) match by project_no if present
+    if "-" in name:
+        proj_no = name.split("-", 1)[0].strip()
+        p = qs.filter(project_no=proj_no).first()
+        if p:
+            return p
+
+    # 3) fallback
+    return qs.first()
 
 from django.http import HttpResponse
 from openpyxl import Workbook
 from openpyxl.styles import Font
 
+from openpyxl.worksheet.table import Table, TableStyleInfo
+from openpyxl.utils import get_column_letter
+
+from openpyxl.worksheet.table import Table, TableStyleInfo
+from openpyxl.utils import get_column_letter
+from datetime import datetime
+import re
+
+def _slugify_filename_part(s: str, max_len: int = 40) -> str:
+    """Keep it readable & filesystem-safe."""
+    s = (s or "").strip()
+    s = re.sub(r"\s+", "_", s)                   # spaces -> _
+    s = re.sub(r"[^\w\-\.]+", "", s, flags=re.U) # remove unsafe chars
+    return s[:max_len] if s else ""
+
+def _summarize_names(names: list[str], label: str) -> str:
+    """
+    If one unique -> return that name; else -> 'N-Label' (e.g., '3-Projects').
+    Names should already be slug-safe.
+    """
+    uniq = [n for n in dict.fromkeys(names) if n]  # preserve order, drop empties
+    if not uniq:
+        return None
+    if len(uniq) == 1:
+        return uniq[0]
+    return f"{len(uniq)}-{label}"
+
 def export_to_excel(modeladmin, request, queryset):
+    # --- Build a meaningful, robust filename ---
+    today_str = datetime.now().strftime("%Y-%m-%d")
+
+    project_names = []
+    contract_names = []
+    for obj in queryset:
+        project_names.append(_slugify_filename_part(getattr(obj, "log_project_name", "")))
+        contract_names.append(
+            _slugify_filename_part(
+                getattr(obj.log_contract, "contract_name", "") if getattr(obj, "log_contract", None) else ""
+            )
+        )
+
+    proj_part = _summarize_names(project_names, "Projects")
+    contr_part = _summarize_names(contract_names, "Contracts")
+
+    parts = ["Logs"]
+    if proj_part:
+        parts.append(proj_part)
+    if contr_part:
+        parts.append(contr_part)
+    parts.append(today_str)
+
+    filename = "_".join(p for p in parts if p).replace("/", "-") + ".xlsx"
+
+    # --- Prepare HTTP response ---
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    response['Content-Disposition'] = 'attachment; filename="logs.xlsx"'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
     wb = Workbook()
     ws = wb.active
     ws.title = 'Logs'
 
-    # Header
-    columns = ['Project Name', 'Contract', 'Section', 'Item', 'Task', 'Time Spent', 'Date', 'Time', 'User']
+    # --- Header row ---
+    columns = [
+        'Project Name', 'Contract', 'Section', 'Item', 'Task',
+        'Time Spent', 'Date', 'Time', 'User',
+        'Unit', 'Item Rate', 'Total (Std only)'
+    ]
     ws.append(columns)
+    from openpyxl.styles import Font
     for cell in ws[1]:
         cell.font = Font(bold=True)
 
-    # Rows
+    # --- Data rows ---
     for obj in queryset:
-        # Split log_timestamps into date and time (best-effort)
-        log_timestamp = getattr(obj, 'log_timestamps', None)
-        if log_timestamp:
+        ts = getattr(obj, 'log_timestamps', None)
+        if ts:
             try:
-                log_date, log_time = log_timestamp.split(' ', 1)
+                log_date, log_time = ts.split(' ', 1)
             except ValueError:
-                log_date = ""
-                log_time = ""
+                log_date, log_time = "", ""
         else:
-            log_date = ""
-            log_time = ""
+            log_date, log_time = "", ""
 
-        # TIME SPENT as a real number (float) -> Excel applies locale (comma decimal in many EU locales)
-        # If it's None or not parseable, leave as None so the cell is empty (no warning triangle).
         raw_time = getattr(obj, 'log_time', None)
         try:
-            time_spent = float(raw_time) if raw_time is not None and raw_time != "" else None
+            time_spent = float(raw_time) if raw_time not in (None, "") else None
         except (ValueError, TypeError):
             time_spent = None
 
-        row = [
+        item = getattr(obj, 'log_Item', None)
+        unit = ""
+        item_rate = None
+        total_std_only = None
+        if item:
+            unit = getattr(item, 'unit', '') or ''
+            try:
+                item_rate_val = getattr(item, 'rate', None)
+                item_rate = float(item_rate_val) if item_rate_val not in (None, "") else None
+            except (ValueError, TypeError):
+                item_rate = None
+            if unit == 'Std' and time_spent is not None and item_rate is not None:
+                total_std_only = time_spent * item_rate
+
+        ws.append([
             getattr(obj, 'log_project_name', ''),
             obj.log_contract.contract_name if getattr(obj, 'log_contract', None) else "",
             obj.log_section.section_name if getattr(obj, 'log_section', None) else "",
-            obj.log_Item.Item_name if getattr(obj, 'log_Item', None) else "",
+            item.Item_name if item else "",
             getattr(obj, 'log_tasks', '') or "",
-            time_spent,          # <-- numeric, not string
+            time_spent,
             log_date,
             log_time,
             obj.user.username if getattr(obj, 'user', None) else '',
-        ]
-        ws.append(row)
+            unit,
+            item_rate,
+            total_std_only,
+        ])
 
-    # Apply number format to the "Time Spent" column (F) to always show one decimal place.
-    # Excel will display the decimal separator according to the user’s locale (comma in many regions).
-    for cell in ws.iter_cols(min_col=6, max_col=6, min_row=2, max_row=ws.max_row):
-        for c in cell:
-            if c.value is not None:
-                c.number_format = '0.0'   # shows e.g. 7,0 in comma-locale; 7.0 in dot-locale
+    # --- Formatting ---
+    for col_idx, fmt in ((6, '0.0'), (11, '0.00'), (12, '0.00')):
+        for col in ws.iter_cols(min_col=col_idx, max_col=col_idx, min_row=2, max_row=ws.max_row):
+            for c in col:
+                if c.value is not None:
+                    c.number_format = fmt
 
-    # (Optional) make columns a bit wider
-    widths = [24, 18, 18, 18, 24, 12, 14, 12, 18]
+    widths = [24, 18, 18, 24, 24, 12, 14, 12, 18, 10, 12, 14]
     for i, w in enumerate(widths, start=1):
-        ws.column_dimensions[chr(64 + i)].width = w
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    ws.freeze_panes = "A2"
+
+    # --- Real Excel table with subtle style ---
+    last_col_letter = get_column_letter(len(columns))
+    last_row = ws.max_row
+    table_ref = f"A1:{last_col_letter}{last_row}"
+    table = Table(displayName="LogsTable", ref=table_ref)
+    table_style = TableStyleInfo(
+        name="TableStyleLight9",  # subtle & neutral
+        showFirstColumn=False,
+        showLastColumn=False,
+        showRowStripes=True,
+        showColumnStripes=False,
+    )
+    table.tableStyleInfo = table_style
+    ws.add_table(table)
 
     wb.save(response)
     return response

@@ -43,17 +43,17 @@ class Employee(models.Model):
 
 # Creating Client model
 class Client(models.Model):
-    client_name = models.CharField(max_length=255, unique=False, default='Unknown Name')
-    client_mail = models.EmailField(max_length=255, unique=False, blank=True, null=True)  
-    client_phone = models.CharField(blank=True, null=True) 
-    firm_name = models.CharField(max_length=255, unique=True, blank=True, null=True)  
-    street_address = models.CharField(max_length=255, default='Unknown')
-    postal_code = models.CharField(max_length=20, default='Unknown')
-    city = models.CharField(max_length=100, default='Unknown')
-    country = CountryField()  # django-countries for country field
+    firm_name = models.CharField(max_length=255, unique=True, blank=False, null=False)
+    client_name = models.CharField(max_length=255, blank=True, null=True)
+    client_mail = models.EmailField(max_length=255, blank=True, null=True)
+    client_phone = models.CharField(max_length=50, blank=True, null=True)
+    street_address = models.CharField(max_length=255, blank=True, null=True)
+    postal_code = models.CharField(max_length=20, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    country = CountryField(blank=True, null=True)
 
     def __str__(self):
-        return self.firm_name or self.client_name
+        return self.firm_name
 
 #Creating Task model
 class Task(models.Model):
