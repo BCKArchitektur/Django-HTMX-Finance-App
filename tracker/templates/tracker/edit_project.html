@@ -162,48 +162,48 @@
                         </button>
                         </td>
 
-<td class="w-1/12 text-right bg-slate-500">
-  <div class="dropdown dropdown-end bg-slate-500">
-    <button tabindex="0" class="btn btn-circle btn-outline btn-sm">
-      <iconify-icon icon="mdi:dots-vertical" height="18"></iconify-icon>
-    </button>
-    <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-200 rounded-box w-56 z-50">
-      <li>
-        <a onclick="openAddUsersModal({{ contract.id }})">
-          <iconify-icon icon="mdi:account-multiple-outline" height="16"></iconify-icon>
-          Benutzer
-        </a>
-      </li>
-      <li>
-        <a onclick="openAddBudgetModal({{ contract.id }})">
-          <iconify-icon icon="mdi:cash" height="16"></iconify-icon>
-          Budget
-        </a>
-      </li>
-      <li>
-        <a onclick="openScopeModal({{ contract.id }})">
-          <iconify-icon icon="mdi:clipboard-text-outline" height="16"></iconify-icon>
-          Scope
-        </a>
-      </li>
-      <li>
-        <a onclick="openMoveContractModal({{ contract.id }}, {{ project.id }})">
-          <iconify-icon icon="lucide:move-diagonal" height="16"></iconify-icon>
-          Verschieben
-        </a>
-      </li>
-      <li>
-        <form method="post" action="{% url 'delete_contract' contract.id %}" onsubmit="return confirm('Vertrag wirklich löschen?');">
-          {% csrf_token %}
-          <button type="submit" class="w-full flex items-center gap-2">
-            <iconify-icon icon="mdi:trash-can-outline" height="16"></iconify-icon>
-            Löschen
-          </button>
-        </form>
-      </li>
-    </ul>
-  </div>
-</td>
+                        <td class="w-1/12 text-right">
+                        <div class="dropdown dropdown-end">
+                            <button tabindex="0" class="btn btn-circle btn-outline btn-sm">
+                            <iconify-icon icon="mdi:dots-vertical" height="18"></iconify-icon>
+                            </button>
+                            <ul tabindex="0" class="dropdown-content menu p-2 shadow  bg-gray-100 rounded-box w-56 z-50">
+                            <li>
+                                <a onclick="openAddUsersModal({{ contract.id }})">
+                                <iconify-icon icon="mdi:account-multiple-outline" height="16"></iconify-icon>
+                                Benutzer
+                                </a>
+                            </li>
+                            <li>
+                                <a onclick="openAddBudgetModal({{ contract.id }})">
+                                <iconify-icon icon="mdi:cash" height="16"></iconify-icon>
+                                Budget
+                                </a>
+                            </li>
+                            <li>
+                                <a onclick="openScopeModal({{ contract.id }})">
+                                <iconify-icon icon="mdi:clipboard-text-outline" height="16"></iconify-icon>
+                                Scope
+                                </a>
+                            </li>
+                            <li>
+                                <a onclick="openMoveContractModal({{ contract.id }}, {{ project.id }})">
+                                <iconify-icon icon="lucide:move-diagonal" height="16"></iconify-icon>
+                                Verschieben
+                                </a>
+                            </li>
+                            <li>
+                                <form method="post" action="{% url 'delete_contract' contract.id %}" onsubmit="return confirm('Vertrag wirklich löschen?');">
+                                {% csrf_token %}
+                                <button type="submit" class="w-full flex items-center gap-2">
+                                    <iconify-icon icon="mdi:trash-can-outline" height="16"></iconify-icon>
+                                    Löschen
+                                </button>
+                                </form>
+                            </li>
+                            </ul>
+                        </div>
+                        </td>
        
                     </tr>
                     {% empty %}
@@ -978,26 +978,31 @@
         updateSummaryFields();
     }
 
+
     function updateTotalBudget(itemId) {
-        console.log('Updating total budget for item:', itemId);
         const quantityInput = document.querySelector(`input[name="quantity_${itemId}"]`);
-        const rateInput = document.querySelector(`input[name="rate_${itemId}"]`);
-        const unitSelect = document.querySelector(`select[name="unit_${itemId}"]`);
-        const totalField = document.getElementById(`total_${itemId}`);
+        const rateInput     = document.querySelector(`input[name="rate_${itemId}"]`);
+        const unitSelect    = document.querySelector(`select[name="unit_${itemId}"]`);
+        const totalField    = document.getElementById(`total_${itemId}`);
 
         if (!quantityInput || !rateInput || !unitSelect || !totalField) return;
 
         const quantityValue = parseGermanNumber(quantityInput.value) || 0;
-        const rateValue = parseGermanNumber(rateInput.value) || 0;
+        const rateValue     = parseGermanNumber(rateInput.value) || 0;
 
-        let totalValue = unitSelect.value === "%" 
-            ? (quantityValue / 100) * rateValue 
+        const totalValue = (unitSelect.value === "%")
+            ? (quantityValue / 100) * rateValue
             : quantityValue * rateValue;
 
         totalField.textContent = formatNumberToGerman(totalValue);
 
-        updateSummaryFields(); // or whatever budget summary method
-    }
+        // your global summary (already there)
+        updateSummaryFields();
+
+        // NEW: refresh just this section’s header total
+        const sectionContainer = totalField.closest('.section-container');
+        if (sectionContainer) updateSectionTotal(sectionContainer);
+        }
 
     function updateTotalInvoice(itemId) {
         console.log('Updating total invoice for item:', itemId);
@@ -1118,6 +1123,24 @@
             .replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Add dots as thousand separators
     }
 
+function updateSectionTotal(sectionContainer) {
+  let sum = 0;
+  // only totals that belong to this section's items table
+  const totals = sectionContainer.querySelectorAll('.items-table tbody td[id^="total_"]');
+  totals.forEach(td => {
+    const v = parseGermanNumber(td.textContent);
+    sum += isNaN(v) ? 0 : v;
+  });
+  const totalEl = sectionContainer.querySelector('.section-total-value');
+  if (totalEl) totalEl.textContent = formatNumberToGerman(sum);
+}
+
+    function updateAllSectionTotals() {
+        document.querySelectorAll('#budget-table .section-container').forEach(sc => {
+            updateSectionTotal(sc);
+        });
+        }
+
     function highlightSelectedNachlassInput() {
         const valueInput = document.getElementById('nachlass_value');
         const percentInput = document.getElementById('nachlass_percentage');
@@ -1219,6 +1242,8 @@
         document.getElementById('gross_contract').value = formatNumberToGerman(grossContract);
 
         console.log('Gross Contract:', grossContract);
+        updateAllSectionTotals();
+
     }
 
     // Add event listeners to recalculate values when VAT or Additional Fee percentage changes
@@ -1428,7 +1453,12 @@
                                 <input type="checkbox" class="checkbox checkbox-sm exclude-nachlass-checkbox" 
                                     data-section-id="${section.id}" ${section.exclude_from_nachlass ? 'checked' : ''}>
                             </label>
-                                                    <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionUp_budget(this)">
+                            
+                            <div class="section-total text-sm font-medium whitespace-nowrap">
+                                Summe: <span class="section-total-value" data-section-id="${section.id}">0,00</span> €
+                            </div>
+
+                            <button type="button" class="btn btn-circle btn-xs btn-outline" onclick="moveSectionUp_budget(this)">
                             <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <path stroke="none" d="M0 0h24v24H0z" />
                                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -1436,7 +1466,7 @@
                                 <line x1="6" y1="11" x2="12" y2="5" />
                             </svg>
                         </button>
-                        <button type="button" class="btn btn-circle btn-sm btn-outline" onclick="moveSectionDown_budget(this)">
+                        <button type="button" class="btn btn-circle btn-xs btn-outline" onclick="moveSectionDown_budget(this)">
                             <svg class="h-3 w-3 text-zinc-500" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <path stroke="none" d="M0 0h24v24H0z" />
                                 <line x1="12" y1="5" x2="12" y2="19" />

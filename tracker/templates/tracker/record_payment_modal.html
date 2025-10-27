@@ -121,9 +121,14 @@ function copyGrossInvoice() {
 }
 
 function copyCurrentGross() {
-    const formatted = document.getElementById('payment_current_invoice_gross').value;
-    const normalized = parseFloat(formatted.replace(/\./g, '').replace(',', '.')).toFixed(2);
-    document.getElementById('amount_received').value = normalized;
+  const parseValue = (val) => parseFloat(val.replace(/\./g, '').replace(',', '.')) || 0;
+
+  const currentGross = parseValue(document.getElementById('payment_current_invoice_gross').value);
+  const invoiceGross = parseValue(document.getElementById('payment_invoice_gross').value);
+
+  const valueToCopy = currentGross > 0 ? currentGross : invoiceGross;
+  document.getElementById('amount_received').value = valueToCopy.toFixed(2);
 }
+
 
 </script>

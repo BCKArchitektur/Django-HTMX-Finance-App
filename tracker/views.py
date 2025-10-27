@@ -2473,7 +2473,7 @@ def download_invoice(request, invoice_id):
 
         
         'invoice_type': invoice.invoice_type,
-        'current_ar_number': invoice.current_ar_number if invoice.invoice_type == 'AR' else None,
+        'current_ar_number': f"{invoice.current_ar_number}." if invoice.current_ar_number and invoice.invoice_type == 'AR' else "",
         'from_date': from_date.strftime('%d.%m.%Y') if from_date else None,
         'to_date': to_date.strftime('%d.%m.%Y') if to_date else None,
         'client_firm': client.firm_name,
@@ -2533,7 +2533,7 @@ def download_invoice(request, invoice_id):
     project_short_name = project.project_name.split()[0]
     company_identifier = "BCK" if "BCK" in template_name else "KOST"
     safe_contract_name = contract.contract_name.replace("/", "_")
-    new_filename = f"{invoice.title} {company_identifier} Rechnung {project_short_name} {invoice.invoice_type} {safe_contract_name}.docx"
+    new_filename = f"{invoice.title} {company_identifier} Rechnung {project_short_name} {invoice.get_invoice_label()} {safe_contract_name}.docx"
 
     response['Content-Disposition'] = f'attachment; filename="{new_filename}"'
 
