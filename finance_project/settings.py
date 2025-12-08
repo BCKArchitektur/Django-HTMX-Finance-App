@@ -35,6 +35,7 @@ SECRET_KEY = "django-insecure-hfjjz86s+pz6y4p=&mxz)dis&l$+mt2)6r$ho@))^5))f#$whp
 DEBUG = True
 
 ALLOWED_HOSTS = ['192.168.1.134',
+                 '192.168.1.138',
                  'localhost',
                  'hal.local',
                  ]
