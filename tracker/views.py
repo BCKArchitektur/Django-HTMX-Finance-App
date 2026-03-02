@@ -1538,7 +1538,7 @@ def generate_word_document(request, contract_id):
     project = contract.project_set.first()
     client = project.client_name
 
-    template_path = os.path.join(r'C:\Users\BCK-CustomApp\Documents\GitHub\Django-HTMX-Finance-App\templates\estimates', template_name)
+    template_path = os.path.join(settings.BASE_DIR, 'templates', 'estimates', template_name)
     if not os.path.exists(template_path):
         raise FileNotFoundError(f"Template not found at {template_path}")
 
@@ -2524,7 +2524,7 @@ def download_invoice(request, invoice_id):
         })
 
     # Load and render template
-    template_path = os.path.join(r'C:\Users\BCK-CustomApp\Documents\GitHub\Django-HTMX-Finance-App\templates\invoices', template_name)
+    template_path = os.path.join(settings.BASE_DIR, 'templates', 'invoices', template_name)
     doc = DocxTemplate(template_path)
     doc.render(context)
     print(context)
