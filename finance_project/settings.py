@@ -80,12 +80,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-if DEBUG:
-    INSTALLED_APPS.append("debug_toolbar")
-    MIDDLEWARE.insert(
-        MIDDLEWARE.index("django.contrib.auth.middleware.AuthenticationMiddleware"),
-        "debug_toolbar.middleware.DebugToolbarMiddleware",
-    )
+
 
 ROOT_URLCONF = "finance_project.urls"
 
