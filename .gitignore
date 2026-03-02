@@ -7,3 +7,5 @@ logs/django.log
 /logs
 venv/Lib/site-packages/_black_version.py
 /venv
+/staticfiles
+*.dump
