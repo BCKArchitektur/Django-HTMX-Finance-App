@@ -1560,7 +1560,7 @@ def generate_word_document(request, contract_id):
     sum_of_items = Decimal(0)
     sum_of_all_lps = Decimal(0)  # ✅ New variable for LP sum
     section_counter = 1
-    is_english_template = template_name in ['BCK_En.docx', 'Kost_En.docx']
+    is_english_template = template_name in ['BCK_En.docx', 'KOST_En.docx']
 
     sum_of_items_for_nachlass = Decimal(0)  # Tracks only eligible totals
     nachlass_item_serials = []              # Stores item serials as strings
