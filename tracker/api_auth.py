@@ -1,5 +1,12 @@
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.permissions import BasePermission
+
+
+class HasAPIKey(BasePermission):
+    """Allow access if a valid API key was supplied (request.auth is set)."""
+    def has_permission(self, request, view):
+        return request.auth is not None
 
 
 class APIKeyAuthentication(BaseAuthentication):

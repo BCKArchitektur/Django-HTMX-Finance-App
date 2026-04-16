@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     # external apps
+    "rest_framework",
     "django_extensions",
     "widget_tweaks",
     'allauth',
@@ -269,6 +270,14 @@ QUILL_CONFIGS = {
     },
 }
 
+
+# ── Django REST Framework ───────────────────────────────────────────────────────
+REST_FRAMEWORK = {
+    # Return JSON only — no browsable HTML API in production
+    'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer'],
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'DEFAULT_PERMISSION_CLASSES': [],
+}
 
 # ── Security Headers ────────────────────────────────────────────────────────────
 # Heroku terminates SSL at its load balancer and forwards HTTP to dynos.

@@ -8,12 +8,11 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 
-from .api_auth import APIKeyAuthentication
+from .api_auth import APIKeyAuthentication, HasAPIKey
 
 User = get_user_model()
 
@@ -50,7 +49,7 @@ class EmployeeHoursView(APIView):
     """
 
     authentication_classes = [APIKeyAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [HasAPIKey]
 
     def get(self, request):
         # ── 1. Validate query parameters ────────────────────────────────────
