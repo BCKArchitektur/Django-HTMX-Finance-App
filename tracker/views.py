@@ -172,7 +172,6 @@ def projects(request):
 
 
 
-@csrf_exempt
 @login_required
 def delete_project(request, project_id):
     if request.method == 'POST':
@@ -181,7 +180,6 @@ def delete_project(request, project_id):
         return JsonResponse({'status': 'success'})
     return HttpResponseBadRequest("Invalid request")
 
-@csrf_exempt
 @login_required
 def delete_client(request, client_id):
     if request.method == 'POST':
@@ -969,7 +967,7 @@ def project_details(request, project_id):
         'contracts': contract_data
     }
 
-    if request.is_ajax():
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse(response)
     else:
         return render(request, 'tracker/project_details.html', {'project': project, 'contracts': contract_data})
@@ -1173,7 +1171,6 @@ def check_contract_name(request):
     return JsonResponse(data)
 
 
-@csrf_exempt
 @login_required
 def add_users(request):
     if request.method == 'POST':
@@ -1207,7 +1204,6 @@ def add_users(request):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
-@csrf_exempt
 @login_required
 def add_budget(request):
     if request.method == 'POST':
@@ -1314,7 +1310,6 @@ def get_project_users(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
     
-@csrf_exempt
 @login_required
 def delete_contract(request, contract_id):
     if request.method == 'POST':
@@ -2602,7 +2597,7 @@ def get_new_contract_number(request, project_id):
 
 from bs4 import BeautifulSoup
 
-@csrf_exempt
+@login_required
 def update_scope(request, contract_id):
     if request.method == 'POST':
         scope_of_work = request.POST.get('scope_of_work', '')
@@ -2630,12 +2625,16 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import SessionAuthentication
 import pandas as pd
 from .models import ServiceProfile
 from .serializers import ServiceProfileSerializer
 
 class ServiceProfileUploadView(APIView):
     """Allows users to upload an Excel file"""
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request, *args, **kwargs):
@@ -2647,6 +2646,9 @@ class ServiceProfileUploadView(APIView):
 
 class ServiceProfileListView(APIView):
     """Lists all uploaded service profiles, including LP breakdowns"""
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, *args, **kwargs):
         profiles = ServiceProfile.objects.all()
         
@@ -2664,7 +2666,9 @@ class ServiceProfileListView(APIView):
 
 class HOAICalculationView(APIView):
     """Performs calculations based on the selected Excel file and chargeable costs"""
-    
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, *args, **kwargs):
         profile_id = request.data.get('service_profile_id')
         cost_input = float(request.data.get('chargeable_costs'))

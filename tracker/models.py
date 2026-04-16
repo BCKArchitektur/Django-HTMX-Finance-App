@@ -507,7 +507,32 @@ class ServiceProfile(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)  # Timestamp for file upload
 
     # New field: Store LP percentages as JSON
-    lp_breakdown = models.JSONField(default=default_lp_breakdown) 
+    lp_breakdown = models.JSONField(default=default_lp_breakdown)
 
     def __str__(self):
         return self.name
+
+
+import secrets as _secrets
+
+class APIKey(models.Model):
+    """API key for external app integrations (e.g. HR App)."""
+    name = models.CharField(
+        max_length=100,
+        help_text="Human-readable label for this key, e.g. 'HR App – Production'."
+    )
+    key = models.CharField(max_length=64, unique=True, db_index=True, editable=False)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = _secrets.token_urlsafe(32)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.name} ({'active' if self.is_active else 'inactive'})"
+
+    class Meta:
+        verbose_name = "API Key"
+        verbose_name_plural = "API Keys"

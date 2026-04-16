@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from .views import ServiceProfileUploadView, ServiceProfileListView, HOAICalculationView
+from .api_views import EmployeeHoursView
 
 urlpatterns = [
     path("", views.log_create_compact, name='log_create_compact'),
@@ -61,6 +62,8 @@ urlpatterns = [
     path('project/<int:project_id>/update-settings/', views.update_project_settings, name='update_project_settings'),
     path('projects/<int:project_id>/reset-hourly-rates/', views.reset_project_hourly_rates, name='reset_project_hourly_rates'),
 
+    # ── External API (Api-Key authentication) ──────────────────────────────
+    path('api/hours/', EmployeeHoursView.as_view(), name='api_employee_hours'),
 
 ]
 

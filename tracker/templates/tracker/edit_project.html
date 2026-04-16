@@ -1920,6 +1920,9 @@ function updateSectionTotal(sectionContainer) {
         fetch(form.action, {
             method: 'POST',
             body: new FormData(form),
+            headers: {
+                'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
         })
             .then((response) => {
                 console.log('Response received:', response);

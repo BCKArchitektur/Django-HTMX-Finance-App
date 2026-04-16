@@ -29,13 +29,21 @@ NUMBER_GROUPING = 3  # Group digits into thousands
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-hfjjz86s+pz6y4p=&mxz)dis&l$+mt2)6r$ho@))^5))f#$whp')
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1')
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'dev-only-insecure-key-do-not-use-in-production'
+    else:
+        raise ValueError("SECRET_KEY environment variable is not set. Cannot start in production mode.")
+
+ALLOWED_HOSTS = os.environ.get(
+    'ALLOWED_HOSTS',
+    'bck-f86a70e697db.herokuapp.com,localhost,127.0.0.1'
+).split(',')
 
 
 # Application definition
@@ -108,11 +116,22 @@ WSGI_APPLICATION = "finance_project.wsgi.application"
 
 DATABASES = {
     "default": dj_database_url.config(
-        default="postgresql://postgres:BCKArchitektur23!@127.0.0.1:5432/bck_2",
+        default=None,
         conn_max_age=600,
         ssl_require=not DEBUG,
     )
 }
+if not DATABASES["default"] and DEBUG:
+    # Local dev fallback — set DATABASE_URL in .env instead
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "bck_2",
+            "USER": "postgres",
+            "HOST": "127.0.0.1",
+            "PORT": "5432",
+        }
+    }
 
 
 # Password validation
@@ -134,12 +153,12 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
+# Internationalization — German locale (consolidated, overrides boilerplate above)
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = 'de'
 
-TIME_ZONE = "UTC"
+TIME_ZONE = 'Europe/Berlin'
 
 USE_I18N = True
 
@@ -246,6 +265,68 @@ QUILL_CONFIGS = {
                 [{'align': []}],
                 ['clean'],  # Remove formatting button
             ],
+        },
+    },
+}
+
+
+# ── Security Headers ────────────────────────────────────────────────────────────
+# Heroku terminates SSL at its load balancer and forwards HTTP to dynos.
+# SECURE_PROXY_SSL_HEADER tells Django to trust the X-Forwarded-Proto header
+# so it knows the original request was HTTPS — without this, SECURE_SSL_REDIRECT
+# causes an infinite redirect loop on Heroku.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = not DEBUG
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+X_FRAME_OPTIONS = 'DENY'
+
+
+# ── Logging ─────────────────────────────────────────────────────────────────────
+# On Heroku the filesystem is ephemeral and logs/ does not exist — use console only.
+# Locally, if logs/ exists, also write to a rotating file.
+_LOG_DIR = BASE_DIR / 'logs'
+_log_handlers = {
+    'console': {
+        'class': 'logging.StreamHandler',
+        'formatter': 'verbose',
+    },
+}
+_tracker_handlers = ['console']
+
+if _LOG_DIR.exists():
+    _log_handlers['file'] = {
+        'class': 'logging.handlers.RotatingFileHandler',
+        'filename': _LOG_DIR / 'django.log',
+        'maxBytes': 5 * 1024 * 1024,  # 5 MB
+        'backupCount': 5,
+        'formatter': 'verbose',
+    }
+    _tracker_handlers.append('file')
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': _log_handlers,
+    'loggers': {
+        'tracker': {
+            'handlers': _tracker_handlers,
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
         },
     },
 }

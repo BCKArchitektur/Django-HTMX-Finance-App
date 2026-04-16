@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Project, Employee, Client, Logs, Contract, Section, Item, Task, ProjectPreset, UserPreset , Invoice , DeletedInvoiceNumber
+from .models import User, Project, Employee, Client, Logs, Contract, Section, Item, Task, ProjectPreset, UserPreset, Invoice, DeletedInvoiceNumber, APIKey
 from django.http import HttpResponse
 from openpyxl import Workbook
 from django.contrib.auth.admin import UserAdmin
@@ -604,5 +604,17 @@ def generate_shared_param_file(modeladmin, request, queryset):
 
 
 @admin.register(DeletedInvoiceNumber)
-class DeletedInvoiceNumber(admin.ModelAdmin):   
+class DeletedInvoiceNumber(admin.ModelAdmin):
     pass
+
+
+@admin.register(APIKey)
+class APIKeyAdmin(admin.ModelAdmin):
+    list_display = ('name', 'key', 'is_active', 'created_at')
+    list_filter = ('is_active',)
+    readonly_fields = ('key', 'created_at')
+    search_fields = ('name',)
+
+    def save_model(self, request, obj, form, change):
+        # key is auto-generated on first save (model.save() handles it)
+        super().save_model(request, obj, form, change)
