@@ -2700,52 +2700,86 @@ class HOAICalculationView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        profile_id = request.data.get('service_profile_id')
-        cost_input = float(request.data.get('chargeable_costs'))
-        fee_zone = request.data.get('fee_zone') 
-        profile = get_object_or_404(ServiceProfile, id=profile_id)
-        excel_path = profile.excel_file.path
+        try:
+            profile_id = request.data.get('service_profile_id')
+            cost_input_raw = request.data.get('chargeable_costs')
+            fee_zone = request.data.get('fee_zone')
 
-        # Read Excel file
-        df = pd.read_excel(excel_path)
+            if not profile_id or cost_input_raw in (None, "", "-"):
+                return Response(
+                    {"error": "service_profile_id and chargeable_costs are required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-        # Find the lower and upper bound rows
-        lower_bound = df[df["Anrechenbare Kosten (€)"] <= cost_input].iloc[-1]
-        upper_bound = df[df["Anrechenbare Kosten (€)"] > cost_input].iloc[0]
+            cost_input = float(cost_input_raw)
+            profile = get_object_or_404(ServiceProfile, id=profile_id)
 
-        # Extract values
-        a = lower_bound["Anrechenbare Kosten (€)"]
-        aa = upper_bound["Anrechenbare Kosten (€)"]
-        
-        b = lower_bound[f"Honorarzone {fee_zone} (von)"]
-        bb = upper_bound[f"Honorarzone {fee_zone} (von)"]
-        
-        c = lower_bound[f"Honorarzone {fee_zone} (bis)"]
-        cc = upper_bound[f"Honorarzone {fee_zone} (bis)"]
+            # Resolve excel file: MEDIA_ROOT is ephemeral on Heroku, so the file
+            # uploaded via admin may be gone. Fall back to the copy committed
+            # under BASE_DIR/hoai_tables/ if needed.
+            excel_path = profile.excel_file.path
+            if not os.path.exists(excel_path):
+                fallback_name = os.path.basename(profile.excel_file.name)
+                fallback_path = os.path.join(settings.BASE_DIR, 'hoai_tables', fallback_name)
+                if os.path.exists(fallback_path):
+                    excel_path = fallback_path
+                else:
+                    return Response(
+                        {"error": f"HOAI table file not found for profile '{profile.name}'. "
+                                  f"Looked at {profile.excel_file.path} and {fallback_path}."},
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
 
-        # Perform linear interpolation
-        honor_from = b + ((cost_input - a) * (bb - b) / (aa - a))
-        honor_to = c + ((cost_input - a) * (cc - c) / (aa - a))
+            df = pd.read_excel(excel_path)
 
-        response_data = {
-            "service_profile": profile.name,
-            "chargeable_costs": cost_input,
-            "fee_zone": fee_zone,
-            "interpolation": {
-                "lower_bound_cost": a,
-                "upper_bound_cost": aa,
-                "lower_bound_von": b,
-                "upper_bound_von": bb,
-                "lower_bound_bis": c,
-                "upper_bound_bis": cc,
-            },
-            "calculated_fee": {
-                "honor_from": round(honor_from, 2),
-                "honor_to": round(honor_to, 2),
+            lower_rows = df[df["Anrechenbare Kosten (€)"] <= cost_input]
+            upper_rows = df[df["Anrechenbare Kosten (€)"] > cost_input]
+            if lower_rows.empty or upper_rows.empty:
+                return Response(
+                    {"error": f"chargeable_costs={cost_input} is outside the HOAI table range "
+                              f"for profile '{profile.name}'."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            lower_bound = lower_rows.iloc[-1]
+            upper_bound = upper_rows.iloc[0]
+
+            a = lower_bound["Anrechenbare Kosten (€)"]
+            aa = upper_bound["Anrechenbare Kosten (€)"]
+            b = lower_bound[f"Honorarzone {fee_zone} (von)"]
+            bb = upper_bound[f"Honorarzone {fee_zone} (von)"]
+            c = lower_bound[f"Honorarzone {fee_zone} (bis)"]
+            cc = upper_bound[f"Honorarzone {fee_zone} (bis)"]
+
+            honor_from = b + ((cost_input - a) * (bb - b) / (aa - a))
+            honor_to = c + ((cost_input - a) * (cc - c) / (aa - a))
+
+            response_data = {
+                "service_profile": profile.name,
+                "chargeable_costs": cost_input,
+                "fee_zone": fee_zone,
+                "interpolation": {
+                    "lower_bound_cost": a,
+                    "upper_bound_cost": aa,
+                    "lower_bound_von": b,
+                    "upper_bound_von": bb,
+                    "lower_bound_bis": c,
+                    "upper_bound_bis": cc,
+                },
+                "calculated_fee": {
+                    "honor_from": round(honor_from, 2),
+                    "honor_to": round(honor_to, 2),
+                },
             }
-        }
-
-        return Response(response_data, status=status.HTTP_200_OK)
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            import traceback
+            tb = traceback.format_exc()
+            print(f"HOAICalculationView error: {type(e).__name__}: {e}\n{tb}")
+            return Response(
+                {"error": f"{type(e).__name__}: {e}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 import os
 import uuid
