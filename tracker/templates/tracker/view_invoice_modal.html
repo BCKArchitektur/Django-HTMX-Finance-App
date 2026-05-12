@@ -247,8 +247,13 @@
 
   function viewInvoice(invoiceId){
     fetch(`/ajax/view-invoice/${invoiceId}/`)
-      .then(r=>r.json())
-      .then(data=>{
+      .then(r=>r.json().then(data=>({ok: r.ok, status: r.status, data})))
+      .then(({ok, status, data})=>{
+        if(!ok || data.error){
+          console.error('view_invoice failed', status, data);
+          alert('Fehler beim Laden der Rechnung (' + status + '): ' + (data.error || 'Unbekannter Fehler'));
+          return;
+        }
         // basics
         document.getElementById('view_project_name').value  = data.project_name || 'N/A';
         document.getElementById('view_contract_name').value = data.contract_name || 'N/A';

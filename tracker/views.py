@@ -34,12 +34,14 @@ from datetime import date
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse, Http404  # Import Http404
-from decimal import Decimal  # Import Decimal for precision handling
+from decimal import Decimal, InvalidOperation
 from datetime import datetime
 from django.db.models import JSONField
 from babel.numbers import format_decimal
 from django.db import transaction, IntegrityError
 from django.db.models import Max, Q
+import re
+import requests
 
 @login_required
 def toggle_dark_mode(request):
@@ -531,12 +533,6 @@ def handle_existing_contract_form(request, project):
 
     return redirect('edit_project', project_id=project.id)
 
-from decimal import Decimal
-import re
-
-
-import re
-from decimal import Decimal
 
 def parse_german_number(number_string):
     """
@@ -545,8 +541,8 @@ def parse_german_number(number_string):
     try:
         number_string = str(number_string)
         normalized_number = number_string.replace('.', '').replace(',', '.')
-        return Decimal(normalized_number)  
-    except (ValueError, AttributeError):
+        return Decimal(normalized_number)
+    except (ValueError, AttributeError, InvalidOperation):
         return Decimal(0)
 
 
@@ -1347,9 +1343,6 @@ def set_bullet(paragraph):
     ind.set(qn("w:hanging"), "360")  # Hanging indent ensures alignment of wrapped text
     pPr.append(ind)
 
-import requests
-from decimal import Decimal
-
 def extract_hoai_details(contract):
     """
     Extracts and formats HOAI data from the contract for document generation.
@@ -1563,7 +1556,7 @@ def generate_word_document(request, contract_id):
 
 
     hoai_details = extract_hoai_details(contract)
-    grundhonorar = parse_german_number(hoai_details["grundhonorar"]) if hoai_details["grundhonorar"] != "0" else Decimal(0)
+    grundhonorar = parse_german_number(hoai_details["grundhonorar"])
 
     # **Process Sections, Separating LP and Non-LP Sections**
     for section in sorted(contract.section.all(), key=lambda s: getattr(s, 'order', 0)):
@@ -1641,7 +1634,7 @@ def generate_word_document(request, contract_id):
     else:   
         additional_fee_value = (sum_of_items * additional_fee_percentage) / Decimal(100)
 
-    zuschlag_amount = float(parse_german_number(hoai_details["zuschlag_amount"]) if hoai_details["zuschlag_amount"] != "0" else Decimal(0))
+    zuschlag_amount = float(parse_german_number(hoai_details["zuschlag_amount"]))
 
     grundhonorar_without_zuschlag = float(grundhonorar) - zuschlag_amount
 
@@ -1897,14 +1890,7 @@ def view_invoice(request, invoice_id):
 
         # --- HOAI / Grundhonorar parsing ---
         hoai_data = contract.hoai_data or {}
-        if hoai_data:
-            grundhonorar = Decimal(
-                str(hoai_data.get("grundhonorar", "0"))
-                .replace('.', '')
-                .replace(',', '.')
-            )
-        else:
-            grundhonorar = Decimal(0)
+        grundhonorar = parse_german_number(hoai_data.get("grundhonorar", "0"))
 
         # ===== Build estimate-based ordering to mirror download_invoice =====
         # 1) Section serials: only for NON-LP sections, by `order`
@@ -2101,9 +2087,13 @@ def view_invoice(request, invoice_id):
     except Http404:
         return JsonResponse({'error': 'Invoice not found'}, status=404)
     except Exception as e:
-        # Log as needed
-        print(f"Unexpected error: {e}")
-        return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        import traceback
+        tb = traceback.format_exc()
+        print(f"view_invoice error for invoice_id={invoice_id}: {type(e).__name__}: {e}\n{tb}")
+        return JsonResponse(
+            {'error': f'{type(e).__name__}: {e}'},
+            status=500,
+        )
 
 
 
@@ -2138,8 +2128,8 @@ def download_invoice(request, invoice_id):
 
     # Extract HOAI details
     hoai_details = extract_hoai_details(contract)
-    grundhonorar = parse_german_number(hoai_details["grundhonorar"]) if hoai_details["grundhonorar"] != "0" else Decimal(0)
-    zuschlag_amount = float(parse_german_number(hoai_details["zuschlag_amount"]) if hoai_details["zuschlag_amount"] != "0" else Decimal(0))
+    grundhonorar = parse_german_number(hoai_details["grundhonorar"])
+    zuschlag_amount = float(parse_german_number(hoai_details["zuschlag_amount"]))
     grundhonorar_without_zuschlag = float(grundhonorar) - zuschlag_amount
 
     # Build section order for NON-LP sections only (to match estimates)
