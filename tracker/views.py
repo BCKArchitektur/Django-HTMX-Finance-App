@@ -505,9 +505,39 @@ def handle_existing_contract_form(request, project):
     contract.section.set(sections_to_keep)  
     contract.save()
 
-    # Save contract with updated HOAI data
+    # Save contract with updated HOAI data.
+    # Defensive merge: the frontend serializes the modal's display spans as
+    # textContent. If the user reopens the contract and saves without
+    # triggering calculateHOAI(), those spans still hold the literal
+    # placeholder "-", which would otherwise overwrite a valid grundhonorar
+    # and interpolation block with garbage. Preserve previous values when
+    # the new ones are placeholders.
     if contract.hoai_data:
-        contract.hoai_data = hoai_data_parsed
+        existing = contract.hoai_data or {}
+        merged = dict(hoai_data_parsed) if hoai_data_parsed else {}
+
+        def _is_placeholder(v):
+            if v is None:
+                return True
+            s = str(v).strip()
+            return s in ("", "-", "-€")
+
+        if _is_placeholder(merged.get("grundhonorar")) and not _is_placeholder(existing.get("grundhonorar")):
+            merged["grundhonorar"] = existing["grundhonorar"]
+
+        new_interp = merged.get("interpolation") or {}
+        old_interp = existing.get("interpolation") or {}
+        if new_interp and any(_is_placeholder(v) for v in new_interp.values()) and old_interp:
+            for k, v in new_interp.items():
+                if _is_placeholder(v) and not _is_placeholder(old_interp.get(k)):
+                    new_interp[k] = old_interp[k]
+            merged["interpolation"] = new_interp
+
+        for k in ("interpolated_basishonorarsatz", "interpolated_oberer_honorarsatz", "zuschlag_amount"):
+            if _is_placeholder(merged.get(k)) and not _is_placeholder(existing.get(k)):
+                merged[k] = existing[k]
+
+        contract.hoai_data = merged
         contract.save()
 
     if contract.hoai_data:
@@ -1783,9 +1813,12 @@ def create_invoice(request, project_id):
                 item = Item.objects.filter(id=item_id).first()
                 unit = item.unit if item else 'Std'  # fallback
 
-                # Use % logic for LP-based items
+                # Use % logic for LP-based items.
+                # `rate` here is the grundhonorar snapshotted into the invoice at
+                # creation time — using it (rather than the live contract.hoai_data
+                # value) keeps historical invoices stable if the contract is edited.
                 if unit == "%":
-                    total = (quantity / Decimal(100)) * grundhonorar
+                    total = (quantity / Decimal(100)) * rate
                 else:
                     total = rate * quantity
 
@@ -1929,9 +1962,12 @@ def view_invoice(request, invoice_id):
                 rate = Decimal(details['rate'])
                 quantity = Decimal(details['quantity'])
 
-                # compute total (supports % items against grundhonorar)
+                # Compute total. For % (LP) items, multiply by the snapshotted
+                # `rate` (which holds the grundhonorar at invoice-creation time)
+                # rather than the live contract value, so historical invoices stay
+                # stable if the contract's HOAI data changes later.
                 if unit == "%":
-                    total = (quantity / Decimal(100)) * grundhonorar
+                    total = (quantity / Decimal(100)) * rate
                 else:
                     total = rate * quantity
 
@@ -2213,8 +2249,12 @@ def download_invoice(request, invoice_id):
             actual_lp_value = hoai_details["lp_breakdown_actual"].get(lp_key, "0")
 
             lp_percentage = Decimal(lp_value) if lp_value != "0" else Decimal(0)
-            lp_amount = (Decimal(details['quantity']) / Decimal(100)) * grundhonorar
-            lp_beauftragt = (lp_percentage / Decimal(100)) * grundhonorar
+            # Snapshotted grundhonorar (per-item rate) keeps the Rechnungsbetrag
+            # stable even if the contract's hoai_data is later cleared/edited.
+            snapshot_grundhonorar = Decimal(str(details['rate']))
+            grundhonorar_for_lp = snapshot_grundhonorar if snapshot_grundhonorar > 0 else grundhonorar
+            lp_amount = (Decimal(details['quantity']) / Decimal(100)) * grundhonorar_for_lp
+            lp_beauftragt = (lp_percentage / Decimal(100)) * grundhonorar_for_lp
 
             # NEW: if requested, skip LPs that are zero (0 % or provided quantity 0)
             if skip_zero_lps and (lp_percentage == 0 or Decimal(details['quantity']) == 0):

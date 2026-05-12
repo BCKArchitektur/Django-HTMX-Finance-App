@@ -514,6 +514,39 @@ document.addEventListener('input', (e) => {
                         });
                     }
 
+                    // Restore the display spans from saved hoai_data so a no-change
+                    // save doesn't capture the default "-" textContent and overwrite
+                    // valid data. After restoring, trigger calculateHOAI() to re-fetch
+                    // the latest interpolation from the API.
+                    const _spanFields = {
+                        grundhonorar: "grundhonorar",
+                        zuschlagAmount: "zuschlag_amount",
+                        interpolatedBase: "interpolated_basishonorarsatz",
+                        interpolatedUpper: "interpolated_oberer_honorarsatz",
+                    };
+                    Object.entries(_spanFields).forEach(([elId, key]) => {
+                        const el = document.getElementById(elId);
+                        const v = data.hoai_data[key];
+                        if (el && v !== undefined && v !== null && String(v).trim() !== "" && String(v).trim() !== "-") {
+                            el.textContent = v;
+                        }
+                    });
+
+                    if (data.hoai_data.interpolation) {
+                        ["lower_bound_cost","upper_bound_cost","lower_bound_von","upper_bound_von","lower_bound_bis","upper_bound_bis"].forEach(key => {
+                            const el = document.getElementById(key);
+                            const v = data.hoai_data.interpolation[key];
+                            if (el && v !== undefined && v !== null && String(v).trim() !== "" && String(v).trim() !== "-") {
+                                el.textContent = v;
+                            }
+                        });
+                    }
+
+                    // Trigger a fresh calculation so the spans reflect current API output.
+                    if (typeof calculateHOAI === "function") {
+                        try { calculateHOAI(); } catch (e) { console.warn("calculateHOAI on restore failed:", e); }
+                    }
+
                     // ✅ Store HOAI Data in Hidden Field
                     document.getElementById("hoai_data").value = JSON.stringify(data.hoai_data);
 
