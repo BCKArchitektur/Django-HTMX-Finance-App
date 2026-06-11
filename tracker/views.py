@@ -117,11 +117,11 @@ def load_tasks(request):
 @login_required
 def delete_log(request, log_id):
     
-    # Force clean up of the log_id to remove commas
+    # Strip German thousands separators (period and comma) that may leak in
+    # from localized template rendering (USE_THOUSAND_SEPARATOR=True).
     try:
-        cleaned_log_id = ''.join(log_id.split(','))  # Remove commas by splitting and rejoining
-        cleaned_log_id = int(cleaned_log_id)  # Convert to integer
-    except ValueError as e:
+        cleaned_log_id = int(log_id.replace('.', '').replace(',', ''))
+    except (ValueError, AttributeError):
         return JsonResponse({'success': False, 'error': 'Invalid log_id format'}, status=400)
     
     if request.method == 'POST':

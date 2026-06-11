@@ -1,4 +1,5 @@
 {% extends 'tracker/base.html' %}
+{% load l10n %}
 
 {% block title %}Create Log{% endblock %}
 
@@ -97,7 +98,7 @@
         </thead>
         <tbody>
             {% for log in logs %}
-            <tr class="log-entry" id="log-{{ log.id }}">
+            <tr class="log-entry" id="log-{{ log.id|unlocalize }}">
                 <td>{{ log.log_timestamps }}</td>
                 <td>{{ log.log_project_name }}</td>
                 <td>{{ log.log_contract }}</td>
@@ -106,7 +107,7 @@
                 <td>{{ log.get_log_task }}</td>
                 <td>{{ log.log_time }}</td>
                 <td>
-                    <button class="btn btn-circle btn-outline btn-xs" onclick="deleteLog('{{ log.id }}', '{{ csrf_token }}', '{{ log.log_time }}')">
+                    <button class="btn btn-circle btn-outline btn-xs" onclick="deleteLog('{{ log.id|unlocalize }}', '{{ csrf_token }}', '{{ log.log_time|unlocalize }}')">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
