@@ -317,7 +317,7 @@ class LogsAdmin(admin.ModelAdmin):
     list_display = ['user', 'log_project_name', 'log_contract', 'log_section', 'log_Item', 'get_log_task', 'log_time', 'log_timestamps']
     list_filter = ['log_project_name', 'log_contract', 'log_section', 'log_Item', 'user']
     search_fields = ['log_project_name', 'log_contract__contract_name', 'log_section__section_name',
-                     'log_Item__Item_name', 'log_tasks__task_name', 'user__username', 'log_timestamps']
+                     'log_Item__Item_name', 'log_tasks', 'user__username', 'log_timestamps']
 
     fieldsets = (
         (None, {
