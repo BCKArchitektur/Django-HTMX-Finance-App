@@ -28,8 +28,9 @@ Usage:
     python manage.py rehome_logs --task-contains BURM --user TN
     python manage.py rehome_logs --log-ids 1204 1205 1206 --apply
 
-    # One log gets a different item than the rest
-    python manage.py rehome_logs --item-for 1204=Bauzeichner/in --apply
+    # Send everything to a different role, or single logs to their own role
+    python manage.py rehome_logs --item "Projektleitung" --apply
+    python manage.py rehome_logs --item-for 1204=Architekt/in --apply
 """
 
 from django.core.management.base import BaseCommand, CommandError
@@ -43,7 +44,9 @@ from tracker.models import Contract, Item, Logs, Project, Section
 DEST_PROJECT = "BRMHQS Burmester"
 DEST_CONTRACT = "Zusätzliche Leistungen"
 DEST_SECTION = "Stundennachweis"
-DEST_ITEM = "Allgemein"
+# Stundennachweis is billed hourly by job title — its items are roles
+# (Architekt/in, Projektleitung, Bauzeichner/in, ...), not a generic "Allgemein".
+DEST_ITEM = "Bauzeichner/in"
 
 SRC_PROJECT = "Büro"
 SRC_TASK_CONTAINS = "BURM"
