@@ -318,6 +318,9 @@ class LogsAdmin(admin.ModelAdmin):
     list_filter = ['log_project_name', 'log_contract', 'log_section', 'log_Item', 'user']
     search_fields = ['log_project_name', 'log_contract__contract_name', 'log_section__section_name',
                      'log_Item__Item_name', 'log_tasks', 'user__username', 'log_timestamps']
+    # log_timestamps is a CharField in "YYYY-MM-DD HH:MM:SS" form, so a plain
+    # descending string sort is also newest-first chronologically.
+    ordering = ['-log_timestamps', '-pk']
 
     fieldsets = (
         (None, {
