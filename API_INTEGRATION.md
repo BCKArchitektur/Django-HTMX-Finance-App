@@ -86,6 +86,96 @@ Date range cannot exceed 366 days.
 
 ---
 
+### `GET /api/projects/`
+
+Returns the projects an employee is assigned to, plus their saved per-project
+**logging preset** (default contract / section / item / task) where one exists.
+Used to map the firm's project codes (`project_no`, e.g. `26-004`) to loggable
+projects and to know which projects can be logged without extra ids.
+
+#### Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `username` | string | Yes | Django username of the employee |
+| `active` | `0` or `1` | No | `1` (default) returns only projects with status *InBearbeitung*; `0` returns all |
+
+#### Success Response — `200 OK`
+
+```json
+[
+  {
+    "project_id": 42,
+    "project_no": "26-004",
+    "project_name": "LWEKDM Loewe KuDamm",
+    "status": "InBearbeitung",
+    "has_preset": true,
+    "preset": {
+      "contract_id": 11, "contract": "(26-004-Ausbau )",
+      "section_id": 55, "section": "Planung",
+      "item_id": 310, "item": "Architekt/in",
+      "task": "Ausführungsplanung"
+    }
+  }
+]
+```
+
+`has_preset` is `false` and `preset` is `null` when the employee has not saved a
+default contract/section/item for that project. A log can only be auto-created
+(without explicit ids) when `has_preset` is `true`.
+
+---
+
+### `POST /api/logs/`
+
+Creates a **single time-log entry** for an employee. Contract/section/item come
+from the employee's saved preset for the project unless explicit ids are given.
+
+#### Request Body (JSON)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `username` | string | Yes | Django username |
+| `project` | string | Yes | `project_no` (e.g. `26-004`) or exact `project_name` |
+| `hours` | number | Yes | Logged hours, `> 0` and `≤ 24` (UI uses 0.25 steps) |
+| `date` | `YYYY-MM-DD` | No | Defaults to **today** (Europe/Berlin). Not in the future; at most 60 days back |
+| `task` | string | No | Free-text task note (falls back to the preset's default task) |
+| `contract_id` / `section_id` / `item_id` | int | No | Explicit override — must be supplied **together**; otherwise the preset is used |
+
+#### Success Response — `201 Created`
+
+```json
+{
+  "id": 9123,
+  "username": "max.mustermann",
+  "project": "26-004-LWEKDM Loewe KuDamm",
+  "date": "2026-11-02",
+  "hours": 2.5,
+  "contract": "(26-004-Ausbau )",
+  "section": "Planung",
+  "item": "Architekt/in",
+  "task": "Ausführungsplanung"
+}
+```
+
+#### Error Responses
+
+| Status | When |
+|--------|------|
+| `400 Bad Request` | Missing/invalid fields; or no preset for the project and no ids given (body includes `"needs_preset": true`) |
+| `401 Unauthorized` | Missing or wrong API key |
+| `404 Not Found` | `username` not found, or the project is not assigned to that user |
+
+**"needs preset" example — `400`:**
+```json
+{
+  "error": "No logging preset set for project '26-004-LWEKDM Loewe KuDamm'. Set your default contract/section/item once in the Tracker app, or pass contract_id/section_id/item_id.",
+  "needs_preset": true
+}
+```
+
+---
+
 ## Examples
 
 ### curl
